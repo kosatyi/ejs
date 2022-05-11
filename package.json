@@ -1,0 +1,44 @@
+{
+  "name": "@kosatyi/ejs",
+  "description": "EJS Templates",
+  "homepage": "https://github.com/kosatyi/ejs",
+  "version": "0.0.0",
+  "main": "dist/ejs.js",
+  "module": "dist/ejs.mjs",
+  "author": "Stepan Kosatyi (https://kosatyi.com)",
+  "dependencies": {
+    "@babel/core": "^7.16.5",
+    "@babel/preset-env": "^7.17.10",
+    "babel-preset-minify": "^0.5.2",
+    "readable-stream": "^3.6.0",
+    "vinyl": "^2.2.1"
+  },
+  "files": [
+    "dist",
+    "src",
+    "build.js"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "version": "npm run build",
+    "postversion": "git push && git push --tags"
+  },
+  "devDependencies": {
+    "rollup": "^2.72.1",
+    "@rollup/plugin-commonjs": "^22.0.0",
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "rollup-plugin-babel": "^4.4.0"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kosatyi/ejs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kosatyi/ejs.git"
+  }
+}
