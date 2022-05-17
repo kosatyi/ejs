@@ -1,154 +1,85 @@
-import {compile, entities, safe, wrapper} from './view'
-import {node} from './node'
-
-/**
- * @with helper
- * @type {{}}
- */
-
-function Scope(data) {
-    extend(this, data || {});
-}
-
-Scope.prototype = {};
-
-const uuid = str => {
-    let i = str.length
-    let hash1 = 5381
-    let hash2 = 52711
-    while (i--) {
-        const char = str.charCodeAt(i)
-        hash1 = (hash1 * 33) ^ char
-        hash2 = (hash2 * 33) ^ char
-    }
-    return (hash1 >>> 0) * 4096 + (hash2 >>> 0)
-}
-
-const random = size => {
-    let string = '';
-    let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_';
-    let limit = chars.length;
-    let length = size || 10;
-    for (let i = 0; i < length; i++) {
-        string += chars.charAt(Math.floor(Math.random() * limit));
-    }
-    return string;
-}
-
-const extend = (target, ...sources) => {
-    return Object.assign(target, ...sources.filter(i => i));
-}
+import { node } from './node'
+import { extend, uuid, random, hasProp, entities, safeValue } from './utils'
+import { compile, wrapper } from './view'
+import { Scope, helpers } from './scope'
 
 const getPrecompiledTemplates = () => {
-    let list = {};
-    let prop = window['EJS_PRECOMPILED_VAR'] || 'ejsPrecompiled';
+    let list = {}
+    let prop = window['EJS_PRECOMPILED_VAR'] || 'ejsPrecompiled'
     if (hasProp(window, prop)) {
-        list = window[prop];
+        list = window[prop]
     }
-    return list;
+    return list
 }
 
-const extList = ['ejs', 'mjs', 'html', 'svg', 'css', 'js'];
-const extDefault = 'ejs';
+const extList = ['ejs', 'mjs', 'html', 'svg', 'css', 'js']
+const extDefault = 'ejs'
 
 const extMissing = (value) => {
-    return (window['EJS_EXT_LIST'] || extList).indexOf(value) === -1;
+    return (window['EJS_EXT_LIST'] || extList).indexOf(value) === -1
 }
 
 const getTemplate = (name) => {
-    const list = getPrecompiledTemplates();
-    const ext = name.split('.').pop();
+    const list = getPrecompiledTemplates()
+    const ext = name.split('.').pop()
     if (name.charAt(0) === '/') {
-        name = name.slice(1);
+        name = name.slice(1)
     }
     if (extMissing(ext)) {
-        name = [name,extDefault].join('.');
+        name = [name, extDefault].join('.')
     }
     if (hasProp(list, name)) {
-        return list[name];
+        return list[name]
     }
-    const id = uuid(name);
+    const id = uuid(name)
     if (hasProp(list, id)) {
-        return list[id];
+        return list[id]
     }
-    return list[id] = compile(name, '.ejs');
+    return (list[id] = compile(name, '.ejs'))
 }
 
 const view = (name) => {
-    const template = getTemplate(name);
+    const template = getTemplate(name)
     return {
         render(data) {
-            const scope = new Scope(data);
-            return template.call(scope, scope, safe);
+            const scope = new Scope(data)
+            const content = template.call(scope, scope, safeValue)
+            if (scope.getLayout()) {
+                return view(scope.getLayout()).render(scope)
+            }
+            return content
         },
         require() {
-            const scope = new Scope({exports: {}});
-            scope.module = scope;
-            template.call(scope, scope, safe);
-            return scope.exports;
-        }
+            const scope = new Scope({ exports: {} })
+            scope.module = scope
+            template.call(scope, scope, safeValue)
+            return scope.exports
+        },
     }
-}
-
-const helpers = (methods) => {
-    extend(Scope.prototype, methods);
-}
-
-const hasProp = (object, prop) => object.hasOwnProperty(prop);
-
-const getPath = (context, name) => {
-    let data = context;
-    let chunk = name.split('.');
-    let prop = chunk.pop();
-    chunk.forEach(part => {
-        data = data[part] = data[part] || {}
-    });
-    return [data, prop];
 }
 
 helpers({
     /**
      * @memberOf window
      * @param name
-     * @param defaults
+     * @param data
+     * @param with_context
+     * @return {*}
      */
-    get(name, defaults) {
-        const [result, prop] = getPath(this, name);
-        return hasProp(result, prop) ? result[prop] : defaults;
+    include(name, data = {}, with_context = true) {
+        return view(name).render(extend({}, with_context ? this : {}, data))
     },
     /**
      * @memberOf window
      * @param name
-     * @param value
+     * @return {{}}
      */
-    set(name, value) {
-        const [result, prop] = getPath(this, name);
-        result[prop] = value;
+    require(name) {
+        return view(name).require()
     },
-    /**
-     * @memberOf window
-     * @param object
-     * @param callback
-     */
-    each(object, callback) {
-        let prop;
-        for (prop in object) {
-            if (object.hasOwnProperty(prop)) {
-                callback.call(this, object[prop], prop, object);
-            }
-        }
-    },
-    /**
-     * @memberOf window
-     * @param name
-     * @param args
-     */
-    call(name, ...args) {
-        const [result, prop] = getPath(this, name);
-        if (typeof (result[prop]) === 'function') {
-            return result[prop](...args);
-        }
-    },
+})
+
+helpers({
     /**
      * @memberOf window
      * @param tag
@@ -166,51 +97,6 @@ helpers({
      * @param prefix
      */
     uuid,
-    /**
-     * @memberOf window
-     * @param name
-     * @param data
-     * @return {*}
-     */
-    include(name, data) {
-        return view(name).render(extend({}, this, data || {}));
-    },
-    /**
-     * @memberOf window
-     * @param name
-     * @param data
-     * @return {*}
-     */
-    macro(name, data) {
-        return view(['macro', name].join('/')).render(extend({}, data || {}));
-    },
-    /**
-     * @memberOf window
-     * @param name
-     * @param path
-     * @return {*}
-     */
-    importMacro(name, path) {
-        this.set(name, p => this.macro(path, p));
-    },
-    /**
-     * @memberOf window
-     * @param name
-     * @return {{}}
-     */
-    require(name) {
-        return view(name).require();
-    }
-});
+})
 
-
-export {
-    node,
-    uuid,
-    random,
-    entities,
-    compile,
-    wrapper,
-    helpers,
-    view
-}
+export { node, uuid, random, entities, compile, wrapper, helpers, view }

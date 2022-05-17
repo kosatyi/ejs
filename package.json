@@ -10,6 +10,7 @@
     "@babel/core": "^7.16.5",
     "@babel/preset-env": "^7.17.10",
     "babel-preset-minify": "^0.5.2",
+    "gulp": "^4.0.2",
     "readable-stream": "^3.6.0",
     "vinyl": "^2.2.1"
   },
@@ -25,9 +26,9 @@
     "postversion": "git push && git push --tags"
   },
   "devDependencies": {
-    "rollup": "^2.72.1",
     "@rollup/plugin-commonjs": "^22.0.0",
     "@rollup/plugin-node-resolve": "^13.3.0",
+    "rollup": "^2.72.1",
     "rollup-plugin-babel": "^4.4.0"
   },
   "directories": {
