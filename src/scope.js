@@ -1,10 +1,7 @@
 import { extend, getPath, hasProp } from './utils'
+import { Output } from './output'
 
-const LAYOUT = '$$l'
-const BLOCKS = '$$b'
-const EXTEND = '$$_'
-const MACRO = '$$m'
-const PRINT = '$$j'
+import { EXTEND, OUTPUT, LAYOUT, BLOCKS } from './defaults'
 
 const noop = () => {}
 
@@ -12,45 +9,40 @@ const noop = () => {}
  * @with helper
  * @type {{}}
  */
-function Scope(data) {
+function Scope(data = {}) {
     this[BLOCKS] = {}
-    this[LAYOUT] = null
-    data = data || {}
-    if (data instanceof Scope) {
-        data[LAYOUT] = null
-    }
     extend(this, data)
+    this[OUTPUT] = Output()
+    this[EXTEND] = false
 }
 
 Scope.prototype = {
-    LAYOUT,
-    BLOCKS,
-    EXTEND,
-    MACRO,
-    PRINT,
+    clone() {
+        this[EXTEND] = false
+        return this
+    },
     /**
-     * Inline macros
+     * Buffered output callback
      * @memberOf window
      * @type Function
      * @param {Function} callback
      * @return {Function}
      */
-    $$m(callback) {},
+    $$m(callback) {
+        return (...args) => {
+            this[OUTPUT].backup()
+            callback(...args)
+            return this[OUTPUT].restore()
+        }
+    },
     /**
-     * Join arguments to output buffer
+     * Join values to output buffer
      * @memberOf window
      * @type Function
      * @param args
      */
-    $$j(...args) {},
-    /**
-     * Print arguments to output buffer
-     * @memberOf window
-     * @param args
-     * @return {Function}
-     */
-    print(...args) {
-        this.$$j(...args)
+    $$j(...args) {
+        this[OUTPUT](args.join(''))
     },
     /**
      * @memberOf window
@@ -102,23 +94,37 @@ Scope.prototype = {
             return result[prop](...args)
         }
     },
+    getOutput() {
+        return this[OUTPUT]
+    },
+    /**
+     *
+     * @return {Scope[EXTEND]|boolean}
+     */
+    hasExtend() {
+        return this[EXTEND] === true
+    },
+    /**
+     *
+     * @return {Scope[LAYOUT]}
+     */
     getLayout() {
         return this[LAYOUT]
     },
+    /**
+     *
+     * @return {Scope[BLOCKS]|{}}
+     */
+    getBlocks() {
+        return this[BLOCKS]
+    },
+    /**
+     * @memberOf window
+     * @param {String} layout
+     */
     extend(layout) {
+        this[EXTEND] = true
         this[LAYOUT] = layout
-    },
-    setBlock(name, callback) {
-        const blocks = this[BLOCKS]
-        blocks[name] = this.$$m(callback)
-    },
-    callBlock(name, callback) {
-        const blocks = this[BLOCKS]
-        if (blocks[name]) {
-            this.$$j(blocks[name](this.$$m(callback)))
-        } else if (callback) {
-            this.$$j(this.$$m(callback)(noop))
-        }
     },
     /**
      * @memberOf window
@@ -127,10 +133,15 @@ Scope.prototype = {
      * @return {*}
      */
     block(name, callback) {
-        if (this.getLayout()) {
-            this.setBlock(name, callback)
+        const blocks = this.getBlocks()
+        if (this.hasExtend()) {
+            blocks[name] = this.$$m(callback)
         } else {
-            this.callBlock(name, callback)
+            if (blocks[name]) {
+                this.$$j(blocks[name](this.$$m(callback)))
+            } else if (callback) {
+                this.$$j(this.$$m(callback)(noop))
+            }
         }
     },
 }

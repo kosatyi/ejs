@@ -1,7 +1,3 @@
-const regexpObject = (obj) => {
-    return new RegExp(['[', Object.keys(obj).join(''), ']'].join(''), 'g')
-}
-
 const symbolEntities = {
     "'": "'",
     '\\': '\\',
@@ -20,26 +16,26 @@ const htmlEntities = {
     "'": '&#x27;',
 }
 
-const symbolEntitiesRegexp = regexpObject(symbolEntities)
-const htmlEntitiesRegexp = regexpObject(htmlEntities)
-
-const entities = (string) => {
-    return ('' + string).replace(htmlEntitiesRegexp, function (match) {
-        return htmlEntities[match]
-    })
+const reKeys = (obj) => {
+    return new RegExp(['[', Object.keys(obj).join(''), ']'].join(''), 'g')
 }
 
-const symbols = (string) => {
-    return ('' + string).replace(symbolEntitiesRegexp, function (match) {
-        return '\\' + symbolEntities[match]
-    })
+export const entities = (string = '') => {
+    return string.replace(reKeys(htmlEntities), (match) => htmlEntities[match])
 }
 
-const safeValue = (value, escape, check) => {
+export const symbols = (string) => {
+    return ('' + string).replace(
+        reKeys(symbolEntities),
+        (match) => '\\' + symbolEntities[match]
+    )
+}
+
+export const safeValue = (value, escape, check) => {
     return (check = value) == null ? '' : escape ? entities(check) : check
 }
 
-const getPath = (context, name) => {
+export const getPath = (context, name) => {
     let data = context
     let chunk = name.split('.')
     let prop = chunk.pop()
@@ -49,11 +45,17 @@ const getPath = (context, name) => {
     return [data, prop]
 }
 
-const extend = (target, ...sources) => {
+export const extend = (target, ...sources) => {
     return Object.assign(target, ...sources.filter((i) => i))
 }
 
-const uuid = (str) => {
+export const format = (pattern = '', params = {}) => {
+    return pattern.replace(/{(.+?)}/g, (match, prop) => {
+        return hasProp(params, prop) ? params[prop] : match
+    })
+}
+
+export const uuid = (str) => {
     let i = str.length
     let hash1 = 5381
     let hash2 = 52711
@@ -65,7 +67,7 @@ const uuid = (str) => {
     return (hash1 >>> 0) * 4096 + (hash2 >>> 0)
 }
 
-const random = (size) => {
+export const random = (size) => {
     let string = ''
     let chars =
         'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_'
@@ -77,6 +79,4 @@ const random = (size) => {
     return string
 }
 
-const hasProp = (object, prop) => object.hasOwnProperty(prop)
-
-export { uuid, extend, random, hasProp, getPath, entities, symbols, safeValue }
+export const hasProp = (object, prop) => object.hasOwnProperty(prop)

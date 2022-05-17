@@ -1,22 +1,21 @@
-import { node } from './node'
+import { config } from './config'
 import { extend, uuid, random, hasProp, entities, safeValue } from './utils'
-import { compile, wrapper } from './view'
+import { node } from './node'
+import { compile } from './compile'
+import { wrapper } from './wrapper'
 import { Scope, helpers } from './scope'
+
+const extMissing = (value) => {
+    return config.get('extension.supported').indexOf(value) === -1
+}
 
 const getPrecompiledTemplates = () => {
     let list = {}
-    let prop = window['EJS_PRECOMPILED_VAR'] || 'ejsPrecompiled'
+    let prop = config.get('export')
     if (hasProp(window, prop)) {
         list = window[prop]
     }
     return list
-}
-
-const extList = ['ejs', 'mjs', 'html', 'svg', 'css', 'js']
-const extDefault = 'ejs'
-
-const extMissing = (value) => {
-    return (window['EJS_EXT_LIST'] || extList).indexOf(value) === -1
 }
 
 const getTemplate = (name) => {
@@ -26,7 +25,7 @@ const getTemplate = (name) => {
         name = name.slice(1)
     }
     if (extMissing(ext)) {
-        name = [name, extDefault].join('.')
+        name = [name, config.get('extension.default')].join('.')
     }
     if (hasProp(list, name)) {
         return list[name]
@@ -38,21 +37,44 @@ const getTemplate = (name) => {
     return (list[id] = compile(name, '.ejs'))
 }
 
+/**
+ *
+ * @param name
+ * @return {any|{require(): any, render(*): (*)}}
+ */
+
 const view = (name) => {
     const template = getTemplate(name)
+    /**
+     *
+     * @param {Object<Scope>} scope
+     * @return {*}
+     */
+    const render = (scope) => {
+        return template.call(scope, scope, scope.getOutput(), safeValue)
+    }
     return {
+        /**
+         *
+         * @param {Object} data
+         * @return {*}
+         */
         render(data) {
             const scope = new Scope(data)
-            const content = template.call(scope, scope, safeValue)
-            if (scope.getLayout()) {
-                return view(scope.getLayout()).render(scope)
+            const content = render(scope)
+            if (scope.hasExtend()) {
+                return view(scope.getLayout()).render(scope.clone())
             }
             return content
         },
+        /**
+         *
+         * @return {any}
+         */
         require() {
             const scope = new Scope({ exports: {} })
             scope.module = scope
-            template.call(scope, scope, safeValue)
+            render(scope)
             return scope.exports
         },
     }
@@ -86,17 +108,23 @@ helpers({
      * @param attrs
      * @param content
      */
-    node,
+    node(tag, attrs, content) {
+        return node(tag, attrs, content)
+    },
     /**
      * @memberOf window
      * @param size
      */
-    random,
+    random(size) {
+        return random(size)
+    },
     /**
      * @memberOf window
-     * @param prefix
+     * @param str
      */
-    uuid,
+    uuid(str) {
+        return uuid(str)
+    },
 })
 
-export { node, uuid, random, entities, compile, wrapper, helpers, view }
+export { config, node, uuid, random, entities, compile, wrapper, helpers, view }
