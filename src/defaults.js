@@ -1,33 +1,46 @@
-// DEFAULT CONFIGURATION
-export const CONFIG = {
+const defaults = {}
+
+defaults.loader = {
+    precompiled: 'ejsPrecompiled',
+}
+
+defaults.extension = {
+    supported: ['ejs', 'mjs', 'html', 'svg', 'css', 'js'],
+    module: 'mjs',
+    default: 'ejs',
     export: 'ejsPrecompiled',
-    spaceless: true,
-    token: {
-        start: '<%',
-        end: '%>',
+}
+
+defaults.vars = {
+    EXTEND: '$$$',
+    OUTPUT: '$$i',
+    LAYOUT: '$$l',
+    MACROS: '$$m',
+    PRINT: '$$j',
+    BLOCKS: '$$b',
+    SCOPE: '$$s',
+    SAFE: '$$v',
+}
+
+defaults.token = {
+    start: '<%',
+    end: '%>',
+    match: '([\\s\\S]+?)',
+}
+
+defaults.tags = {
+    '-'(value) {
+        return `'+\n${this.SAFE}(${value},1)+\n'`
     },
-    extension: {
-        supported: ['ejs', 'mjs', 'html', 'svg', 'css', 'js'],
-        module: 'mjs',
-        default: 'ejs',
+    '='(value) {
+        return `'+\n${this.SAFE}(${value})+\n'`
+    },
+    '#'(value) {
+        return `'+\n/**${value}**/+\n'`
+    },
+    ''(value) {
+        return `'\n${value}\n${this.OUTPUT}+='`
     },
 }
 
-export const EXTEND = '$$$'
-export const OUTPUT = '$$i'
-export const LAYOUT = '$$l'
-export const BLOCKS = '$$b'
-export const SCOPE = '$$s'
-export const SAFE = '$$v'
-
-export const COMMA = ','
-export const BUFFER_START = OUTPUT + "('"
-export const BUFFER_END = "');\n"
-export const BEFORE_SAFE = SAFE + '('
-export const AFTER_SAFE = ')'
-export const BEFORE_LINE = "'+\n"
-export const AFTER_LINE = "+\n'"
-export const BEFORE_EVAL = "')\n"
-export const AFTER_EVAL = '\n'
-export const COMMENT_START = '/**'
-export const COMMENT_END = '**/'
+module.exports = defaults

@@ -1,3 +1,5 @@
+const utils = {}
+
 const symbolEntities = {
     "'": "'",
     '\\': '\\',
@@ -16,46 +18,100 @@ const htmlEntities = {
     "'": '&#x27;',
 }
 
-const reKeys = (obj) => {
+function regexKeys(obj) {
     return new RegExp(['[', Object.keys(obj).join(''), ']'].join(''), 'g')
 }
 
-export const entities = (string = '') => {
-    return string.replace(reKeys(htmlEntities), (match) => htmlEntities[match])
+const htmlEntitiesMatch = regexKeys(htmlEntities)
+const symbolEntitiesMatch = regexKeys(symbolEntities)
+
+utils.entities = function (string = '') {
+    return ('' + string).replace(
+        htmlEntitiesMatch,
+        (match) => htmlEntities[match]
+    )
 }
 
-export const symbols = (string) => {
+utils.symbols = function (string) {
     return ('' + string).replace(
-        reKeys(symbolEntities),
+        symbolEntitiesMatch,
         (match) => '\\' + symbolEntities[match]
     )
 }
 
-export const safeValue = (value, escape, check) => {
-    return (check = value) == null ? '' : escape ? entities(check) : check
+utils.safeValue = function (value, escape, check) {
+    return (check = value) == null ? '' : escape ? utils.entities(check) : check
 }
 
-export const getPath = (context, name) => {
+utils.getPath = function (context, name) {
     let data = context
     let chunk = name.split('.')
     let prop = chunk.pop()
-    chunk.forEach((part) => {
+    chunk.forEach(function (part) {
         data = data[part] = data[part] || {}
     })
     return [data, prop]
 }
 
-export const extend = (target, ...sources) => {
-    return Object.assign(target, ...sources.filter((i) => i))
+utils.extend = function (target) {
+    return [].slice
+        .call(arguments, 1)
+        .filter(function (source) {
+            return source
+        })
+        .reduce(function (target, source) {
+            return Object.assign(target, source)
+        }, target)
 }
 
-export const format = (pattern = '', params = {}) => {
-    return pattern.replace(/{(.+?)}/g, (match, prop) => {
-        return hasProp(params, prop) ? params[prop] : match
+utils.noop = function () {}
+
+utils.format = function (pattern, params) {
+    pattern = pattern || ''
+    params = params || {}
+    return pattern.replace(/\${(.+?)}/g, function (match, prop) {
+        return utils.hasProp(params, prop) ? params[prop] : match
     })
 }
 
-export const uuid = (str) => {
+utils.each = function (object, callback, context) {
+    let prop
+    for (prop in object) {
+        if (utils.hasProp(object, prop)) {
+            callback.call(context || null, object[prop], prop, object)
+        }
+    }
+}
+
+utils.map = function (object, callback, context) {
+    const isArray = object instanceof Array
+    const result = isArray ? [] : {}
+    utils.each(
+        object,
+        function (value, key, object) {
+            let item = callback.call(this, value, key, object)
+            if (item !== undefined) {
+                if (isArray) {
+                    result.push(item)
+                } else {
+                    result[key] = item
+                }
+            }
+        },
+        context
+    )
+    return result
+}
+
+utils.omit = function (object, list) {
+    return utils.map(object, function (value, key) {
+        if (list.indexOf(key) === -1) {
+            return value
+        }
+    })
+}
+
+utils.uuid = function (str) {
     let i = str.length
     let hash1 = 5381
     let hash2 = 52711
@@ -67,7 +123,7 @@ export const uuid = (str) => {
     return (hash1 >>> 0) * 4096 + (hash2 >>> 0)
 }
 
-export const random = (size) => {
+utils.random = function (size) {
     let string = ''
     let chars =
         'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_'
@@ -79,4 +135,8 @@ export const random = (size) => {
     return string
 }
 
-export const hasProp = (object, prop) => object.hasOwnProperty(prop)
+utils.hasProp = function (object, prop) {
+    return object && object.hasOwnProperty(prop)
+}
+
+module.exports = utils

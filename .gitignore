@@ -4,3 +4,4 @@ test
 
 # Project exclude paths
 /dist/
+/src2/

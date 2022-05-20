@@ -1,130 +1,90 @@
-import { config } from './config'
-import { extend, uuid, random, hasProp, entities, safeValue } from './utils'
-import { node } from './node'
-import { compile } from './compile'
-import { wrapper } from './wrapper'
-import { Scope, helpers } from './scope'
+const defaults = require('./defaults')
+const { extend, safeValue } = require('./utils')
+const ConfigureCompiler = require('./compiler')
+const ConfigureScope = require('./scope')
+const ConfigureTemplate = require('./template')
+const ConfigureWrapper = require('./wrapper')
 
-const extMissing = (value) => {
-    return config.get('extension.supported').indexOf(value) === -1
-}
+function configure(options) {
+    //
+    options = options || {}
+    //
+    const token = extend({}, defaults.token, options.token)
+    const tags = extend({}, defaults.tags, options.tags)
+    const loader = extend({}, defaults.loader, options.loader)
+    const vars = extend({}, defaults.vars, options.vars)
+    const extension = extend({}, defaults.extension, options.extension)
+    //
+    const Scope = ConfigureScope(vars)
+    const Compiler = ConfigureCompiler(token, tags, vars)
+    const Template = ConfigureTemplate(loader, extension)
+    const Wrapper = ConfigureWrapper(loader)
 
-const getPrecompiledTemplates = () => {
-    let list = {}
-    let prop = config.get('export')
-    if (hasProp(window, prop)) {
-        list = window[prop]
-    }
-    return list
-}
+    const ejs = {}
 
-const getTemplate = (name) => {
-    const list = getPrecompiledTemplates()
-    const ext = name.split('.').pop()
-    if (name.charAt(0) === '/') {
-        name = name.slice(1)
+    //
+    function view(name) {
+        const template = Template(name)
+        const output = (scope) => {
+            return template.call(scope, scope, safeValue)
+        }
+        return {
+            render(data = {}) {
+                const scope = new Scope(data)
+                const content = output(scope)
+                if (scope.getExtend()) {
+                    scope.setExtend(false)
+                    const layout = scope.getLayout()
+                    const data = scope.clone()
+                    return view(layout).render(data)
+                }
+                return content
+            },
+            require() {
+                const scope = new Scope({ exports: {} })
+                scope.module = scope
+                output(scope)
+                return scope.exports
+            },
+        }
     }
-    if (extMissing(ext)) {
-        name = [name, config.get('extension.default')].join('.')
-    }
-    if (hasProp(list, name)) {
-        return list[name]
-    }
-    const id = uuid(name)
-    if (hasProp(list, id)) {
-        return list[id]
-    }
-    return (list[id] = compile(name, '.ejs'))
-}
 
-/**
- *
- * @param name
- * @return {any|{require(): any, render(*): (*)}}
- */
+    ejs.view = view
 
-const view = (name) => {
-    const template = getTemplate(name)
-    /**
-     *
-     * @param {Object<Scope>} scope
-     * @return {*}
-     */
-    const render = (scope) => {
-        return template.call(scope, scope, scope.getOutput(), safeValue)
+    ejs.compile = Compiler
+
+    ejs.wrapper = Wrapper
+
+    ejs.helpers = function (methods) {
+        extend(Scope.prototype, methods || {})
     }
-    return {
+
+    ejs.helpers({
         /**
-         *
-         * @param {Object} data
+         * @memberOf window
+         * @param name
+         * @param data
+         * @param cx
          * @return {*}
          */
-        render(data) {
-            const scope = new Scope(data)
-            const content = render(scope)
-            if (scope.hasExtend()) {
-                return view(scope.getLayout()).render(scope.clone())
-            }
-            return content
+        include(name, data = {}, cx = true) {
+            return view(name).render(extend(cx ? this.clone(true) : {}, data))
         },
         /**
-         *
-         * @return {any}
+         * @memberOf window
+         * @param name
+         * @return {{}}
          */
-        require() {
-            const scope = new Scope({ exports: {} })
-            scope.module = scope
-            render(scope)
-            return scope.exports
+        require(name) {
+            return view(name).require()
         },
-    }
+    })
+
+    return ejs
 }
 
-helpers({
-    /**
-     * @memberOf window
-     * @param name
-     * @param data
-     * @param with_context
-     * @return {*}
-     */
-    include(name, data = {}, with_context = true) {
-        return view(name).render(extend({}, with_context ? this : {}, data))
-    },
-    /**
-     * @memberOf window
-     * @param name
-     * @return {{}}
-     */
-    require(name) {
-        return view(name).require()
-    },
-})
+const ejs = configure({})
 
-helpers({
-    /**
-     * @memberOf window
-     * @param tag
-     * @param attrs
-     * @param content
-     */
-    node(tag, attrs, content) {
-        return node(tag, attrs, content)
-    },
-    /**
-     * @memberOf window
-     * @param size
-     */
-    random(size) {
-        return random(size)
-    },
-    /**
-     * @memberOf window
-     * @param str
-     */
-    uuid(str) {
-        return uuid(str)
-    },
-})
+ejs.configure = configure
 
-export { config, node, uuid, random, entities, compile, wrapper, helpers, view }
+module.exports = ejs

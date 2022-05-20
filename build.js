@@ -1,5 +1,3 @@
-const { wrapper, compile } = require('./dist/ejs')
-
 const babel = require('@babel/core')
 const { Transform } = require('readable-stream')
 const File = require('vinyl')
@@ -62,7 +60,7 @@ const transformCache = {
     },
 }
 
-const compileTemplates = ({ namespace, filename }) => {
+const compileTemplates = ({ ejs, namespace, filename }) => {
     const concat = []
     return new Transform({
         objectMode: true,
@@ -83,7 +81,7 @@ const compileTemplates = ({ namespace, filename }) => {
                         concat.push(fromCache)
                         return callback()
                     }
-                    babelTransform(compile(contents, relative).source)
+                    babelTransform(ejs.compile(contents, relative).source)
                         .then((result) => {
                             const data = {
                                 name: file.relative,
@@ -101,7 +99,7 @@ const compileTemplates = ({ namespace, filename }) => {
             }
         },
         flush(callback) {
-            const content = wrapper(namespace, concat)
+            const content = ejs.wrapper(concat)
             const file = new File({
                 path: filename,
                 contents: Buffer.from(content),
