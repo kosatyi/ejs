@@ -1,18 +1,20 @@
 const defaults = {}
 
 defaults.loader = {
-    precompiled: 'ejsPrecompiled',
+    export: 'ejs.precompiled',
+    path: 'views',
 }
 
 defaults.extension = {
     supported: ['ejs', 'mjs', 'html', 'svg', 'css', 'js'],
     module: 'mjs',
     default: 'ejs',
-    export: 'ejsPrecompiled',
+    export: 'ejs.precompiled',
 }
 
 defaults.vars = {
     EXTEND: '$$$',
+    BUFFER: '$$a',
     OUTPUT: '$$i',
     LAYOUT: '$$l',
     MACROS: '$$m',
@@ -25,22 +27,7 @@ defaults.vars = {
 defaults.token = {
     start: '<%',
     end: '%>',
-    match: '([\\s\\S]+?)',
-}
-
-defaults.tags = {
-    '-'(value) {
-        return `'+\n${this.SAFE}(${value},1)+\n'`
-    },
-    '='(value) {
-        return `'+\n${this.SAFE}(${value})+\n'`
-    },
-    '#'(value) {
-        return `'+\n/**${value}**/+\n'`
-    },
-    ''(value) {
-        return `'\n${value}\n${this.OUTPUT}+='`
-    },
+    regex: '([\\s\\S]+?)',
 }
 
 module.exports = defaults

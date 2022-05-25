@@ -1,10 +1,62 @@
 const { extend, omit, each, getPath, hasProp, noop } = require('./utils')
+const element = require('./element')
+
+/**
+ *
+ * @param instance
+ * @method create
+ * @constructor
+ */
+function Component(instance) {
+    this.props = extend({}, instance.props)
+    this.create = instance.create.bind(this)
+}
+
+/**
+ *
+ */
+Component.prototype = {
+    element,
+    render(props) {
+        return this.create(extend({}, this.props, props))
+    },
+}
+
+/**
+ *
+ * @return {buffer}
+ * @constructor
+ */
+function StringBuffer() {
+    let store,
+        array = []
+    function buffer(value) {
+        array.push(value)
+    }
+    buffer.start = function () {
+        array = []
+    }
+    buffer.backup = function () {
+        store = array.concat()
+        array = []
+    }
+    buffer.restore = function () {
+        const result = array.concat()
+        array = store.concat()
+        return result.join('')
+    }
+    buffer.end = function () {
+        return array.join('')
+    }
+    return buffer
+}
 
 function configure(vars) {
-    const { EXTEND, MACROS, LAYOUT, OUTPUT, PRINT, BLOCKS } = vars
+    const { EXTEND, MACROS, LAYOUT, PRINT, BLOCKS, BUFFER } = vars
     function Scope(data = {}) {
         this.setBlocks()
         extend(this, data)
+        this.setBuffer()
         this.setLayout(false)
         this.setExtend(false)
     }
@@ -12,6 +64,12 @@ function configure(vars) {
         extend(Scope.prototype, methods)
     }
     Scope.prototype = {
+        getBuffer() {
+            return this[BUFFER]
+        },
+        setBuffer() {
+            this[BUFFER] = StringBuffer()
+        },
         setExtend(state) {
             this[EXTEND] = state
         },
@@ -31,7 +89,7 @@ function configure(vars) {
             return this[BLOCKS]
         },
         clone(exclude_blocks) {
-            const filter = [LAYOUT, OUTPUT, EXTEND, MACROS, PRINT]
+            const filter = [LAYOUT, EXTEND, MACROS, PRINT, BUFFER]
             if (exclude_blocks === true) {
                 filter.push(BLOCKS)
             }
@@ -41,10 +99,10 @@ function configure(vars) {
          * Join values to output buffer
          * @memberOf window
          * @type Function
-         * @param args
          */
-        print(...args) {
-            this[PRINT](...args)
+        echo() {
+            const buffer = this.getBuffer()
+            buffer([].join.call(arguments, ''))
         },
         /**
          * Buffered output callback
@@ -54,7 +112,28 @@ function configure(vars) {
          * @return {Function}
          */
         macro(callback) {
-            return this[MACROS](callback)
+            const buffer = this.getBuffer()
+            return function () {
+                buffer.backup()
+                callback && callback.apply(this, arguments)
+                return buffer.restore()
+            }.bind(this)
+        },
+        /**
+         * @memberOf window
+         */
+        element(tag, attr, content) {
+            this.echo(element(tag, attr, this.macro(content)()))
+        },
+        /**
+         * @memberOf window
+         * @param {Object} instance
+         */
+        component(instance) {
+            instance = new Component(instance)
+            return function component(props) {
+                this.echo(instance.render(props))
+            }.bind(this)
         },
         /**
          * @memberOf window
@@ -77,12 +156,12 @@ function configure(vars) {
         /**
          * @memberOf window
          * @param name
-         * @param args
          */
-        call(name, ...args) {
+        call(name) {
+            const params = [].slice.call(arguments, 1)
             const [result, prop] = getPath(this, name)
             if (typeof result[prop] === 'function') {
-                return result[prop](...args)
+                return result[prop].apply(result, params)
             }
         },
         /**
@@ -91,6 +170,9 @@ function configure(vars) {
          * @param callback
          */
         each(object, callback) {
+            if (typeof object === 'string') {
+                object = this.get(object, [])
+            }
             each(object, callback, this)
         },
         /**
@@ -113,9 +195,9 @@ function configure(vars) {
                 blocks[name] = this.macro(callback)
             } else {
                 if (blocks[name]) {
-                    this.print(blocks[name](this.macro(callback)))
+                    this.echo(blocks[name](this.macro(callback)))
                 } else {
-                    this.print(this.macro(callback)(noop))
+                    this.echo(this.macro(callback)(noop))
                 }
             }
         },

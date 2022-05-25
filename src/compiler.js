@@ -1,56 +1,93 @@
-const { symbols, each } = require('./utils')
+const { symbols } = require('./utils')
 
-function generate(token, tags, vars) {
-    const matches = []
-    const formats = []
-    each(tags, function (value, name) {
-        matches.push(
-            token.start.concat(name).concat(token.match).concat(token.end)
-        )
-        formats.push(value.bind(vars))
-    })
-    const regex = new RegExp(matches.join('|').concat('|$'), 'g')
-    return [regex, formats, matches]
+const tags = [
+    {
+        symbol: '-',
+        format(value) {
+            return `'+\n${this.SAFE}(${value},1)+\n'`
+        },
+    },
+    {
+        symbol: '=',
+        format(value) {
+            return `'+\n${this.SAFE}(${value})+\n'`
+        },
+    },
+    {
+        symbol: '#',
+        format(value) {
+            return `'+\n/**${value}**/+\n'`
+        },
+    },
+    {
+        symbol: '',
+        format(value) {
+            return `')\n${value}\n${this.BUFFER}('`
+        },
+    },
+]
+
+function Compiler(token, vars, extension) {
+    this.extension = extension
+    this.token = token
+    this.vars = vars
+    this.setup()
 }
 
-function configure(token, tags, vars) {
-    const { MACROS, OUTPUT, PRINT, SCOPE, SAFE } = vars
-    const [regex, formats] = generate(token, tags, vars)
-    function Compiler(text, path) {
+Compiler.prototype = {
+    setup() {
+        this.matches = []
+        this.formats = []
+        tags.forEach(function (item) {
+            this.matches.push(
+                this.token.start
+                    .concat(item.symbol)
+                    .concat(this.token.regex)
+                    .concat(this.token.end)
+            )
+            this.formats.push(item.format.bind(this.vars))
+        }, this)
+        this.regex = new RegExp(this.matches.join('|').concat('|$'), 'g')
+    },
+    match(text, callback) {
         let index = 0
-        let result = null
-        let source = `${OUTPUT}+='`
-        text.replace(regex, function () {
+        callback = callback.bind(this)
+        text.replace(this.regex, function () {
             const params = [].slice.call(arguments, 0, -1)
             const offset = params.pop()
             const match = params.shift()
-            source += symbols(text.slice(index, offset))
-            params.forEach((v, i) => {
-                if (v) source += formats[i](v)
-            })
+            callback(params, index, offset)
             index = offset + match.length
             return match
         })
-        source += "';\n"
-        source = `with(${SCOPE}){\n${source}}\n`
-        source =
-            `var ${OUTPUT}=''\n` +
-            `function ${MACROS}(c){return function(){var a,b=${OUTPUT};${OUTPUT}="";c.apply(null,arguments);a=${OUTPUT};${OUTPUT}=b;return a}}\n` +
-            `function ${PRINT}(){${OUTPUT}+=[].join.call(arguments,'')}\n` +
-            `this.$$m = ${MACROS};\n` +
-            `this.$$j = ${PRINT};\n` +
-            `${source}\n return ${OUTPUT};\n`
+    },
+    compile(content, path) {
+        const { SCOPE, SAFE, BUFFER } = this.vars
+        let result = null
+        let extension = path.split('.').pop()
+        if (extension === this.extension.module) {
+            content = [this.token.start, content, this.token.end].join('\n')
+        }
+        let source = `${BUFFER}('`
+        this.match(content, function (params, index, offset) {
+            source += symbols(content.slice(index, offset))
+            params.forEach(function (value, index) {
+                if (value) source += this.formats[index](value)
+            }, this)
+        })
+        source += `');`
+        source = `with(${SCOPE}){${source}}`
+        source = `${BUFFER}.start();${source}return ${BUFFER}.end();`
         try {
-            result = new Function(SCOPE, SAFE, source)
-            result.source = `(function(${SCOPE},${SAFE}){\n${source}\n})`
+            result = new Function(SCOPE, SAFE, BUFFER, source)
+            result.source = `(function(${SCOPE},${SAFE},${BUFFER}){\n${source}\n})`
         } catch (e) {
             e.filename = path
             e.source = source
             throw e
         }
         return result
-    }
-    return Compiler
+    },
 }
 
-module.exports = configure
+module.exports = Compiler

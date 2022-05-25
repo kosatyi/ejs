@@ -84,6 +84,21 @@ utils.each = function (object, callback, context) {
 }
 
 utils.map = function (object, callback, context) {
+    const result = []
+    utils.each(
+        object,
+        function (value, key, object) {
+            let item = callback.call(this, value, key, object)
+            if (item !== undefined) {
+                result.push(item)
+            }
+        },
+        context
+    )
+    return result
+}
+
+utils.filter = function (object, callback, context) {
     const isArray = object instanceof Array
     const result = isArray ? [] : {}
     utils.each(
@@ -104,7 +119,7 @@ utils.map = function (object, callback, context) {
 }
 
 utils.omit = function (object, list) {
-    return utils.map(object, function (value, key) {
+    return utils.filter(object, function (value, key) {
         if (list.indexOf(key) === -1) {
             return value
         }

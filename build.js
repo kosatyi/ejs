@@ -24,19 +24,15 @@ const babelTransform = (content) => {
             },
             (error, result) => {
                 if (error) reject(error)
-                if (result) resolve(result)
+                if (result) resolve(result.code)
             }
         )
     })
 }
 
-const transformCache = {
-    secret: 'memoryCache',
+const cache = {
     store: {},
-    key(file) {
-        return file.relative
-    },
-    hash(content) {
+    key(content) {
         return crypto.createHash('sha256').update(content).digest('base64')
     },
     exist(key, hash) {
@@ -60,46 +56,45 @@ const transformCache = {
     },
 }
 
-const compileTemplates = ({ ejs, namespace, filename }) => {
+const compileTemplates = ({ compile, transform, wrapper, filename }) => {
     const concat = []
     return new Transform({
         objectMode: true,
         transform(file, enc, callback) {
-            if (file !== null) {
-                if (file.isStream()) {
-                    this.emit(
-                        'error',
-                        new Error('compileTemplates: Streaming not supported')
-                    )
-                    callback()
-                } else if (file.isBuffer()) {
-                    const relative = file.relative
-                    const contents = file.contents.toString()
-                    const modified = transformCache.hash(contents)
-                    const fromCache = transformCache.get(relative, modified)
-                    if (fromCache) {
-                        concat.push(fromCache)
-                        return callback()
-                    }
-                    babelTransform(ejs.compile(contents, relative).source)
-                        .then((result) => {
-                            const data = {
-                                name: file.relative,
-                                content: Buffer.from(result.code),
-                            }
-                            transformCache.save(relative, data, modified)
-                            concat.push(data)
-                            callback()
-                        })
-                        .catch((error) => {
-                            this.emit('error', new Error(error))
-                            callback()
-                        })
+            if (file === null) return
+            if (file.isStream()) {
+                this.emit(
+                    'error',
+                    new Error('compileTemplates: Streaming not supported')
+                )
+                callback()
+            } else if (file.isBuffer()) {
+                const relative = file.relative
+                const contents = file.contents.toString()
+                const modified = cache.key(contents)
+                const data = cache.get(relative, modified)
+                if (data) {
+                    concat.push(data)
+                    return callback()
                 }
+                const source = compile(contents, relative).source
+                babelTransform(source)
+                    .then((result) => {
+                        const data = {
+                            name: relative,
+                            content: Buffer.from(String(result)),
+                        }
+                        cache.save(relative, data, modified)
+                        concat.push(data)
+                    })
+                    .catch((error) => {
+                        this.emit('error', new Error(error))
+                    })
+                    .finally(callback)
             }
         },
         flush(callback) {
-            const content = ejs.wrapper(concat)
+            const content = wrapper(concat)
             const file = new File({
                 path: filename,
                 contents: Buffer.from(content),

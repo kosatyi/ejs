@@ -1,6 +1,10 @@
-function configure(loader) {
-    const name = loader.precompiled
-    function Wrapper(list) {
+function Wrapper(loader) {
+    this.name = loader.export
+}
+
+Wrapper.prototype = {
+    browser(list) {
+        let name = this.name
         let out = '(function(o){\n'
         list.forEach((item) => {
             out +=
@@ -10,10 +14,9 @@ function configure(loader) {
                 String(item.content) +
                 '\n'
         })
-        out += '})(window.' + name + ' = window.' + name + ' || {});\n'
+        out += '})(window["' + name + '"] = window["' + name + '"] || {});\n'
         return out
-    }
-    return Wrapper
+    },
 }
 
-module.exports = configure
+module.exports = Wrapper

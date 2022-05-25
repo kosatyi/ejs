@@ -1,7 +1,4 @@
 .idea
 node_modules
 test
-
-# Project exclude paths
-/dist/
-/src2/
+dist
