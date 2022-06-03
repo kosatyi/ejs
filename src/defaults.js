@@ -1,15 +1,13 @@
 const defaults = {}
 
-defaults.loader = {
-    export: 'ejs.precompiled',
-    path: 'views',
-}
+defaults.export = 'ejs.precompiled'
+defaults.browser = true
+defaults.path = 'views'
 
 defaults.extension = {
-    supported: ['ejs', 'mjs', 'html', 'svg', 'css', 'js'],
-    module: 'mjs',
+    supported: ['ejs', 'js', 'html', 'svg', 'css'],
     default: 'ejs',
-    export: 'ejs.precompiled',
+    module: 'js',
 }
 
 defaults.vars = {
@@ -20,6 +18,7 @@ defaults.vars = {
     MACROS: '$$m',
     PRINT: '$$j',
     BLOCKS: '$$b',
+    ERROR: '$$e',
     SCOPE: '$$s',
     SAFE: '$$v',
 }
@@ -29,5 +28,8 @@ defaults.token = {
     end: '%>',
     regex: '([\\s\\S]+?)',
 }
-
+/**
+ * @typedef {{}} Defaults
+ * @type {Object}
+ */
 module.exports = defaults

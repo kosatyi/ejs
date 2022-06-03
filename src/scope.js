@@ -1,58 +1,10 @@
 const { extend, omit, each, getPath, hasProp, noop } = require('./utils')
 const element = require('./element')
+const Buffer = require('./buffer')
+const Component = require('./component')
 
-/**
- *
- * @param instance
- * @method create
- * @constructor
- */
-function Component(instance) {
-    this.props = extend({}, instance.props)
-    this.create = instance.create.bind(this)
-}
-
-/**
- *
- */
-Component.prototype = {
-    element,
-    render(props) {
-        return this.create(extend({}, this.props, props))
-    },
-}
-
-/**
- *
- * @return {buffer}
- * @constructor
- */
-function StringBuffer() {
-    let store,
-        array = []
-    function buffer(value) {
-        array.push(value)
-    }
-    buffer.start = function () {
-        array = []
-    }
-    buffer.backup = function () {
-        store = array.concat()
-        array = []
-    }
-    buffer.restore = function () {
-        const result = array.concat()
-        array = store.concat()
-        return result.join('')
-    }
-    buffer.end = function () {
-        return array.join('')
-    }
-    return buffer
-}
-
-function configure(vars) {
-    const { EXTEND, MACROS, LAYOUT, PRINT, BLOCKS, BUFFER } = vars
+function configure(config) {
+    const { EXTEND, MACROS, LAYOUT, PRINT, BLOCKS, BUFFER } = config.vars
     function Scope(data = {}) {
         this.setBlocks()
         extend(this, data)
@@ -63,12 +15,13 @@ function configure(vars) {
     Scope.helpers = function (methods) {
         extend(Scope.prototype, methods)
     }
+
     Scope.prototype = {
         getBuffer() {
             return this[BUFFER]
         },
         setBuffer() {
-            this[BUFFER] = StringBuffer()
+            this[BUFFER] = Buffer()
         },
         setExtend(state) {
             this[EXTEND] = state
@@ -97,36 +50,71 @@ function configure(vars) {
         },
         /**
          * Join values to output buffer
-         * @memberOf window
+         * @memberOf global
          * @type Function
          */
         echo() {
             const buffer = this.getBuffer()
-            buffer([].join.call(arguments, ''))
+            const params = [].slice.call(arguments)
+            params.forEach(function (item) {
+                buffer(item)
+            })
         },
         /**
          * Buffered output callback
-         * @memberOf window
+         * @memberOf global
          * @type Function
          * @param {Function} callback
+         * @param {Boolean} [echo]
          * @return {Function}
          */
-        macro(callback) {
+        macro(callback, echo) {
             const buffer = this.getBuffer()
-            return function () {
+            const macro = function () {
                 buffer.backup()
-                callback && callback.apply(this, arguments)
-                return buffer.restore()
+                if (typeof callback === 'function') {
+                    callback.apply(this, arguments)
+                }
+                const result = buffer.restore()
+                return echo === true ? this.echo(result) : result
             }.bind(this)
+            macro.ctx = this
+            return macro
         },
         /**
-         * @memberOf window
+         *
+         * @param value
+         * @param callback
+         * @return {Promise<unknown>}
+         */
+        resolve(value, callback) {
+            return Promise.resolve(value).then(callback.bind(this))
+        },
+        /**
+         * @memberOf global
+         */
+        async(promise, callback) {
+            this.echo(
+                this.resolve(promise, function (data) {
+                    return this.macro(callback)(data)
+                })
+            )
+        },
+        /**
+         * @memberOf global
          */
         element(tag, attr, content) {
-            this.echo(element(tag, attr, this.macro(content)()))
+            if (typeof content === 'function') {
+                content = this.macro(content)()
+            }
+            this.echo(
+                this.resolve(content, function (content) {
+                    return element(tag, attr, content)
+                })
+            )
         },
         /**
-         * @memberOf window
+         * @memberOf global
          * @param {Object} instance
          */
         component(instance) {
@@ -136,36 +124,48 @@ function configure(vars) {
             }.bind(this)
         },
         /**
-         * @memberOf window
+         * @memberOf global
          * @param name
          * @param defaults
          */
         get(name, defaults) {
-            const [result, prop] = getPath(this, name)
+            const path = getPath(this, name)
+            const result = path.shift()
+            const prop = path.pop()
             return hasProp(result, prop) ? result[prop] : defaults
         },
         /**
-         * @memberOf window
-         * @param name
+         * @memberOf global
+         * @param {String} name
          * @param value
+         * @return
          */
         set(name, value) {
-            const [result, prop] = getPath(this, name)
+            const path = getPath(this, name)
+            const result = path.shift()
+            const prop = path.pop()
+            if (this.getExtend()) {
+                if (hasProp(result, prop)) {
+                    return result[prop]
+                }
+            }
             result[prop] = value
         },
         /**
-         * @memberOf window
+         * @memberOf global
          * @param name
          */
         call(name) {
             const params = [].slice.call(arguments, 1)
-            const [result, prop] = getPath(this, name)
+            const path = getPath(this, name)
+            const result = path.shift()
+            const prop = path.pop()
             if (typeof result[prop] === 'function') {
                 return result[prop].apply(result, params)
             }
         },
         /**
-         * @memberOf window
+         * @memberOf global
          * @param object
          * @param callback
          */
@@ -176,7 +176,7 @@ function configure(vars) {
             each(object, callback, this)
         },
         /**
-         * @memberOf window
+         * @memberOf global
          * @param {String} layout
          */
         extend(layout) {
@@ -184,21 +184,75 @@ function configure(vars) {
             this.setLayout(layout)
         },
         /**
-         * @memberOf window
+         * @memberOf global
          * @param name
          * @param callback
          * @return {*}
          */
         block(name, callback) {
             const blocks = this.getBlocks()
+            const macro = this.macro(callback)
             if (this.getExtend()) {
-                blocks[name] = this.macro(callback)
+                blocks[name] = macro
             } else {
-                if (blocks[name]) {
-                    this.echo(blocks[name](this.macro(callback)))
+                const block = blocks[name]
+                const parent = function () {
+                    this.echo(macro())
+                }.bind(block ? block.ctx : null)
+                if (block) {
+                    this.echo(block(parent))
                 } else {
-                    this.echo(this.macro(callback)(noop))
+                    this.echo(macro(noop))
                 }
+            }
+        },
+        /**
+         * @memberOf global
+         * @param {string} path
+         * @param {object} [data]
+         * @param {boolean} [cx]
+         * @return {string|{}}
+         */
+        include(path, data = {}, cx = true) {
+            const params = extend(cx ? this.clone(true) : {}, data)
+            const promise = this.render(path, params)
+            this.echo(promise)
+        },
+        /**
+         * @memberOf global
+         * @param {string} path
+         */
+        use(path) {
+            const scope = this
+            const promise = this.require(path)
+            this.echo(promise)
+            return {
+                as(namespace) {
+                    promise.then(function (exports) {
+                        scope.set(namespace, exports)
+                    })
+                    return this
+                },
+            }
+        },
+        /**
+         * @memberOf global
+         * @param {string} path
+         */
+        from(path) {
+            const scope = this
+            const promise = this.require(path)
+            this.echo(promise)
+            return {
+                use() {
+                    const params = [].slice.call(arguments)
+                    promise.then(function (exports) {
+                        params.forEach(function (name) {
+                            scope.set(name, exports[name])
+                        })
+                    })
+                    return this
+                },
             }
         },
     }

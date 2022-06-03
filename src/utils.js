@@ -53,6 +53,31 @@ utils.getPath = function (context, name) {
     return [data, prop]
 }
 
+utils.assign = function (list) {
+    const sources = (list || [null]).map(function (source) {
+        return source || {}
+    })
+    return {
+        target: sources.shift(),
+        sources,
+    }
+}
+
+utils.isPromise = function (p) {
+    return Boolean(p && typeof p.then === 'function')
+}
+
+utils.merge = function (target) {
+    return [].slice
+        .call(arguments, 1)
+        .filter(function (source) {
+            return source
+        })
+        .reduce(function (target, source) {
+            return Object.assign(target, source)
+        }, target)
+}
+
 utils.extend = function (target) {
     return [].slice
         .call(arguments, 1)

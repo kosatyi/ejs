@@ -1,5 +1,16 @@
 const { symbols } = require('./utils')
 
+const getFunctionBuilder = function () {
+    return Function
+    let fn
+    try {
+        fn = new Function('return (async function(){}).constructor;')()
+    } catch (e) {
+        fn = Function
+    }
+    return fn
+}
+
 const tags = [
     {
         symbol: '-',
@@ -27,10 +38,10 @@ const tags = [
     },
 ]
 
-function Compiler(token, vars, extension) {
-    this.extension = extension
-    this.token = token
-    this.vars = vars
+function Compiler(config) {
+    this.extension = config.extension
+    this.token = config.token
+    this.vars = config.vars
     this.setup()
 }
 
@@ -64,10 +75,6 @@ Compiler.prototype = {
     compile(content, path) {
         const { SCOPE, SAFE, BUFFER } = this.vars
         let result = null
-        let extension = path.split('.').pop()
-        if (extension === this.extension.module) {
-            content = [this.token.start, content, this.token.end].join('\n')
-        }
         let source = `${BUFFER}('`
         this.match(content, function (params, index, offset) {
             source += symbols(content.slice(index, offset))
@@ -78,9 +85,10 @@ Compiler.prototype = {
         source += `');`
         source = `with(${SCOPE}){${source}}`
         source = `${BUFFER}.start();${source}return ${BUFFER}.end();`
+        source += `\n//# sourceURL=${path}`
         try {
-            result = new Function(SCOPE, SAFE, BUFFER, source)
-            result.source = `(function(${SCOPE},${SAFE},${BUFFER}){\n${source}\n})`
+            result = new Function(SCOPE, BUFFER, SAFE, source)
+            result.source = result.toString()
         } catch (e) {
             e.filename = path
             e.source = source

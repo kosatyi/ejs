@@ -72,25 +72,32 @@ const compileTemplates = ({ compile, transform, wrapper, filename }) => {
                 const relative = file.relative
                 const contents = file.contents.toString()
                 const modified = cache.key(contents)
-                const data = cache.get(relative, modified)
+                let data = cache.get(relative, modified)
                 if (data) {
                     concat.push(data)
                     return callback()
                 }
                 const source = compile(contents, relative).source
-                babelTransform(source)
-                    .then((result) => {
-                        const data = {
-                            name: relative,
-                            content: Buffer.from(String(result)),
-                        }
-                        cache.save(relative, data, modified)
-                        concat.push(data)
-                    })
-                    .catch((error) => {
-                        this.emit('error', new Error(error))
-                    })
-                    .finally(callback)
+                data = {
+                    name: relative,
+                    content: Buffer.from(String(source)),
+                }
+                cache.save(relative, data, modified)
+                concat.push(data)
+                callback()
+                // babelTransform(source)
+                //     .then((result) => {
+                //         const data = {
+                //             name: relative,
+                //             content: Buffer.from(String(result)),
+                //         }
+                //         cache.save(relative, data, modified)
+                //         concat.push(data)
+                //     })
+                //     .catch((error) => {
+                //         this.emit('error', new Error(error))
+                //     })
+                //     .finally(callback)
             }
         },
         flush(callback) {

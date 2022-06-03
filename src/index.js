@@ -1,100 +1,121 @@
 const defaults = require('./defaults')
-const { extend, safeValue, hasProp } = require('./utils')
-
+const { extend, safeValue } = require('./utils')
 const ConfigureScope = require('./scope')
 const Compiler = require('./compiler')
 const Wrapper = require('./wrapper')
 const Loader = require('./loader')
-
+const Cache = require('./cache')
 function configure(options) {
-    // Default
-    options = options || {}
+    const config = extend(
+        {
+            loader: {},
+            extension: {},
+            token: {},
+            vars: {},
+        },
+        defaults,
+        options || {}
+    )
     //
-    const config = {
-        extension: {},
-        loader: {},
-        token: {},
-        vars: {},
+    const compiler = new Compiler(config)
+    const wrapper = new Wrapper(config)
+    const cache = new Cache(config)
+    const loader = new Loader(cache, compiler, config)
+    //
+    const Scope = ConfigureScope(config)
+    //
+    function template(path, defaultExt) {
+        const ext = path.split('.').pop()
+        if (config.extension.supported.indexOf(ext) === -1) {
+            path = [path, defaultExt].join('.')
+        }
+        return path
     }
-    extend(config.token, defaults.token, options.token)
-    extend(config.loader, defaults.loader, options.loader)
-    extend(config.vars, defaults.vars, options.vars)
-    extend(config.extension, defaults.extension, options.extension)
-    //
-    const compiler = new Compiler(config.token, config.vars, config.extension)
-    const wrapper = new Wrapper(config.loader)
-    const loader = new Loader(config.loader, config.extension)
-    //
-    const Scope = ConfigureScope(config.vars)
-    //
-    const cache = {}
     //
     function output(path, scope) {
-        let template
-        if (hasProp(cache, path) === false) {
-            let text = loader.fetch(path)
-            template = compiler.compile(text, path)
-            cache[path] = template
-        } else {
-            template = cache[path]
-        }
-        return template.call(scope, scope, safeValue, scope.getBuffer())
+        return loader.get(path).then(function (template) {
+            return template.call(scope, scope, scope.getBuffer(), safeValue)
+        })
     }
     //
     function render(path, data) {
+        const view = template(path, config.extension.default)
         const scope = new Scope(data)
-        const content = output(path, scope)
-        if (scope.getExtend()) {
-            scope.setExtend(false)
-            const layout = scope.getLayout()
-            const data = scope.clone()
-            return render(layout, data)
-        }
-        return content
+        return output(view, scope).then(function (content) {
+            if (scope.getExtend()) {
+                scope.setExtend(false)
+                const layout = scope.getLayout()
+                const data = scope.clone()
+                return render(layout, data)
+            }
+            return content
+        })
     }
-    /**
-     * @memberOf window
-     * @name require
-     * @param {String} path
-     * @return {{}}
-     */
+    //
     function require(path) {
-        this.exports = this.exports || {}
+        const view = template(path, config.extension.module)
+        this.exports = {}
         this.module = this
-        output(path, this)
-        return this.exports
+        return output(view, this).then(
+            function () {
+                return this.exports
+            }.bind(this)
+        )
     }
     /**
-     * @memberOf window
-     * @param name
-     * @param data
-     * @param cx
-     * @return {*}
-     */
-    function include(name, data = {}, cx = true) {
-        return render(name, extend(cx ? this.clone(true) : {}, data))
-    }
-    /**
-     * @memberOf window
+     * @memberOf global
      */
     const ejs = {
+        /**
+         *
+         * @param path
+         * @param data
+         * @return {*}
+         */
         render: render,
+        /**
+         *
+         * @param text
+         * @param path
+         * @return {Function}
+         */
         compile(text, path) {
             return compiler.compile(text, path)
         },
+        /**
+         *
+         * @param list
+         * @return {string}
+         */
         wrapper(list) {
             return wrapper.browser(list)
         },
+        /**
+         *
+         * @param methods
+         */
         helpers(methods) {
             extend(Scope.prototype, methods || {})
         },
-        precompiled(list) {},
+        /**
+         *  Configure EJS
+         */
+        configure: configure,
     }
     ejs.helpers({
-        include,
-        require,
+        /**
+         * @memberOf global
+         * @param {string} path
+         * @return {string|{}}
+         */
+        require: require,
+        /**
+         * @memberOf global
+         * @param {string} path
+         * @return {string|{}}
+         */
+        render: render,
     })
-    ejs.configure = configure
     return ejs
 }
 

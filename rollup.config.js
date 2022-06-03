@@ -10,6 +10,9 @@ const umd = {
         name: 'ejs',
         file: pkg.main,
         format: 'umd',
+        globals: {
+            fs: 'fs',
+        },
     },
     plugins: [
         commonjs({}),
