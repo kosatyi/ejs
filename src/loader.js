@@ -21,7 +21,11 @@ function FileSystem(template) {
 function Loader(cache, compiler, config) {
     this.cache = cache
     this.compiler = compiler
-    this.resolver = config.browser ? HttpRequest : FileSystem
+    if (typeof config.resolver === 'function') {
+        this.resolver = config.resolver
+    } else {
+        this.resolver = config.browser ? HttpRequest : FileSystem
+    }
     this.path = config.path
     this.token = config.token || {}
     this.module = config.extension.module

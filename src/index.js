@@ -5,6 +5,7 @@ const Compiler = require('./compiler')
 const Wrapper = require('./wrapper')
 const Loader = require('./loader')
 const Cache = require('./cache')
+
 function configure(options) {
     const config = extend(
         {
@@ -62,10 +63,26 @@ function configure(options) {
             }.bind(this)
         )
     }
+    //
+    extend(Scope.prototype, {
+        /**
+         * @memberOf global
+         * @param {string} path
+         * @return {string|{}}
+         */
+        require: require,
+        /**
+         * @memberOf global
+         * @param {string} path
+         * @return {string|{}}
+         */
+        render: render,
+    })
+
     /**
      * @memberOf global
      */
-    const ejs = {
+    return {
         /**
          *
          * @param path
@@ -102,21 +119,6 @@ function configure(options) {
          */
         configure: configure,
     }
-    ejs.helpers({
-        /**
-         * @memberOf global
-         * @param {string} path
-         * @return {string|{}}
-         */
-        require: require,
-        /**
-         * @memberOf global
-         * @param {string} path
-         * @return {string|{}}
-         */
-        render: render,
-    })
-    return ejs
 }
 
 module.exports = configure({})

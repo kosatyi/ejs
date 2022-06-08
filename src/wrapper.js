@@ -1,16 +1,7 @@
-/**
- *
- * @param {{}} config
- * @constructor
- */
 function Wrapper(config) {
     this.name = config.export
 }
 
-/**
- *
- * @type {{browser(*): string}}
- */
 Wrapper.prototype = {
     browser(list) {
         let name = this.name

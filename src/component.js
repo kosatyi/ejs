@@ -4,7 +4,6 @@ const element = require('./element')
  *
  * @param {{}} instance
  * @method create
- * @constructor
  */
 function Component(instance) {
     this.props = extend({}, instance.props)
@@ -20,6 +19,6 @@ Component.prototype = {
     },
 }
 /**
- *  @type {Component}
+ *  @type {function}
  */
 module.exports = Component

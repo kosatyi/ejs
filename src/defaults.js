@@ -28,8 +28,5 @@ defaults.token = {
     end: '%>',
     regex: '([\\s\\S]+?)',
 }
-/**
- * @typedef {{}} Defaults
- * @type {Object}
- */
+
 module.exports = defaults
