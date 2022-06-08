@@ -24,6 +24,7 @@ function configure(options) {
     const loader = new Loader(cache, compiler, config)
     //
     const Scope = ConfigureScope(config)
+
     //
     function template(path, defaultExt) {
         const ext = path.split('.').pop()
@@ -62,6 +63,12 @@ function configure(options) {
                 return this.exports
             }.bind(this)
         )
+    }
+    //
+    function __express(path, options, fn) {
+        const settings = options.settings || {}
+        console.log(path, options, fn)
+        return fn(null, 'test content')
     }
     //
     extend(Scope.prototype, {
@@ -118,6 +125,10 @@ function configure(options) {
          *  Configure EJS
          */
         configure: configure,
+        /**
+         *
+         */
+        __express,
     }
 }
 

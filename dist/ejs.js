@@ -293,7 +293,6 @@
 	 *
 	 * @param {{}} instance
 	 * @method create
-	 * @constructor
 	 */
 
 	function Component$1(instance) {
@@ -312,7 +311,7 @@
 	  }
 	};
 	/**
-	 *  @type {Component}
+	 *  @type {function}
 	 */
 
 	var component = Component$1;
@@ -649,14 +648,14 @@
 	  }
 	}];
 
-	function Compiler$2(config) {
+	function Compiler$1(config) {
 	  this.extension = config.extension;
 	  this.token = config.token;
 	  this.vars = config.vars;
 	  this.setup();
 	}
 
-	Compiler$2.prototype = {
+	Compiler$1.prototype = {
 	  setup: function setup() {
 	    this.matches = [];
 	    this.formats = [];
@@ -708,11 +707,12 @@
 	    return result;
 	  }
 	};
-	var compiler = Compiler$2;
+	var compiler = Compiler$1;
 
 	function Wrapper$1(config) {
 	  this.name = config["export"];
 	}
+
 	Wrapper$1.prototype = {
 	  browser: function browser(list) {
 	    var name = this.name;
@@ -726,40 +726,7 @@
 	};
 	var wrapper = Wrapper$1;
 
-	var extend$1 = utils_1.extend,
-	    hasProp = utils_1.hasProp;
-
-	function Cache$2(config) {
-	  this.namespace = config["export"];
-	  this.list = {};
-	  this.preload();
-	}
-
-	Cache$2.prototype = {
-	  exist: function exist(key) {
-	    return hasProp(this.list, key);
-	  },
-	  get: function get(key) {
-	    return this.list[key];
-	  },
-	  resolve: function resolve(key) {
-	    return Promise.resolve(this.get(key));
-	  },
-	  set: function set(key, value) {
-	    this.list[key] = value;
-	  },
-	  preload: function preload() {
-	    extend$1(this.list, commonjsGlobal[this.namespace]);
-	  },
-	  load: function load(list) {
-	    extend$1(this.list, list);
-	  }
-	};
-	var cache = Cache$2;
-
 	var fs = require$$0__default["default"];
-	var Cache$1 = cache;
-	var Compiler$1 = compiler;
 
 	function HttpRequest(template) {
 	  return commonjsGlobal.fetch(template).then(function (response) {
@@ -780,16 +747,6 @@
 	}
 
 	function Loader$1(cache, compiler, config) {
-	  if (!(cache instanceof Cache$1)) {
-	    throw Error('cache param is not instance of Cache');
-	  }
-
-	  if (!(compiler instanceof Compiler$1)) {
-	    throw Error('compiler param is not instance of Compiler');
-	  } //valid.instanceOf(cache, Cache)
-	  //valid.instanceOf(cache, Compiler)
-
-
 	  this.cache = cache;
 	  this.compiler = compiler;
 
@@ -857,6 +814,37 @@
 	  }
 	};
 	var loader = Loader$1;
+
+	var extend$1 = utils_1.extend,
+	    hasProp = utils_1.hasProp;
+
+	function Cache$1(config) {
+	  this.namespace = config["export"];
+	  this.list = {};
+	  this.preload();
+	}
+
+	Cache$1.prototype = {
+	  exist: function exist(key) {
+	    return hasProp(this.list, key);
+	  },
+	  get: function get(key) {
+	    return this.list[key];
+	  },
+	  resolve: function resolve(key) {
+	    return Promise.resolve(this.get(key));
+	  },
+	  set: function set(key, value) {
+	    this.list[key] = value;
+	  },
+	  preload: function preload() {
+	    extend$1(this.list, commonjsGlobal[this.namespace]);
+	  },
+	  load: function load(list) {
+	    extend$1(this.list, list);
+	  }
+	};
+	var cache = Cache$1;
 
 	var defaults = defaults_1;
 	var extend = utils_1.extend,
@@ -930,6 +918,13 @@
 	  } //
 
 
+	  function __express(path, options, fn) {
+	    options.settings || {};
+	    console.log(path, options, fn);
+	    return fn(null, 'test content');
+	  } //
+
+
 	  extend(Scope.prototype, {
 	    /**
 	     * @memberOf global
@@ -988,7 +983,12 @@
 	    /**
 	     *  Configure EJS
 	     */
-	    configure: configure
+	    configure: configure,
+
+	    /**
+	     *
+	     */
+	    __express: __express
 	  };
 	}
 
