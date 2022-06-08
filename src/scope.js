@@ -100,6 +100,9 @@ function configure(config) {
                 })
             )
         },
+        /**
+         * @memberOf global
+         */
         node: element,
         /**
          * @memberOf global

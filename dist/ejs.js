@@ -440,6 +440,10 @@
 	        return this.macro(callback)(data);
 	      }));
 	    },
+
+	    /**
+	     * @memberOf global
+	     */
 	    node: _element,
 
 	    /**
