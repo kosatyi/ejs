@@ -66,7 +66,12 @@ function configure(options) {
     }
     //
     function __express(path, options, fn) {
-        options.settings || {};
+        if (typeof options === 'function') {
+            fn = options;
+            options = {};
+        }
+        options = options || {};
+        options.settings || {}; // Mixin any options provided to the express app.
         console.log(path, options, fn);
         return fn(null, 'test content')
     }
