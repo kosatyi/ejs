@@ -1,18 +1,18 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('fs')) :
-	typeof define === 'function' && define.amd ? define(['fs'], factory) :
-	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.ejs = factory(global.fs));
-})(this, (function (require$$0) { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('fs'), require('chokidar'), require('path')) :
+	typeof define === 'function' && define.amd ? define(['fs', 'chokidar', 'path'], factory) :
+	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.ejs = factory(global.fs, global.chokidar));
+})(this, (function (require$$0, require$$1) { 'use strict';
 
 	function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
 	var require$$0__default = /*#__PURE__*/_interopDefaultLegacy(require$$0);
+	var require$$1__default = /*#__PURE__*/_interopDefaultLegacy(require$$1);
 
 	var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
 	var defaults$1 = {};
 	defaults$1["export"] = 'ejs.precompiled';
-	defaults$1.browser = true;
 	defaults$1.path = 'views';
 	defaults$1.extension = {
 	  supported: ['ejs', 'js', 'html', 'svg', 'css'],
@@ -732,9 +732,11 @@
 	var wrapper = Wrapper$1;
 
 	var fs = require$$0__default["default"];
+	var chokidar = require$$1__default["default"];
+	var isNode = new Function('try {return this===global;}catch(e){return false;}');
 
 	function HttpRequest(template) {
-	  return commonjsGlobal.fetch(template).then(function (response) {
+	  return window.fetch(template).then(function (response) {
 	    return response.text();
 	  });
 	}
@@ -758,7 +760,7 @@
 	  if (typeof config.resolver === 'function') {
 	    this.resolver = config.resolver;
 	  } else {
-	    this.resolver = config.browser ? HttpRequest : FileSystem;
+	    this.resolver = isNode() ? FileSystem : HttpRequest;
 	  }
 
 	  this.path = config.path;
@@ -768,17 +770,31 @@
 	  this.supported = config.extension.supported || [];
 	  this.supported.push(this.module);
 	  this.supported.push(this["default"]);
+
+	  if (config.watch && isNode()) {
+	    this.watch();
+	  }
 	}
 
 	Loader$1.prototype = {
+	  watch: function watch() {
+	    this.watcher = chokidar.watch('.', {
+	      cwd: this.path
+	    });
+	    this.watcher.on('change', function (ev, name) {
+	      this.cache.remove(name);
+	    }.bind(this));
+	    this.watcher.on('error', function (error) {
+	      console.log('watcher error: ' + error);
+	    }.bind(this));
+	  },
 	  normalize: function normalize(template) {
-	    var ext = template.split('.').pop();
 	    template = [this.path, template].join('/');
 	    template = template.replace(/\/\//g, '/');
-
-	    if (template.charAt(0) === '/') {
-	      template = template.slice(1);
-	    }
+	    return template;
+	  },
+	  extension: function extension(template) {
+	    var ext = template.split('.').pop();
 
 	    if (this.supported.indexOf(ext) === -1) {
 	      template = [template, this["default"]].join('.');
@@ -787,6 +803,7 @@
 	    return template;
 	  },
 	  resolve: function resolve(template) {
+	    template = this.normalize(template);
 	    return this.resolver(template).then(function (content) {
 	      return this.process(content, template);
 	    }.bind(this));
@@ -801,7 +818,7 @@
 	    return content;
 	  },
 	  get: function get(path) {
-	    var template = this.normalize(path);
+	    var template = this.extension(path);
 
 	    if (this.cache.exist(template)) {
 	      return this.cache.resolve(template);
@@ -835,6 +852,9 @@
 	  },
 	  get: function get(key) {
 	    return this.list[key];
+	  },
+	  remove: function remove(key) {
+	    delete this[key];
 	  },
 	  resolve: function resolve(key) {
 	    return Promise.resolve(this.get(key));

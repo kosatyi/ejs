@@ -78,26 +78,19 @@ const compileTemplates = ({ compile, transform, wrapper, filename }) => {
                     return callback()
                 }
                 const source = compile(contents, relative).source
-                data = {
-                    name: relative,
-                    content: Buffer.from(String(source)),
-                }
-                cache.save(relative, data, modified)
-                concat.push(data)
-                callback()
-                // babelTransform(source)
-                //     .then((result) => {
-                //         const data = {
-                //             name: relative,
-                //             content: Buffer.from(String(result)),
-                //         }
-                //         cache.save(relative, data, modified)
-                //         concat.push(data)
-                //     })
-                //     .catch((error) => {
-                //         this.emit('error', new Error(error))
-                //     })
-                //     .finally(callback)
+                babelTransform(source)
+                    .then((result) => {
+                        const data = {
+                            name: relative,
+                            content: Buffer.from(String(result)),
+                        }
+                        cache.save(relative, data, modified)
+                        concat.push(data)
+                    })
+                    .catch((error) => {
+                        this.emit('error', new Error(error))
+                    })
+                    .finally(callback)
             }
         },
         flush(callback) {

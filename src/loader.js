@@ -1,7 +1,12 @@
 const fs = require('fs')
+const chokidar = require('chokidar')
+const path = require('path')
+const isNode = new Function(
+    'try {return this===global;}catch(e){return false;}'
+)
 
 function HttpRequest(template) {
-    return global.fetch(template).then(function (response) {
+    return window.fetch(template).then(function (response) {
         return response.text()
     })
 }
@@ -24,7 +29,7 @@ function Loader(cache, compiler, config) {
     if (typeof config.resolver === 'function') {
         this.resolver = config.resolver
     } else {
-        this.resolver = config.browser ? HttpRequest : FileSystem
+        this.resolver = isNode() ? FileSystem : HttpRequest
     }
     this.path = config.path
     this.token = config.token || {}
@@ -33,22 +38,43 @@ function Loader(cache, compiler, config) {
     this.supported = config.extension.supported || []
     this.supported.push(this.module)
     this.supported.push(this.default)
+    if (config.watch && isNode()) {
+        this.watch()
+    }
 }
 
 Loader.prototype = {
+    watch() {
+        this.watcher = chokidar.watch('.', {
+            cwd: this.path,
+        })
+        this.watcher.on(
+            'change',
+            function (ev, name) {
+                this.cache.remove(name)
+            }.bind(this)
+        )
+        this.watcher.on(
+            'error',
+            function (error) {
+                console.log('watcher error: ' + error)
+            }.bind(this)
+        )
+    },
     normalize(template) {
-        let ext = template.split('.').pop()
         template = [this.path, template].join('/')
         template = template.replace(/\/\//g, '/')
-        if (template.charAt(0) === '/') {
-            template = template.slice(1)
-        }
+        return template
+    },
+    extension(template) {
+        let ext = template.split('.').pop()
         if (this.supported.indexOf(ext) === -1) {
             template = [template, this.default].join('.')
         }
         return template
     },
     resolve(template) {
+        template = this.normalize(template)
         return this.resolver(template).then(
             function (content) {
                 return this.process(content, template)
@@ -63,7 +89,7 @@ Loader.prototype = {
         return content
     },
     get(path) {
-        let template = this.normalize(path)
+        let template = this.extension(path)
         if (this.cache.exist(template)) {
             return this.cache.resolve(template)
         }

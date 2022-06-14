@@ -10,13 +10,14 @@
     "@babel/core": "^7.16.5",
     "@babel/preset-env": "^7.17.10",
     "babel-polyfill": "^6.26.0",
+    "babel-preset-minify": "^0.5.2",
+    "chokidar": "^3.5.3",
     "gulp": "^4.0.2",
     "readable-stream": "^3.6.0",
     "vinyl": "^2.2.1"
   },
   "files": [
     "dist",
-    "src",
     "build.js"
   ],
   "scripts": {

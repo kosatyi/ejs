@@ -1,7 +1,6 @@
 const defaults = {}
 
 defaults.export = 'ejs.precompiled'
-defaults.browser = true
 defaults.path = 'views'
 
 defaults.extension = {

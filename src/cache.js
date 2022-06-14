@@ -13,6 +13,9 @@ Cache.prototype = {
     get(key) {
         return this.list[key]
     },
+    remove(key) {
+        delete this[key]
+    },
     resolve(key) {
         return Promise.resolve(this.get(key))
     },
