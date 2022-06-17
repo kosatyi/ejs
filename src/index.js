@@ -95,6 +95,7 @@ function configure(options) {
      * @memberOf global
      */
     return {
+        cache,
         /**
          *
          * @param path

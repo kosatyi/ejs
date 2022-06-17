@@ -977,6 +977,8 @@
 	   */
 
 	  return {
+	    cache: cache,
+
 	    /**
 	     *
 	     * @param path
