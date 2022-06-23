@@ -1,6 +1,5 @@
 const fs = require('fs')
 const chokidar = require('chokidar')
-const path = require('path')
 const isNode = new Function(
     'try {return this===global;}catch(e){return false;}'
 )

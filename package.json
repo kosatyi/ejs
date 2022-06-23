@@ -4,7 +4,6 @@
   "homepage": "https://github.com/kosatyi/ejs",
   "version": "0.0.0",
   "main": "dist/ejs.js",
-  "module": "dist/ejs.mjs",
   "author": "Stepan Kosatyi (https://kosatyi.com)",
   "dependencies": {
     "@babel/core": "^7.16.5",

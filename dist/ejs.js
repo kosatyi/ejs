@@ -1,6 +1,6 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('fs'), require('chokidar'), require('path')) :
-	typeof define === 'function' && define.amd ? define(['fs', 'chokidar', 'path'], factory) :
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('fs'), require('chokidar')) :
+	typeof define === 'function' && define.amd ? define(['fs', 'chokidar'], factory) :
 	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.ejs = factory(global.fs, global.chokidar));
 })(this, (function (require$$0, require$$1) { 'use strict';
 

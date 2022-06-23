@@ -25,19 +25,4 @@ const umd = {
     ],
 }
 
-const mjs = {
-    input: 'src/index.js',
-    output: {
-        file: pkg.module,
-        format: 'es',
-        globals: {
-            fs: 'fs',
-            path: 'path',
-            chokidar: 'chokidar',
-        },
-    },
-    external: ['fs', 'chokidar', 'path'],
-    plugins: [commonjs({}), resolve({})],
-}
-
-export default [umd, mjs]
+export default [umd]
