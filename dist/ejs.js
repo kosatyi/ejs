@@ -326,7 +326,7 @@
 	var Buffer = buffer;
 	var Component = component;
 
-	function configure$1(config) {
+	function configure$2(config) {
 	  var _config$vars = config.vars,
 	      EXTEND = _config$vars.EXTEND,
 	      MACROS = _config$vars.MACROS,
@@ -627,7 +627,26 @@
 	  return Scope;
 	}
 
-	var scope = configure$1;
+	var scope = configure$2;
+
+	function configure$1(ejs) {
+	  function Express(path, options) {
+	    this.path = path;
+	    this.options = options;
+	  }
+
+	  Express.prototype.render = function (options, callback) {
+	    ejs.render(this.path, options).then(function (content) {
+	      callback(null, content);
+	    }.bind(this))["catch"](function () {
+	      callback('template not found: ' + this.path);
+	    }.bind(this));
+	  };
+
+	  return Express;
+	}
+
+	var express = configure$1;
 
 	var symbols = utils_1.symbols;
 
@@ -875,6 +894,7 @@
 	var extend = utils_1.extend,
 	    safeValue = utils_1.safeValue;
 	var ConfigureScope = scope;
+	var ConfigureExpress = express;
 	var Compiler = compiler;
 	var Wrapper = wrapper;
 	var Loader = loader;
@@ -943,20 +963,6 @@
 	  } //
 
 
-	  function __express(path, options, fn) {
-	    if (typeof options === 'function') {
-	      fn = options;
-	      options = {};
-	    }
-
-	    options = options || {};
-	    options.settings || {}; // Mixin any options provided to the express app.
-
-	    console.log(path, options, fn);
-	    return fn(null, 'test content');
-	  } //
-
-
 	  extend(Scope.prototype, {
 	    /**
 	     * @memberOf global
@@ -1022,7 +1028,9 @@
 	    /**
 	     *
 	     */
-	    __express: __express
+	    express: function express(app) {
+	      app.set('view', ConfigureExpress(this));
+	    }
 	  };
 	}
 

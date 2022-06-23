@@ -1,6 +1,7 @@
 const defaults = require('./defaults')
 const { extend, safeValue } = require('./utils')
 const ConfigureScope = require('./scope')
+const ConfigureExpress = require('./express')
 const Compiler = require('./compiler')
 const Wrapper = require('./wrapper')
 const Loader = require('./loader')
@@ -134,7 +135,9 @@ function configure(options) {
         /**
          *
          */
-        __express,
+        express(app) {
+            app.set('view', ConfigureExpress(this))
+        },
     }
 }
 
