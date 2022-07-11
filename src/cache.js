@@ -1,8 +1,9 @@
 const { extend, hasProp } = require('./utils')
 
 function Cache(config) {
-    this.namespace = config.export
     this.list = {}
+    this.enabled = config.cache || false
+    this.namespace = config.export
     this.preload()
 }
 

@@ -1,16 +1,5 @@
 const { symbols } = require('./utils')
 
-const getFunctionBuilder = function () {
-    return Function
-    let fn
-    try {
-        fn = new Function('return (async function(){}).constructor;')()
-    } catch (e) {
-        fn = Function
-    }
-    return fn
-}
-
 const tags = [
     {
         symbol: '-',
@@ -39,14 +28,14 @@ const tags = [
 ]
 
 function Compiler(config) {
-    this.extension = config.extension
-    this.token = config.token
-    this.vars = config.vars
-    this.setup()
+    this.setup(config)
 }
 
 Compiler.prototype = {
-    setup() {
+    setup(config) {
+        this.extension = config.extension
+        this.token = config.token
+        this.vars = config.vars
         this.matches = []
         this.formats = []
         tags.forEach(function (item) {

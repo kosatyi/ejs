@@ -1,13 +1,16 @@
+const path = require('path')
 const defaults = require('./defaults')
 const { extend, safeValue } = require('./utils')
+const { isFunction } = require('./type')
 const ConfigureScope = require('./scope')
-const ConfigureExpress = require('./express')
 const Compiler = require('./compiler')
 const Wrapper = require('./wrapper')
 const Loader = require('./loader')
-const Cache = require('./cache')
 
 function configure(options) {
+    /**
+     * @extends defaults
+     */
     const config = extend(
         {
             loader: {},
@@ -19,13 +22,11 @@ function configure(options) {
         options || {}
     )
     //
+    const Scope = ConfigureScope(config)
+    //
     const compiler = new Compiler(config)
     const wrapper = new Wrapper(config)
-    const cache = new Cache(config)
-    const loader = new Loader(cache, compiler, config)
-    //
-    const Scope = ConfigureScope(config)
-
+    const loader = new Loader(config, compiler)
     //
     function template(path, defaultExt) {
         const ext = path.split('.').pop()
@@ -35,14 +36,14 @@ function configure(options) {
         return path
     }
     //
-    function output(path, scope) {
-        return loader.get(path).then(function (template) {
+    function output(path, scope, options) {
+        return loader.get(path, options).then(function (template) {
             return template.call(scope, scope, scope.getBuffer(), safeValue)
         })
     }
     //
-    function render(path, data) {
-        const view = template(path, config.extension.default)
+    function render(name, data) {
+        const view = template(name, config.extension.default)
         const scope = new Scope(data)
         return output(view, scope).then(function (content) {
             if (scope.getExtend()) {
@@ -55,8 +56,8 @@ function configure(options) {
         })
     }
     //
-    function require(path) {
-        const view = template(path, config.extension.module)
+    function require(name) {
+        const view = template(name, config.extension.module)
         this.exports = {}
         this.module = this
         return output(view, this).then(
@@ -66,15 +67,17 @@ function configure(options) {
         )
     }
     //
-    function __express(path, options, fn) {
-        if (typeof options === 'function') {
-            fn = options
+    function express(name, options, callback) {
+        if (isFunction(options)) {
+            callback = options
             options = {}
         }
         options = options || {}
-        const settings = options.settings || {} // Mixin any options provided to the express app.
-        console.log(path, options, fn)
-        return fn(null, 'test content')
+        const settings = options.settings || {}
+        const filename = path.relative(settings['views'], name)
+        return render(filename, options).then(function (content) {
+            callback(null, content)
+        })
     }
     //
     extend(Scope.prototype, {
@@ -96,7 +99,6 @@ function configure(options) {
      * @memberOf global
      */
     return {
-        cache,
         /**
          *
          * @param path
@@ -135,9 +137,7 @@ function configure(options) {
         /**
          *
          */
-        express(app) {
-            app.set('view', ConfigureExpress(this))
-        },
+        __express: express,
     }
 }
 

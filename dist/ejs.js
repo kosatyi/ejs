@@ -1,11 +1,12 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('fs'), require('chokidar')) :
-	typeof define === 'function' && define.amd ? define(['fs', 'chokidar'], factory) :
-	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.ejs = factory(global.fs, global.chokidar));
-})(this, (function (require$$0, require$$1) { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('path'), require('fs'), require('chokidar')) :
+	typeof define === 'function' && define.amd ? define(['path', 'fs', 'chokidar'], factory) :
+	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.ejs = factory(global.path, global.fs, global.chokidar));
+})(this, (function (require$$0$1, require$$0, require$$1) { 'use strict';
 
 	function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
+	var require$$0__default$1 = /*#__PURE__*/_interopDefaultLegacy(require$$0$1);
 	var require$$0__default = /*#__PURE__*/_interopDefaultLegacy(require$$0);
 	var require$$1__default = /*#__PURE__*/_interopDefaultLegacy(require$$1);
 
@@ -14,6 +15,7 @@
 	var defaults$1 = {};
 	defaults$1["export"] = 'ejs.precompiled';
 	defaults$1.path = 'views';
+	defaults$1.resolver = null;
 	defaults$1.extension = {
 	  supported: ['ejs', 'js', 'html', 'svg', 'css'],
 	  "default": 'ejs',
@@ -211,6 +213,18 @@
 
 	var utils_1 = utils;
 
+	var type = {};
+
+	type.isFunction = function (v) {
+	  return typeof v === 'function';
+	};
+
+	type.isString = function (v) {
+	  return typeof v === 'string';
+	};
+
+	var type_1 = type;
+
 	var entities = utils_1.entities,
 	    map = utils_1.map;
 	var selfClosed = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
@@ -322,11 +336,13 @@
 	    getPath = utils_1.getPath,
 	    hasProp$1 = utils_1.hasProp,
 	    noop = utils_1.noop;
+	var isFunction$1 = type_1.isFunction,
+	    isString = type_1.isString;
 	var _element = element_1;
 	var Buffer = buffer;
 	var Component = component;
 
-	function configure$2(config) {
+	function configure$1(config) {
 	  var _config$vars = config.vars,
 	      EXTEND = _config$vars.EXTEND,
 	      MACROS = _config$vars.MACROS,
@@ -410,7 +426,7 @@
 	      var macro = function () {
 	        buffer.backup();
 
-	        if (typeof callback === 'function') {
+	        if (isFunction$1(callback)) {
 	          callback.apply(this, arguments);
 	        }
 
@@ -450,7 +466,7 @@
 	     * @memberOf global
 	     */
 	    element: function element(tag, attr, content) {
-	      if (typeof content === 'function') {
+	      if (isFunction$1(content)) {
 	        content = this.macro(content)();
 	      }
 
@@ -512,7 +528,7 @@
 	      var result = path.shift();
 	      var prop = path.pop();
 
-	      if (typeof result[prop] === 'function') {
+	      if (isFunction$1(result[prop])) {
 	        return result[prop].apply(result, params);
 	      }
 	    },
@@ -523,7 +539,7 @@
 	     * @param callback
 	     */
 	    each: function each(object, callback) {
-	      if (typeof object === 'string') {
+	      if (isString(object)) {
 	        object = this.get(object, []);
 	      }
 
@@ -627,29 +643,9 @@
 	  return Scope;
 	}
 
-	var scope = configure$2;
-
-	function configure$1(ejs) {
-	  function Express(path, options) {
-	    this.path = path;
-	    this.options = options;
-	  }
-
-	  Express.prototype.render = function (options, callback) {
-	    ejs.render(this.path, options).then(function (content) {
-	      callback(null, content);
-	    }.bind(this))["catch"](function () {
-	      callback('template not found: ' + this.path);
-	    }.bind(this));
-	  };
-
-	  return Express;
-	}
-
-	var express = configure$1;
+	var scope = configure$1;
 
 	var symbols = utils_1.symbols;
-
 	var tags = [{
 	  symbol: '-',
 	  format: function format(value) {
@@ -673,14 +669,14 @@
 	}];
 
 	function Compiler$1(config) {
-	  this.extension = config.extension;
-	  this.token = config.token;
-	  this.vars = config.vars;
-	  this.setup();
+	  this.setup(config);
 	}
 
 	Compiler$1.prototype = {
-	  setup: function setup() {
+	  setup: function setup(config) {
+	    this.extension = config.extension;
+	    this.token = config.token;
+	    this.vars = config.vars;
 	    this.matches = [];
 	    this.formats = [];
 	    tags.forEach(function (item) {
@@ -734,10 +730,13 @@
 	var compiler = Compiler$1;
 
 	function Wrapper$1(config) {
-	  this.name = config["export"];
+	  this.configure(config);
 	}
 
 	Wrapper$1.prototype = {
+	  configure: function configure(config) {
+	    this.name = config["export"];
+	  },
 	  browser: function browser(list) {
 	    var name = this.name;
 	    var out = '(function(o){\n';
@@ -750,8 +749,44 @@
 	};
 	var wrapper = Wrapper$1;
 
+	var extend$1 = utils_1.extend,
+	    hasProp = utils_1.hasProp;
+
+	function Cache$1(config) {
+	  this.list = {};
+	  this.enabled = config.cache || false;
+	  this.namespace = config["export"];
+	  this.preload();
+	}
+
+	Cache$1.prototype = {
+	  exist: function exist(key) {
+	    return hasProp(this.list, key);
+	  },
+	  get: function get(key) {
+	    return this.list[key];
+	  },
+	  remove: function remove(key) {
+	    delete this[key];
+	  },
+	  resolve: function resolve(key) {
+	    return Promise.resolve(this.get(key));
+	  },
+	  set: function set(key, value) {
+	    this.list[key] = value;
+	  },
+	  preload: function preload() {
+	    extend$1(this.list, commonjsGlobal[this.namespace]);
+	  },
+	  load: function load(list) {
+	    extend$1(this.list, list);
+	  }
+	};
+	var cache = Cache$1;
+
 	var fs = require$$0__default["default"];
 	var chokidar = require$$1__default["default"];
+	var Cache = cache;
 	var isNode = new Function('try {return this===global;}catch(e){return false;}');
 
 	function HttpRequest(template) {
@@ -772,8 +807,8 @@
 	  });
 	}
 
-	function Loader$1(cache, compiler, config) {
-	  this.cache = cache;
+	function Loader$1(config, compiler) {
+	  this.cache = new Cache(config);
 	  this.compiler = compiler;
 
 	  if (typeof config.resolver === 'function') {
@@ -823,7 +858,7 @@
 	  },
 	  resolve: function resolve(template) {
 	    template = this.normalize(template);
-	    return this.resolver(template).then(function (content) {
+	    return this.resolver(template, this).then(function (content) {
 	      return this.process(content, template);
 	    }.bind(this));
 	  },
@@ -856,51 +891,20 @@
 	};
 	var loader = Loader$1;
 
-	var extend$1 = utils_1.extend,
-	    hasProp = utils_1.hasProp;
-
-	function Cache$1(config) {
-	  this.namespace = config["export"];
-	  this.list = {};
-	  this.preload();
-	}
-
-	Cache$1.prototype = {
-	  exist: function exist(key) {
-	    return hasProp(this.list, key);
-	  },
-	  get: function get(key) {
-	    return this.list[key];
-	  },
-	  remove: function remove(key) {
-	    delete this[key];
-	  },
-	  resolve: function resolve(key) {
-	    return Promise.resolve(this.get(key));
-	  },
-	  set: function set(key, value) {
-	    this.list[key] = value;
-	  },
-	  preload: function preload() {
-	    extend$1(this.list, commonjsGlobal[this.namespace]);
-	  },
-	  load: function load(list) {
-	    extend$1(this.list, list);
-	  }
-	};
-	var cache = Cache$1;
-
+	var path = require$$0__default$1["default"];
 	var defaults = defaults_1;
 	var extend = utils_1.extend,
 	    safeValue = utils_1.safeValue;
+	var isFunction = type_1.isFunction;
 	var ConfigureScope = scope;
-	var ConfigureExpress = express;
 	var Compiler = compiler;
 	var Wrapper = wrapper;
 	var Loader = loader;
-	var Cache = cache;
 
 	function configure(options) {
+	  /**
+	   * @extends defaults
+	   */
 	  var config = extend({
 	    loader: {},
 	    extension: {},
@@ -908,14 +912,13 @@
 	    vars: {}
 	  }, defaults, options || {}); //
 
+	  var Scope = ConfigureScope(config); //
+
 	  var compiler = new Compiler(config);
 
 	  var _wrapper = new Wrapper(config);
 
-	  var cache = new Cache(config);
-	  var loader = new Loader(cache, compiler, config); //
-
-	  var Scope = ConfigureScope(config); //
+	  var loader = new Loader(config, compiler); //
 
 	  function template(path, defaultExt) {
 	    var ext = path.split('.').pop();
@@ -928,15 +931,15 @@
 	  } //
 
 
-	  function output(path, scope) {
-	    return loader.get(path).then(function (template) {
+	  function output(path, scope, options) {
+	    return loader.get(path, options).then(function (template) {
 	      return template.call(scope, scope, scope.getBuffer(), safeValue);
 	    });
 	  } //
 
 
-	  function render(path, data) {
-	    var view = template(path, config.extension["default"]);
+	  function render(name, data) {
+	    var view = template(name, config.extension["default"]);
 	    var scope = new Scope(data);
 	    return output(view, scope).then(function (content) {
 	      if (scope.getExtend()) {
@@ -953,13 +956,28 @@
 	  } //
 
 
-	  function require(path) {
-	    var view = template(path, config.extension.module);
+	  function require(name) {
+	    var view = template(name, config.extension.module);
 	    this.exports = {};
 	    this.module = this;
 	    return output(view, this).then(function () {
 	      return this.exports;
 	    }.bind(this));
+	  } //
+
+
+	  function express(name, options, callback) {
+	    if (isFunction(options)) {
+	      callback = options;
+	      options = {};
+	    }
+
+	    options = options || {};
+	    var settings = options.settings || {};
+	    var filename = path.relative(settings['views'], name);
+	    return render(filename, options).then(function (content) {
+	      callback(null, content);
+	    });
 	  } //
 
 
@@ -983,8 +1001,6 @@
 	   */
 
 	  return {
-	    cache: cache,
-
 	    /**
 	     *
 	     * @param path
@@ -1028,9 +1044,7 @@
 	    /**
 	     *
 	     */
-	    express: function express(app) {
-	      app.set('view', ConfigureExpress(this));
-	    }
+	    __express: express
 	  };
 	}
 

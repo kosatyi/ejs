@@ -2,6 +2,7 @@ const defaults = {}
 
 defaults.export = 'ejs.precompiled'
 defaults.path = 'views'
+defaults.resolver = null
 
 defaults.extension = {
     supported: ['ejs', 'js', 'html', 'svg', 'css'],

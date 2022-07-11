@@ -1,4 +1,5 @@
 const { extend, omit, each, getPath, hasProp, noop } = require('./utils')
+const { isFunction, isString } = require('./type')
 const element = require('./element')
 const Buffer = require('./buffer')
 const Component = require('./component')
@@ -15,7 +16,6 @@ function configure(config) {
     Scope.helpers = function (methods) {
         extend(Scope.prototype, methods)
     }
-
     Scope.prototype = {
         getBuffer() {
             return this[BUFFER]
@@ -72,7 +72,7 @@ function configure(config) {
             const buffer = this.getBuffer()
             const macro = function () {
                 buffer.backup()
-                if (typeof callback === 'function') {
+                if (isFunction(callback)) {
                     callback.apply(this, arguments)
                 }
                 const result = buffer.restore()
@@ -108,7 +108,7 @@ function configure(config) {
          * @memberOf global
          */
         element(tag, attr, content) {
-            if (typeof content === 'function') {
+            if (isFunction(content)) {
                 content = this.macro(content)()
             }
             this.echo(
@@ -164,7 +164,7 @@ function configure(config) {
             const path = getPath(this, name)
             const result = path.shift()
             const prop = path.pop()
-            if (typeof result[prop] === 'function') {
+            if (isFunction(result[prop])) {
                 return result[prop].apply(result, params)
             }
         },
@@ -174,7 +174,7 @@ function configure(config) {
          * @param callback
          */
         each(object, callback) {
-            if (typeof object === 'string') {
+            if (isString(object)) {
                 object = this.get(object, [])
             }
             each(object, callback, this)

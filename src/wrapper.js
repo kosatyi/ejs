@@ -1,8 +1,11 @@
 function Wrapper(config) {
-    this.name = config.export
+    this.configure(config)
 }
 
 Wrapper.prototype = {
+    configure(config) {
+        this.name = config.export
+    },
     browser(list) {
         let name = this.name
         let out = '(function(o){\n'

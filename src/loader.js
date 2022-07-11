@@ -1,5 +1,7 @@
 const fs = require('fs')
 const chokidar = require('chokidar')
+const Cache = require('./cache')
+
 const isNode = new Function(
     'try {return this===global;}catch(e){return false;}'
 )
@@ -22,8 +24,8 @@ function FileSystem(template) {
     })
 }
 
-function Loader(cache, compiler, config) {
-    this.cache = cache
+function Loader(config, compiler) {
+    this.cache = new Cache(config)
     this.compiler = compiler
     if (typeof config.resolver === 'function') {
         this.resolver = config.resolver
@@ -74,7 +76,7 @@ Loader.prototype = {
     },
     resolve(template) {
         template = this.normalize(template)
-        return this.resolver(template).then(
+        return this.resolver(template, this).then(
             function (content) {
                 return this.process(content, template)
             }.bind(this)
