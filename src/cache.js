@@ -3,6 +3,7 @@ const { extend, hasProp } = require('./utils')
 function Cache(config) {
     this.list = {}
     this.enabled = config.cache || false
+    console.log('cache is enabled', this.enabled)
     this.namespace = config.export
     this.preload()
 }
@@ -15,7 +16,7 @@ Cache.prototype = {
         return this.list[key]
     },
     remove(key) {
-        delete this[key]
+        delete this.list[key]
     },
     resolve(key) {
         return Promise.resolve(this.get(key))

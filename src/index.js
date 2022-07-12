@@ -36,8 +36,8 @@ function configure(options) {
         return path
     }
     //
-    function output(path, scope, options) {
-        return loader.get(path, options).then(function (template) {
+    function output(path, scope) {
+        return loader.get(path).then(function (template) {
             return template.call(scope, scope, scope.getBuffer(), safeValue)
         })
     }
@@ -67,6 +67,8 @@ function configure(options) {
         )
     }
     //
+    let expressInstance = null
+    //
     function express(name, options, callback) {
         if (isFunction(options)) {
             callback = options
@@ -74,10 +76,20 @@ function configure(options) {
         }
         options = options || {}
         const settings = options.settings || {}
-        const filename = path.relative(settings['views'], name)
-        return render(filename, options).then(function (content) {
-            callback(null, content)
-        })
+        const viewPath = settings['views']
+        const viewOptions = settings['view options'] || {}
+        const filename = path.relative(viewPath, name)
+        if (expressInstance === null) {
+            expressInstance = configure(viewOptions)
+        }
+        return expressInstance
+            .render(filename, options)
+            .then(function (content) {
+                callback(null, content)
+            })
+            .catch(function (error) {
+                callback(error)
+            })
     }
     //
     extend(Scope.prototype, {

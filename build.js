@@ -56,7 +56,7 @@ const cache = {
     },
 }
 
-const compileTemplates = ({ compile, transform, wrapper, filename }) => {
+const gulpCompile = ({ compile, wrapper, filename }) => {
     const concat = []
     return new Transform({
         objectMode: true,
@@ -105,4 +105,4 @@ const compileTemplates = ({ compile, transform, wrapper, filename }) => {
     })
 }
 
-exports.compileTemplates = compileTemplates
+exports.gulpCompile = gulpCompile

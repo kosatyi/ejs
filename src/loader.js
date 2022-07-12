@@ -51,7 +51,7 @@ Loader.prototype = {
         })
         this.watcher.on(
             'change',
-            function (ev, name) {
+            function (name) {
                 this.cache.remove(name)
             }.bind(this)
         )
@@ -72,6 +72,7 @@ Loader.prototype = {
         if (this.supported.indexOf(ext) === -1) {
             template = [template, this.default].join('.')
         }
+
         return template
     },
     resolve(template) {

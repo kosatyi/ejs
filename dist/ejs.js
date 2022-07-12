@@ -1,16 +1,37 @@
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('path'), require('fs'), require('chokidar')) :
-	typeof define === 'function' && define.amd ? define(['path', 'fs', 'chokidar'], factory) :
-	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.ejs = factory(global.path, global.fs, global.chokidar));
-})(this, (function (require$$0$1, require$$0, require$$1) { 'use strict';
-
-	function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
-
-	var require$$0__default$1 = /*#__PURE__*/_interopDefaultLegacy(require$$0$1);
-	var require$$0__default = /*#__PURE__*/_interopDefaultLegacy(require$$0);
-	var require$$1__default = /*#__PURE__*/_interopDefaultLegacy(require$$1);
+var ejs = (function () {
+	'use strict';
 
 	var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+	function getAugmentedNamespace(n) {
+	  var f = n.default;
+		if (typeof f == "function") {
+			var a = function () {
+				return f.apply(this, arguments);
+			};
+			a.prototype = f.prototype;
+	  } else a = {};
+	  Object.defineProperty(a, '__esModule', {value: true});
+		Object.keys(n).forEach(function (k) {
+			var d = Object.getOwnPropertyDescriptor(n, k);
+			Object.defineProperty(a, k, d.get ? d : {
+				enumerable: true,
+				get: function () {
+					return n[k];
+				}
+			});
+		});
+		return a;
+	}
+
+	var _rollup_plugin_ignore_empty_module_placeholder = {};
+
+	var _rollup_plugin_ignore_empty_module_placeholder$1 = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		'default': _rollup_plugin_ignore_empty_module_placeholder
+	});
+
+	var require$$0 = /*@__PURE__*/getAugmentedNamespace(_rollup_plugin_ignore_empty_module_placeholder$1);
 
 	var defaults$1 = {};
 	defaults$1["export"] = 'ejs.precompiled';
@@ -755,6 +776,7 @@
 	function Cache$1(config) {
 	  this.list = {};
 	  this.enabled = config.cache || false;
+	  console.log('cache is enabled', this.enabled);
 	  this.namespace = config["export"];
 	  this.preload();
 	}
@@ -767,7 +789,7 @@
 	    return this.list[key];
 	  },
 	  remove: function remove(key) {
-	    delete this[key];
+	    delete this.list[key];
 	  },
 	  resolve: function resolve(key) {
 	    return Promise.resolve(this.get(key));
@@ -784,8 +806,8 @@
 	};
 	var cache = Cache$1;
 
-	var fs = require$$0__default["default"];
-	var chokidar = require$$1__default["default"];
+	var fs = require$$0;
+	var chokidar = require$$0;
 	var Cache = cache;
 	var isNode = new Function('try {return this===global;}catch(e){return false;}');
 
@@ -835,7 +857,7 @@
 	    this.watcher = chokidar.watch('.', {
 	      cwd: this.path
 	    });
-	    this.watcher.on('change', function (ev, name) {
+	    this.watcher.on('change', function (name) {
 	      this.cache.remove(name);
 	    }.bind(this));
 	    this.watcher.on('error', function (error) {
@@ -891,7 +913,7 @@
 	};
 	var loader = Loader$1;
 
-	var path = require$$0__default$1["default"];
+	var path = require$$0;
 	var defaults = defaults_1;
 	var extend = utils_1.extend,
 	    safeValue = utils_1.safeValue;
@@ -931,8 +953,8 @@
 	  } //
 
 
-	  function output(path, scope, options) {
-	    return loader.get(path, options).then(function (template) {
+	  function output(path, scope) {
+	    return loader.get(path).then(function (template) {
 	      return template.call(scope, scope, scope.getBuffer(), safeValue);
 	    });
 	  } //
@@ -966,6 +988,8 @@
 	  } //
 
 
+	  var expressInstance = null; //
+
 	  function express(name, options, callback) {
 	    if (isFunction(options)) {
 	      callback = options;
@@ -974,9 +998,18 @@
 
 	    options = options || {};
 	    var settings = options.settings || {};
-	    var filename = path.relative(settings['views'], name);
-	    return render(filename, options).then(function (content) {
+	    var viewPath = settings['views'];
+	    var viewOptions = settings['view options'] || {};
+	    var filename = path.relative(viewPath, name);
+
+	    if (expressInstance === null) {
+	      expressInstance = configure(viewOptions);
+	    }
+
+	    return expressInstance.render(filename, options).then(function (content) {
 	      callback(null, content);
+	    })["catch"](function (error) {
+	      callback(error);
 	    });
 	  } //
 
@@ -1052,4 +1085,4 @@
 
 	return src;
 
-}));
+})();
