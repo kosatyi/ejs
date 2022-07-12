@@ -1,8 +1,8 @@
-const { extend, omit, each, getPath, hasProp, noop } = require('./utils')
-const { isFunction, isString } = require('./type')
-const element = require('./element')
-const Buffer = require('./buffer')
-const Component = require('./component')
+import { extend, omit, each, getPath, hasProp, noop } from './utils'
+import { isFunction, isString } from './type'
+import element from './element'
+import Buffer from './buffer'
+import Component from './component'
 
 function configure(config) {
     const { EXTEND, MACROS, LAYOUT, PRINT, BLOCKS, BUFFER } = config.vars
@@ -263,4 +263,4 @@ function configure(config) {
     return Scope
 }
 
-module.exports = configure
+export default configure

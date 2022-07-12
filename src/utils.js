@@ -1,5 +1,3 @@
-const utils = {}
-
 const symbolEntities = {
     "'": "'",
     '\\': '\\',
@@ -25,25 +23,25 @@ function regexKeys(obj) {
 const htmlEntitiesMatch = regexKeys(htmlEntities)
 const symbolEntitiesMatch = regexKeys(symbolEntities)
 
-utils.entities = function (string = '') {
+export const entities = function (string = '') {
     return ('' + string).replace(
         htmlEntitiesMatch,
         (match) => htmlEntities[match]
     )
 }
 
-utils.symbols = function (string) {
+export const symbols = function (string) {
     return ('' + string).replace(
         symbolEntitiesMatch,
         (match) => '\\' + symbolEntities[match]
     )
 }
 
-utils.safeValue = function (value, escape, check) {
-    return (check = value) == null ? '' : escape ? utils.entities(check) : check
+export const safeValue = function (value, escape, check) {
+    return (check = value) == null ? '' : escape ? entities(check) : check
 }
 
-utils.getPath = function (context, name) {
+export const getPath = function (context, name) {
     let data = context
     let chunk = name.split('.')
     let prop = chunk.pop()
@@ -53,7 +51,7 @@ utils.getPath = function (context, name) {
     return [data, prop]
 }
 
-utils.assign = function (list) {
+export const assign = function (list) {
     const sources = (list || [null]).map(function (source) {
         return source || {}
     })
@@ -63,11 +61,11 @@ utils.assign = function (list) {
     }
 }
 
-utils.isPromise = function (p) {
+export const isPromise = function (p) {
     return Boolean(p && typeof p.then === 'function')
 }
 
-utils.merge = function (target) {
+export const merge = function (target) {
     return [].slice
         .call(arguments, 1)
         .filter(function (source) {
@@ -78,7 +76,7 @@ utils.merge = function (target) {
         }, target)
 }
 
-utils.extend = function (target) {
+export const extend = function (target) {
     return [].slice
         .call(arguments, 1)
         .filter(function (source) {
@@ -89,28 +87,32 @@ utils.extend = function (target) {
         }, target)
 }
 
-utils.noop = function () {}
+export const noop = function () {}
 
-utils.format = function (pattern, params) {
+export const format = function (pattern, params) {
     pattern = pattern || ''
     params = params || {}
     return pattern.replace(/\${(.+?)}/g, function (match, prop) {
-        return utils.hasProp(params, prop) ? params[prop] : match
+        return hasProp(params, prop) ? params[prop] : match
     })
 }
 
-utils.each = function (object, callback, context) {
+export const each = function (object, callback, context) {
     let prop
     for (prop in object) {
-        if (utils.hasProp(object, prop)) {
+        if (hasProp(object, prop)) {
             callback.call(context || null, object[prop], prop, object)
         }
     }
 }
 
-utils.map = function (object, callback, context) {
+export const isNode = new Function(
+    'try {return this===global;}catch(e){return false;}'
+)
+
+export const map = function (object, callback, context) {
     const result = []
-    utils.each(
+    each(
         object,
         function (value, key, object) {
             let item = callback.call(this, value, key, object)
@@ -123,10 +125,10 @@ utils.map = function (object, callback, context) {
     return result
 }
 
-utils.filter = function (object, callback, context) {
+export const filter = function (object, callback, context) {
     const isArray = object instanceof Array
     const result = isArray ? [] : {}
-    utils.each(
+    each(
         object,
         function (value, key, object) {
             let item = callback.call(this, value, key, object)
@@ -143,15 +145,15 @@ utils.filter = function (object, callback, context) {
     return result
 }
 
-utils.omit = function (object, list) {
-    return utils.filter(object, function (value, key) {
+export const omit = function (object, list) {
+    return filter(object, function (value, key) {
         if (list.indexOf(key) === -1) {
             return value
         }
     })
 }
 
-utils.uuid = function (str) {
+export const uuid = function (str) {
     let i = str.length
     let hash1 = 5381
     let hash2 = 52711
@@ -163,7 +165,7 @@ utils.uuid = function (str) {
     return (hash1 >>> 0) * 4096 + (hash2 >>> 0)
 }
 
-utils.random = function (size) {
+export const random = function (size) {
     let string = ''
     let chars =
         'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_'
@@ -175,8 +177,6 @@ utils.random = function (size) {
     return string
 }
 
-utils.hasProp = function (object, prop) {
+export const hasProp = function (object, prop) {
     return object && object.hasOwnProperty(prop)
 }
-
-module.exports = utils

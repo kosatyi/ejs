@@ -1,18 +1,20 @@
-var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+import path from 'path';
+import fs from 'fs';
+import chokidar from 'chokidar';
 
-const defaults$1 = {};
+const defaults = {};
 
-defaults$1.export = 'ejs.precompiled';
-defaults$1.path = 'views';
-defaults$1.resolver = null;
+defaults.export = 'ejs.precompiled';
+defaults.path = 'views';
+defaults.resolver = null;
 
-defaults$1.extension = {
+defaults.extension = {
     supported: ['ejs', 'js', 'html', 'svg', 'css'],
     default: 'ejs',
     module: 'js',
 };
 
-defaults$1.vars = {
+defaults.vars = {
     EXTEND: '$$$',
     BUFFER: '$$a',
     OUTPUT: '$$i',
@@ -25,15 +27,11 @@ defaults$1.vars = {
     SAFE: '$$v',
 };
 
-defaults$1.token = {
+defaults.token = {
     start: '<%',
     end: '%>',
     regex: '([\\s\\S]+?)',
 };
-
-var defaults_1 = defaults$1;
-
-const utils = {};
 
 const symbolEntities = {
     "'": "'",
@@ -60,25 +58,25 @@ function regexKeys(obj) {
 const htmlEntitiesMatch = regexKeys(htmlEntities);
 const symbolEntitiesMatch = regexKeys(symbolEntities);
 
-utils.entities = function (string = '') {
+const entities = function (string = '') {
     return ('' + string).replace(
         htmlEntitiesMatch,
         (match) => htmlEntities[match]
     )
 };
 
-utils.symbols = function (string) {
+const symbols = function (string) {
     return ('' + string).replace(
         symbolEntitiesMatch,
         (match) => '\\' + symbolEntities[match]
     )
 };
 
-utils.safeValue = function (value, escape, check) {
-    return (check = value) == null ? '' : escape ? utils.entities(check) : check
+const safeValue = function (value, escape, check) {
+    return (check = value) == null ? '' : escape ? entities(check) : check
 };
 
-utils.getPath = function (context, name) {
+const getPath = function (context, name) {
     let data = context;
     let chunk = name.split('.');
     let prop = chunk.pop();
@@ -88,21 +86,7 @@ utils.getPath = function (context, name) {
     return [data, prop]
 };
 
-utils.assign = function (list) {
-    const sources = (list || [null]).map(function (source) {
-        return source || {}
-    });
-    return {
-        target: sources.shift(),
-        sources,
-    }
-};
-
-utils.isPromise = function (p) {
-    return Boolean(p && typeof p.then === 'function')
-};
-
-utils.merge = function (target) {
+const extend = function (target) {
     return [].slice
         .call(arguments, 1)
         .filter(function (source) {
@@ -113,39 +97,24 @@ utils.merge = function (target) {
         }, target)
 };
 
-utils.extend = function (target) {
-    return [].slice
-        .call(arguments, 1)
-        .filter(function (source) {
-            return source
-        })
-        .reduce(function (target, source) {
-            return Object.assign(target, source)
-        }, target)
-};
+const noop = function () {};
 
-utils.noop = function () {};
-
-utils.format = function (pattern, params) {
-    pattern = pattern || '';
-    params = params || {};
-    return pattern.replace(/\${(.+?)}/g, function (match, prop) {
-        return utils.hasProp(params, prop) ? params[prop] : match
-    })
-};
-
-utils.each = function (object, callback, context) {
+const each = function (object, callback, context) {
     let prop;
     for (prop in object) {
-        if (utils.hasProp(object, prop)) {
+        if (hasProp(object, prop)) {
             callback.call(context || null, object[prop], prop, object);
         }
     }
 };
 
-utils.map = function (object, callback, context) {
+const isNode = new Function(
+    'try {return this===global;}catch(e){return false;}'
+);
+
+const map = function (object, callback, context) {
     const result = [];
-    utils.each(
+    each(
         object,
         function (value, key, object) {
             let item = callback.call(this, value, key, object);
@@ -158,10 +127,10 @@ utils.map = function (object, callback, context) {
     return result
 };
 
-utils.filter = function (object, callback, context) {
+const filter = function (object, callback, context) {
     const isArray = object instanceof Array;
     const result = isArray ? [] : {};
-    utils.each(
+    each(
         object,
         function (value, key, object) {
             let item = callback.call(this, value, key, object);
@@ -178,57 +147,25 @@ utils.filter = function (object, callback, context) {
     return result
 };
 
-utils.omit = function (object, list) {
-    return utils.filter(object, function (value, key) {
+const omit = function (object, list) {
+    return filter(object, function (value, key) {
         if (list.indexOf(key) === -1) {
             return value
         }
     })
 };
 
-utils.uuid = function (str) {
-    let i = str.length;
-    let hash1 = 5381;
-    let hash2 = 52711;
-    while (i--) {
-        const char = str.charCodeAt(i);
-        hash1 = (hash1 * 33) ^ char;
-        hash2 = (hash2 * 33) ^ char;
-    }
-    return (hash1 >>> 0) * 4096 + (hash2 >>> 0)
-};
-
-utils.random = function (size) {
-    let string = '';
-    let chars =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_';
-    let limit = chars.length;
-    let length = size || 10;
-    for (let i = 0; i < length; i++) {
-        string += chars.charAt(Math.floor(Math.random() * limit));
-    }
-    return string
-};
-
-utils.hasProp = function (object, prop) {
+const hasProp = function (object, prop) {
     return object && object.hasOwnProperty(prop)
 };
 
-var utils_1 = utils;
-
-const type = {};
-
-type.isFunction = function (v) {
+const isFunction = function (v) {
     return typeof v === 'function'
 };
 
-type.isString = function (v) {
+const isString = function (v) {
     return typeof v === 'string'
 };
-
-var type_1 = type;
-
-const { entities, map } = utils_1;
 
 const selfClosed = [
     'area',
@@ -254,7 +191,7 @@ const slash = '/';
 const lt = '<';
 const gt = '>';
 
-function element$2(tag, attrs, content) {
+function element(tag, attrs, content) {
     const result = [];
     const hasClosedTag = selfClosed.indexOf(tag) === -1;
     const attributes = map(attrs, function (value, key) {
@@ -275,8 +212,6 @@ function element$2(tag, attrs, content) {
     return result.join('')
 }
 
-var element_1 = element$2;
-
 function resolve(list) {
     return Promise.all(list).then(function (list) {
         return list.join('')
@@ -286,7 +221,7 @@ function resolve(list) {
  *
  * @return {function}
  */
-function Buffer$1() {
+function Buffer() {
     let store = [],
         array = [];
     function buffer(value) {
@@ -310,50 +245,36 @@ function Buffer$1() {
     return buffer
 }
 
-var buffer = Buffer$1;
-
-const { extend: extend$3 } = utils_1;
-const element$1 = element_1;
 /**
  *
  * @param {{}} instance
  * @method create
  */
-function Component$1(instance) {
-    this.props = extend$3({}, instance.props);
+function Component(instance) {
+    this.props = extend({}, instance.props);
     this.create = instance.create.bind(this);
 }
 /**
  *
  */
-Component$1.prototype = {
-    element: element$1,
+Component.prototype = {
+    element,
     render(props) {
-        return this.create(extend$3({}, this.props, props))
+        return this.create(extend({}, this.props, props))
     },
 };
-/**
- *  @type {function}
- */
-var component = Component$1;
-
-const { extend: extend$2, omit, each, getPath, hasProp: hasProp$1, noop } = utils_1;
-const { isFunction: isFunction$1, isString } = type_1;
-const element = element_1;
-const Buffer = buffer;
-const Component = component;
 
 function configure$1(config) {
     const { EXTEND, MACROS, LAYOUT, PRINT, BLOCKS, BUFFER } = config.vars;
     function Scope(data = {}) {
         this.setBlocks();
-        extend$2(this, data);
+        extend(this, data);
         this.setBuffer();
         this.setLayout(false);
         this.setExtend(false);
     }
     Scope.helpers = function (methods) {
-        extend$2(Scope.prototype, methods);
+        extend(Scope.prototype, methods);
     };
     Scope.prototype = {
         getBuffer() {
@@ -411,7 +332,7 @@ function configure$1(config) {
             const buffer = this.getBuffer();
             const macro = function () {
                 buffer.backup();
-                if (isFunction$1(callback)) {
+                if (isFunction(callback)) {
                     callback.apply(this, arguments);
                 }
                 const result = buffer.restore();
@@ -447,7 +368,7 @@ function configure$1(config) {
          * @memberOf global
          */
         element(tag, attr, content) {
-            if (isFunction$1(content)) {
+            if (isFunction(content)) {
                 content = this.macro(content)();
             }
             this.echo(
@@ -475,7 +396,7 @@ function configure$1(config) {
             const path = getPath(this, name);
             const result = path.shift();
             const prop = path.pop();
-            return hasProp$1(result, prop) ? result[prop] : defaults
+            return hasProp(result, prop) ? result[prop] : defaults
         },
         /**
          * @memberOf global
@@ -488,7 +409,7 @@ function configure$1(config) {
             const result = path.shift();
             const prop = path.pop();
             if (this.getExtend()) {
-                if (hasProp$1(result, prop)) {
+                if (hasProp(result, prop)) {
                     return result[prop]
                 }
             }
@@ -503,7 +424,7 @@ function configure$1(config) {
             const path = getPath(this, name);
             const result = path.shift();
             const prop = path.pop();
-            if (isFunction$1(result[prop])) {
+            if (isFunction(result[prop])) {
                 return result[prop].apply(result, params)
             }
         },
@@ -557,7 +478,7 @@ function configure$1(config) {
          * @return {string|{}}
          */
         include(path, data = {}, cx = true) {
-            const params = extend$2(cx ? this.clone(true) : {}, data);
+            const params = extend(cx ? this.clone(true) : {}, data);
             const promise = this.render(path, params);
             this.echo(promise);
         },
@@ -602,10 +523,6 @@ function configure$1(config) {
     return Scope
 }
 
-var scope = configure$1;
-
-const { symbols } = utils_1;
-
 const tags = [
     {
         symbol: '-',
@@ -633,11 +550,11 @@ const tags = [
     },
 ];
 
-function Compiler$1(config) {
+function Compiler(config) {
     this.setup(config);
 }
 
-Compiler$1.prototype = {
+Compiler.prototype = {
     setup(config) {
         this.extension = config.extension;
         this.token = config.token;
@@ -693,13 +610,11 @@ Compiler$1.prototype = {
     },
 };
 
-var compiler = Compiler$1;
-
-function Wrapper$1(config) {
+function Wrapper(config) {
     this.configure(config);
 }
 
-Wrapper$1.prototype = {
+Wrapper.prototype = {
     configure(config) {
         this.name = config.export;
     },
@@ -719,19 +634,14 @@ Wrapper$1.prototype = {
     },
 };
 
-var wrapper = Wrapper$1;
-
-const { extend: extend$1, hasProp } = utils_1;
-
-function Cache$1(config) {
+function Cache(config) {
     this.list = {};
     this.enabled = config.cache || false;
-    console.log('cache is enabled', this.enabled);
     this.namespace = config.export;
     this.preload();
 }
 
-Cache$1.prototype = {
+Cache.prototype = {
     exist(key) {
         return hasProp(this.list, key)
     },
@@ -748,22 +658,14 @@ Cache$1.prototype = {
         this.list[key] = value;
     },
     preload() {
-        extend$1(this.list, commonjsGlobal[this.namespace]);
+        if (isNode() === false) {
+            extend(this.list, window[this.namespace]);
+        }
     },
     load(list) {
-        extend$1(this.list, list);
+        extend(this.list, list);
     },
 };
-
-var cache = Cache$1;
-
-const fs = require('fs');
-const chokidar = require('chokidar');
-const Cache = cache;
-
-const isNode = new Function(
-    'try {return this===global;}catch(e){return false;}'
-);
 
 function HttpRequest(template) {
     return window.fetch(template).then(function (response) {
@@ -783,7 +685,7 @@ function FileSystem(template) {
     })
 }
 
-function Loader$1(config, compiler) {
+function Loader(config, compiler) {
     this.cache = new Cache(config);
     this.compiler = compiler;
     if (typeof config.resolver === 'function') {
@@ -803,7 +705,7 @@ function Loader$1(config, compiler) {
     }
 }
 
-Loader$1.prototype = {
+Loader.prototype = {
     watch() {
         this.watcher = chokidar.watch('.', {
             cwd: this.path,
@@ -868,17 +770,6 @@ Loader$1.prototype = {
     },
 };
 
-var loader = Loader$1;
-
-const path = require('path');
-const defaults = defaults_1;
-const { extend, safeValue } = utils_1;
-const { isFunction } = type_1;
-const ConfigureScope = scope;
-const Compiler = compiler;
-const Wrapper = wrapper;
-const Loader = loader;
-
 function configure(options) {
     /**
      * @extends defaults
@@ -894,7 +785,7 @@ function configure(options) {
         options || {}
     );
     //
-    const Scope = ConfigureScope(config);
+    const Scope = configure$1(config);
     //
     const compiler = new Compiler(config);
     const wrapper = new Wrapper(config);
@@ -1025,6 +916,6 @@ function configure(options) {
     }
 }
 
-var src = configure({});
+var index = configure({});
 
-export { src as default };
+export { index as default };

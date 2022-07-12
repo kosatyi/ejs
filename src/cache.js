@@ -1,9 +1,8 @@
-const { extend, hasProp } = require('./utils')
+import { extend, hasProp, isNode } from './utils'
 
 function Cache(config) {
     this.list = {}
     this.enabled = config.cache || false
-    console.log('cache is enabled', this.enabled)
     this.namespace = config.export
     this.preload()
 }
@@ -25,11 +24,13 @@ Cache.prototype = {
         this.list[key] = value
     },
     preload() {
-        extend(this.list, global[this.namespace])
+        if (isNode() === false) {
+            extend(this.list, window[this.namespace])
+        }
     },
     load(list) {
         extend(this.list, list)
     },
 }
 
-module.exports = Cache
+export default Cache

@@ -1,11 +1,11 @@
-const path = require('path')
-const defaults = require('./defaults')
-const { extend, safeValue } = require('./utils')
-const { isFunction } = require('./type')
-const ConfigureScope = require('./scope')
-const Compiler = require('./compiler')
-const Wrapper = require('./wrapper')
-const Loader = require('./loader')
+import path from 'path'
+import defaults from './defaults'
+import { extend, safeValue } from './utils'
+import { isFunction } from './type'
+import ConfigureScope from './scope'
+import Compiler from './compiler'
+import Wrapper from './wrapper'
+import Loader from './loader'
 
 function configure(options) {
     /**
@@ -153,4 +153,4 @@ function configure(options) {
     }
 }
 
-module.exports = configure({})
+export default configure({})

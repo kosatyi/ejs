@@ -1,5 +1,5 @@
-const { extend } = require('./utils')
-const element = require('./element')
+import { extend } from './utils'
+import element from './element'
 /**
  *
  * @param {{}} instance
@@ -21,4 +21,5 @@ Component.prototype = {
 /**
  *  @type {function}
  */
-module.exports = Component
+
+export default Component

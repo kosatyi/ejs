@@ -29,4 +29,4 @@ defaults.token = {
     regex: '([\\s\\S]+?)',
 }
 
-module.exports = defaults
+export default defaults

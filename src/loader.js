@@ -1,10 +1,7 @@
-const fs = require('fs')
-const chokidar = require('chokidar')
-const Cache = require('./cache')
-
-const isNode = new Function(
-    'try {return this===global;}catch(e){return false;}'
-)
+import fs from 'fs'
+import chokidar from 'chokidar'
+import Cache from './cache'
+import { isNode } from './utils'
 
 function HttpRequest(template) {
     return window.fetch(template).then(function (response) {
@@ -109,4 +106,4 @@ Loader.prototype = {
     },
 }
 
-module.exports = Loader
+export default Loader

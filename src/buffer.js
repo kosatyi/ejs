@@ -31,4 +31,4 @@ function Buffer() {
     return buffer
 }
 
-module.exports = Buffer
+export default Buffer

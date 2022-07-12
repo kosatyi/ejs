@@ -1,4 +1,4 @@
-const { symbols } = require('./utils')
+import { symbols } from './utils'
 
 const tags = [
     {
@@ -87,4 +87,4 @@ Compiler.prototype = {
     },
 }
 
-module.exports = Compiler
+export default Compiler

@@ -22,4 +22,4 @@ Wrapper.prototype = {
     },
 }
 
-module.exports = Wrapper
+export default Wrapper

@@ -1,11 +1,7 @@
-const type = {}
-
-type.isFunction = function (v) {
+export const isFunction = function (v) {
     return typeof v === 'function'
 }
 
-type.isString = function (v) {
+export const isString = function (v) {
     return typeof v === 'string'
 }
-
-module.exports = type
