@@ -1,13 +1,6 @@
-function Wrapper(config) {
-    this.configure(config)
-}
-
-Wrapper.prototype = {
-    configure(config) {
-        this.name = config.export
-    },
-    browser(list) {
-        let name = this.name
+const Wrapper = (config) => {
+    const name = config.export
+    return function (list) {
         let out = '(function(o){\n'
         list.forEach((item) => {
             out +=
@@ -19,7 +12,7 @@ Wrapper.prototype = {
         })
         out += '})(window["' + name + '"] = window["' + name + '"] || {});\n'
         return out
-    },
+    }
 }
 
 export default Wrapper

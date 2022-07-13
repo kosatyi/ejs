@@ -1,7 +1,8 @@
-export const isFunction = function (v) {
-    return typeof v === 'function'
+export const typeProp = function () {
+    const args = [].slice.call(arguments)
+    const callback = args.shift()
+    return args.filter(callback).pop()
 }
 
-export const isString = function (v) {
-    return typeof v === 'string'
-}
+export const isFunction = (v) => typeof v === 'function'
+export const isString = (v) => typeof v === 'string'

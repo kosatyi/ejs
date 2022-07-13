@@ -1,5 +1,8 @@
-var ejs = (function () {
-    'use strict';
+(function (global, factory) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.ejs = factory());
+})(this, (function () { 'use strict';
 
     var path = {};
 
@@ -30,6 +33,19 @@ var ejs = (function () {
       regex: '([\\s\\S]+?)'
     };
 
+    var typeProp = function typeProp() {
+      var args = [].slice.call(arguments);
+      var callback = args.shift();
+      return args.filter(callback).pop();
+    };
+    var isFunction = function isFunction(v) {
+      return typeof v === 'function';
+    };
+    var isString = function isString(v) {
+      return typeof v === 'string';
+    };
+
+    var isNode = new Function('try {return this===global;}catch(e){return false;}');
     var symbolEntities = {
       "'": "'",
       '\\': '\\',
@@ -47,9 +63,9 @@ var ejs = (function () {
       "'": '&#x27;'
     };
 
-    function regexKeys(obj) {
+    var regexKeys = function regexKeys(obj) {
       return new RegExp(['[', Object.keys(obj).join(''), ']'].join(''), 'g');
-    }
+    };
 
     var htmlEntitiesMatch = regexKeys(htmlEntities);
     var symbolEntitiesMatch = regexKeys(symbolEntities);
@@ -76,8 +92,13 @@ var ejs = (function () {
       });
       return [data, prop];
     };
-    var extend = function extend(target) {
-      return [].slice.call(arguments, 1).filter(function (source) {
+    var extend = function extend() {
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      var target = args.shift();
+      return args.filter(function (source) {
         return source;
       }).reduce(function (target, source) {
         return Object.assign(target, source);
@@ -93,11 +114,10 @@ var ejs = (function () {
         }
       }
     };
-    var isNode = new Function('try {return this===global;}catch(e){return false;}');
     var map = function map(object, callback, context) {
       var result = [];
       each(object, function (value, key, object) {
-        var item = callback.call(this, value, key, object);
+        var item = callback.call(value, key, object);
 
         if (item !== undefined) {
           result.push(item);
@@ -109,7 +129,7 @@ var ejs = (function () {
       var isArray = object instanceof Array;
       var result = isArray ? [] : {};
       each(object, function (value, key, object) {
-        var item = callback.call(this, value, key, object);
+        var item = callback(value, key, object);
 
         if (item !== undefined) {
           if (isArray) {
@@ -132,11 +152,168 @@ var ejs = (function () {
       return object && object.hasOwnProperty(prop);
     };
 
-    var isFunction = function isFunction(v) {
-      return typeof v === 'function';
+    var tags = [{
+      symbol: '-',
+      format: function format(value) {
+        return "'+\n".concat(this.SAFE, "(").concat(value, ",1)+\n'");
+      }
+    }, {
+      symbol: '=',
+      format: function format(value) {
+        return "'+\n".concat(this.SAFE, "(").concat(value, ")+\n'");
+      }
+    }, {
+      symbol: '#',
+      format: function format(value) {
+        return "'+\n/**".concat(value, "**/+\n'");
+      }
+    }, {
+      symbol: '',
+      format: function format(value) {
+        return "')\n".concat(value, "\n").concat(this.BUFFER, "('");
+      }
+    }];
+
+    var match = function match(regex, text, callback) {
+      var index = 0;
+      text.replace(regex, function () {
+        var params = [].slice.call(arguments, 0, -1);
+        var offset = params.pop();
+        var match = params.shift();
+        callback(params, index, offset);
+        index = offset + match.length;
+        return match;
+      });
     };
-    var isString = function isString(v) {
-      return typeof v === 'string';
+
+    var Compiler = function Compiler(config) {
+      var token = config.token;
+      var vars = config.vars;
+      var module = config.extension.module;
+      var matches = [];
+      var formats = [];
+      tags.forEach(function (item) {
+        matches.push(token.start.concat(item.symbol).concat(token.regex).concat(token.end));
+        formats.push(item.format.bind(vars));
+      });
+      var regex = new RegExp(matches.join('|').concat('|$'), 'g');
+      /**
+       * @type Function
+       * @name Compile
+       */
+
+      return function (content, path) {
+        var SCOPE = vars.SCOPE,
+            SAFE = vars.SAFE,
+            BUFFER = vars.BUFFER;
+        var extension = path.split('.').pop();
+
+        if (extension === module) {
+          content = [token.start, content, token.end].join('\n');
+        }
+
+        var source = "".concat(BUFFER, "('");
+        match(regex, content, function (params, index, offset) {
+          source += symbols(content.slice(index, offset));
+          params.forEach(function (value, index) {
+            if (value) source += formats[index](value);
+          });
+        });
+        source += "');";
+        source = "with(".concat(SCOPE, "){").concat(source, "}");
+        source = "".concat(BUFFER, ".start();").concat(source, "return ").concat(BUFFER, ".end();");
+        source += "\n//# sourceURL=".concat(path);
+        var result = null;
+
+        try {
+          result = new Function(SCOPE, BUFFER, SAFE, source);
+          result.source = result.toString();
+        } catch (e) {
+          e.filename = path;
+          e.source = source;
+          throw e;
+        }
+
+        return result;
+      };
+    };
+
+    var Wrapper = function Wrapper(config) {
+      var name = config["export"];
+      return function (list) {
+        var out = '(function(o){\n';
+        list.forEach(function (item) {
+          out += 'o[' + JSON.stringify(item.name) + ']=' + String(item.content) + '\n';
+        });
+        out += '})(window["' + name + '"] = window["' + name + '"] || {});\n';
+        return out;
+      };
+    };
+
+    var HttpRequest = function HttpRequest(template) {
+      return window.fetch(template).then(function (response) {
+        return response.text();
+      });
+    };
+
+    var FileSystem = function FileSystem(template) {
+      return new Promise(function (resolve, reject) {
+        path.readFile(template, function (error, data) {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(data.toString());
+          }
+        });
+      });
+    };
+
+    var Watcher = function Watcher(path$1, cache) {
+      return path.watch('.', {
+        cwd: path$1
+      }).on('change', function (name) {
+        cache.remove(name);
+      }).on('error', function (error) {
+        console.log('watcher error: ' + error);
+      });
+    };
+
+    var Template = function Template(config, cache, compile) {
+      var path = config.path;
+      config.token || {};
+      var resolver = isFunction(config.resolver) ? config.resolver : isNode() ? FileSystem : HttpRequest;
+
+      var normalize = function normalize(template) {
+        template = [path, template].join('/');
+        template = template.replace(/\/\//g, '/');
+        return template;
+      };
+
+      var resolve = function resolve(template) {
+        return resolver(normalize(template));
+      };
+
+      var result = function result(content, template) {
+        cache.set(template, content);
+        return content;
+      };
+
+      var get = function get(template) {
+        if (cache.exist(template)) {
+          return cache.resolve(template);
+        }
+
+        var content = resolve(template).then(function (content) {
+          return result(compile(content, template), template);
+        });
+        return result(content, template);
+      };
+
+      if (config.watch && isNode()) {
+        Watcher(path, cache);
+      }
+
+      return get;
     };
 
     var selfClosed = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
@@ -167,18 +344,18 @@ var ejs = (function () {
       return result.join('');
     }
 
-    function resolve(list) {
+    var resolve = function resolve(list) {
       return Promise.all(list).then(function (list) {
         return list.join('');
       });
-    }
+    };
     /**
      *
      * @return {function}
      */
 
 
-    function Buffer() {
+    var Buffer = function Buffer() {
       var store = [],
           array = [];
 
@@ -206,7 +383,7 @@ var ejs = (function () {
       };
 
       return buffer;
-    }
+    };
 
     /**
      *
@@ -214,30 +391,33 @@ var ejs = (function () {
      * @method create
      */
 
-    function Component(instance) {
-      this.props = extend({}, instance.props);
-      this.create = instance.create.bind(this);
-    }
-    /**
-     *
-     */
-
-
-    Component.prototype = {
-      element: element,
-      render: function render(props) {
-        return this.create(extend({}, this.props, props));
-      }
+    var Component = function Component(instance) {
+      var defaults = extend({}, instance.props);
+      var create = instance.create;
+      return {
+        element: element,
+        create: create,
+        render: function render(props) {
+          return this.create(extend({}, defaults, props));
+        }
+      };
     };
 
-    function configure$1(config) {
+    var Scope = function Scope(config, methods) {
+      /**
+       *
+       */
       var _config$vars = config.vars,
           EXTEND = _config$vars.EXTEND,
           MACROS = _config$vars.MACROS,
           LAYOUT = _config$vars.LAYOUT,
-          PRINT = _config$vars.PRINT,
           BLOCKS = _config$vars.BLOCKS,
           BUFFER = _config$vars.BUFFER;
+      /**
+       *
+       * @param data
+       * @constructor
+       */
 
       function Scope() {
         var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -248,37 +428,101 @@ var ejs = (function () {
         this.setExtend(false);
       }
 
+      Object.defineProperties(Scope.prototype, {
+        setBuffer: {
+          value: function value() {
+            Object.defineProperty(this, BUFFER, {
+              value: Buffer(),
+              writable: false,
+              configurable: false
+            });
+          },
+          writable: false,
+          configurable: false
+        },
+        getBuffer: {
+          value: function value() {
+            return this[BUFFER];
+          },
+          writable: false,
+          configurable: false
+        },
+        setBlocks: {
+          value: function value() {
+            Object.defineProperty(this, BLOCKS, {
+              value: {},
+              writable: true,
+              enumerable: true,
+              configurable: false
+            });
+          },
+          writable: false,
+          configurable: false
+        },
+        getBlocks: {
+          value: function value() {
+            return this[BLOCKS];
+          },
+          writable: false,
+          configurable: false
+        },
+        setExtend: {
+          value: function value(state) {
+            Object.defineProperty(this, EXTEND, {
+              value: state,
+              writable: true,
+              configurable: false
+            });
+          },
+          writable: false,
+          configurable: false
+        },
+        getExtend: {
+          value: function value() {
+            return this[EXTEND];
+          },
+          writable: false,
+          configurable: false
+        },
+        setLayout: {
+          value: function value(layout) {
+            Object.defineProperty(this, LAYOUT, {
+              value: layout,
+              writable: true,
+              configurable: false
+            });
+          },
+          writable: false,
+          configurable: false
+        },
+        getLayout: {
+          value: function value() {
+            return this[LAYOUT];
+          },
+          writable: false,
+          configurable: false
+        }
+      });
+
       Scope.helpers = function (methods) {
         extend(Scope.prototype, methods);
       };
+      /**
+       * @lends Scope.prototype
+       */
 
-      Scope.prototype = {
-        getBuffer: function getBuffer() {
-          return this[BUFFER];
-        },
-        setBuffer: function setBuffer() {
-          this[BUFFER] = Buffer();
-        },
-        setExtend: function setExtend(state) {
-          this[EXTEND] = state;
-        },
-        getExtend: function getExtend() {
-          return this[EXTEND];
-        },
-        getLayout: function getLayout() {
-          return this[LAYOUT];
-        },
-        setLayout: function setLayout(layout) {
-          this[LAYOUT] = layout;
-        },
-        setBlocks: function setBlocks() {
-          this[BLOCKS] = {};
-        },
-        getBlocks: function getBlocks() {
-          return this[BLOCKS];
-        },
+
+      Scope.helpers(methods);
+      /**
+       * @lends Scope.prototype
+       */
+
+      Scope.helpers({
+        /**
+         * @return {*}
+         */
         clone: function clone(exclude_blocks) {
-          var filter = [LAYOUT, EXTEND, MACROS, PRINT, BUFFER];
+          var filter = [LAYOUT, EXTEND, MACROS, BUFFER];
 
           if (exclude_blocks === true) {
             filter.push(BLOCKS);
@@ -289,7 +533,6 @@ var ejs = (function () {
 
         /**
          * Join values to output buffer
-         * @memberOf global
          * @type Function
          */
         echo: function echo() {
@@ -302,7 +545,6 @@ var ejs = (function () {
 
         /**
          * Buffered output callback
-         * @memberOf global
          * @type Function
          * @param {Function} callback
          * @param {Boolean} [echo]
@@ -327,7 +569,7 @@ var ejs = (function () {
         },
 
         /**
-         *
+         * @memberOf global
          * @param value
          * @param callback
          * @return {Promise<unknown>}
@@ -368,7 +610,7 @@ var ejs = (function () {
          * @param {Object} instance
          */
         component: function component(instance) {
-          instance = new Component(instance);
+          instance = Component(instance);
           return function component(props) {
             this.echo(instance.render(props));
           }.bind(this);
@@ -527,265 +769,50 @@ var ejs = (function () {
             }
           };
         }
-      };
+      });
       return Scope;
-    }
-
-    var tags = [{
-      symbol: '-',
-      format: function format(value) {
-        return "'+\n".concat(this.SAFE, "(").concat(value, ",1)+\n'");
-      }
-    }, {
-      symbol: '=',
-      format: function format(value) {
-        return "'+\n".concat(this.SAFE, "(").concat(value, ")+\n'");
-      }
-    }, {
-      symbol: '#',
-      format: function format(value) {
-        return "'+\n/**".concat(value, "**/+\n'");
-      }
-    }, {
-      symbol: '',
-      format: function format(value) {
-        return "')\n".concat(value, "\n").concat(this.BUFFER, "('");
-      }
-    }];
-
-    function Compiler(config) {
-      this.setup(config);
-    }
-
-    Compiler.prototype = {
-      setup: function setup(config) {
-        this.extension = config.extension;
-        this.token = config.token;
-        this.vars = config.vars;
-        this.matches = [];
-        this.formats = [];
-        tags.forEach(function (item) {
-          this.matches.push(this.token.start.concat(item.symbol).concat(this.token.regex).concat(this.token.end));
-          this.formats.push(item.format.bind(this.vars));
-        }, this);
-        this.regex = new RegExp(this.matches.join('|').concat('|$'), 'g');
-      },
-      match: function match(text, callback) {
-        var index = 0;
-        callback = callback.bind(this);
-        text.replace(this.regex, function () {
-          var params = [].slice.call(arguments, 0, -1);
-          var offset = params.pop();
-          var match = params.shift();
-          callback(params, index, offset);
-          index = offset + match.length;
-          return match;
-        });
-      },
-      compile: function compile(content, path) {
-        var _this$vars = this.vars,
-            SCOPE = _this$vars.SCOPE,
-            SAFE = _this$vars.SAFE,
-            BUFFER = _this$vars.BUFFER;
-        var result = null;
-        var source = "".concat(BUFFER, "('");
-        this.match(content, function (params, index, offset) {
-          source += symbols(content.slice(index, offset));
-          params.forEach(function (value, index) {
-            if (value) source += this.formats[index](value);
-          }, this);
-        });
-        source += "');";
-        source = "with(".concat(SCOPE, "){").concat(source, "}");
-        source = "".concat(BUFFER, ".start();").concat(source, "return ").concat(BUFFER, ".end();");
-        source += "\n//# sourceURL=".concat(path);
-
-        try {
-          result = new Function(SCOPE, BUFFER, SAFE, source);
-          result.source = result.toString();
-        } catch (e) {
-          e.filename = path;
-          e.source = source;
-          throw e;
-        }
-
-        return result;
-      }
-    };
-
-    function Wrapper(config) {
-      this.configure(config);
-    }
-
-    Wrapper.prototype = {
-      configure: function configure(config) {
-        this.name = config["export"];
-      },
-      browser: function browser(list) {
-        var name = this.name;
-        var out = '(function(o){\n';
-        list.forEach(function (item) {
-          out += 'o[' + JSON.stringify(item.name) + ']=' + String(item.content) + '\n';
-        });
-        out += '})(window["' + name + '"] = window["' + name + '"] || {});\n';
-        return out;
-      }
     };
 
     function Cache(config) {
-      this.list = {};
-      this.enabled = config.cache || false;
-      this.namespace = config["export"];
-      this.preload();
-    }
-
-    Cache.prototype = {
-      exist: function exist(key) {
-        return hasProp(this.list, key);
-      },
-      get: function get(key) {
-        return this.list[key];
-      },
-      remove: function remove(key) {
-        delete this.list[key];
-      },
-      resolve: function resolve(key) {
-        return Promise.resolve(this.get(key));
-      },
-      set: function set(key, value) {
-        this.list[key] = value;
-      },
-      preload: function preload() {
-        if (isNode() === false) {
-          extend(this.list, window[this.namespace]);
-        }
-      },
-      load: function load(list) {
-        extend(this.list, list);
-      }
-    };
-
-    function HttpRequest(template) {
-      return window.fetch(template).then(function (response) {
-        return response.text();
-      });
-    }
-
-    function FileSystem(template) {
-      return new Promise(function (resolve, reject) {
-        path.readFile(template, function (error, data) {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(data.toString());
+      var namespace = config["export"];
+      var list = {};
+      var cache = {
+        preload: function preload() {
+          if (isNode() === false) {
+            this.load(window[namespace]);
           }
-        });
-      });
+
+          return this;
+        },
+        exist: function exist(key) {
+          return hasProp(list, key);
+        },
+        get: function get(key) {
+          return list[key];
+        },
+        remove: function remove(key) {
+          delete list[key];
+        },
+        resolve: function resolve(key) {
+          return Promise.resolve(this.get(key));
+        },
+        set: function set(key, value) {
+          list[key] = value;
+          return this;
+        },
+        load: function load(data) {
+          extend(list, data);
+          return this;
+        }
+      };
+      return cache.preload();
     }
 
-    function Loader(config, compiler) {
-      this.cache = new Cache(config);
-      this.compiler = compiler;
+    function init() {
+      var config = {};
+      var _helpers = {};
 
-      if (typeof config.resolver === 'function') {
-        this.resolver = config.resolver;
-      } else {
-        this.resolver = isNode() ? FileSystem : HttpRequest;
-      }
-
-      this.path = config.path;
-      this.token = config.token || {};
-      this.module = config.extension.module;
-      this["default"] = config.extension["default"];
-      this.supported = config.extension.supported || [];
-      this.supported.push(this.module);
-      this.supported.push(this["default"]);
-
-      if (config.watch && isNode()) {
-        this.watch();
-      }
-    }
-
-    Loader.prototype = {
-      watch: function watch() {
-        this.watcher = path.watch('.', {
-          cwd: this.path
-        });
-        this.watcher.on('change', function (name) {
-          this.cache.remove(name);
-        }.bind(this));
-        this.watcher.on('error', function (error) {
-          console.log('watcher error: ' + error);
-        }.bind(this));
-      },
-      normalize: function normalize(template) {
-        template = [this.path, template].join('/');
-        template = template.replace(/\/\//g, '/');
-        return template;
-      },
-      extension: function extension(template) {
-        var ext = template.split('.').pop();
-
-        if (this.supported.indexOf(ext) === -1) {
-          template = [template, this["default"]].join('.');
-        }
-
-        return template;
-      },
-      resolve: function resolve(template) {
-        template = this.normalize(template);
-        return this.resolver(template, this).then(function (content) {
-          return this.process(content, template);
-        }.bind(this));
-      },
-      process: function process(content, template) {
-        var extension = template.split('.').pop();
-
-        if (this.module.indexOf(extension) > -1) {
-          content = [this.token.start, content, this.token.end].join('\n');
-        }
-
-        return content;
-      },
-      get: function get(path) {
-        var template = this.extension(path);
-
-        if (this.cache.exist(template)) {
-          return this.cache.resolve(template);
-        }
-
-        var content = this.resolve(template).then(function (content) {
-          content = this.compiler.compile(content, template);
-          return this.result(content, template);
-        }.bind(this));
-        return this.result(content, template);
-      },
-      result: function result(content, template) {
-        this.cache.set(template, content);
-        return content;
-      }
-    };
-
-    function configure(options) {
-      /**
-       * @extends defaults
-       */
-      var config = extend({
-        loader: {},
-        extension: {},
-        token: {},
-        vars: {}
-      }, defaults, options || {}); //
-
-      var Scope = configure$1(config); //
-
-      var compiler = new Compiler(config);
-
-      var _wrapper = new Wrapper(config);
-
-      var loader = new Loader(config, compiler); //
-
-      function template(path, defaultExt) {
+      var ext = function ext(path, defaultExt) {
         var ext = path.split('.').pop();
 
         if (config.extension.supported.indexOf(ext) === -1) {
@@ -793,47 +820,68 @@ var ejs = (function () {
         }
 
         return path;
-      } //
+      };
 
+      var view = {
+        output: function output(path, scope) {
+          return view.template(path).then(function (template) {
+            return template.call(scope, scope, scope.getBuffer(), safeValue);
+          });
+        },
+        render: function render(name, data) {
+          var filepath = ext(name, config.extension["default"]);
+          var scope = new view.scope(data);
+          return view.output(filepath, scope).then(function (content) {
+            if (scope.getExtend()) {
+              scope.setExtend(false);
+              var layout = scope.getLayout();
 
-      function output(path, scope) {
-        return loader.get(path).then(function (template) {
-          return template.call(scope, scope, scope.getBuffer(), safeValue);
-        });
-      } //
+              var _data = scope.clone();
 
+              return view.render(layout, _data);
+            }
 
-      function render(name, data) {
-        var view = template(name, config.extension["default"]);
-        var scope = new Scope(data);
-        return output(view, scope).then(function (content) {
-          if (scope.getExtend()) {
-            scope.setExtend(false);
-            var layout = scope.getLayout();
+            return content;
+          });
+        },
+        require: function require(name, context) {
+          var filepath = ext(name, config.extension.module);
+          context.exports = extend({}, context.exports);
+          context.module = context;
+          return view.output(filepath, context).then(function (content) {
+            return context.exports;
+          });
+        },
+        helpers: function helpers(methods) {
+          methods = methods || {};
+          extend(_helpers, methods);
+          view.scope.helpers(methods);
+        },
+        configure: function configure(options) {
+          config["export"] = typeProp(isString, defaults["export"], options["export"]);
+          config.path = typeProp(isString, defaults.path, options.path);
+          config.resolver = typeProp(isFunction, defaults.resolver, options.resolver);
+          config.extension = extend({}, defaults.extension, options.extension);
+          config.token = extend({}, defaults.token, options.token);
+          config.vars = extend({}, defaults.vars, options.vars);
+          view.scope = Scope(config, _helpers);
+          view.compile = Compiler(config);
+          view.wrapper = Wrapper(config);
+          view.cache = Cache(config);
+          view.template = Template(config, view.cache, view.compile);
+          return view;
+        }
+      };
+      /**
+       *
+       * @param name
+       * @param options
+       * @param callback
+       * @return {*}
+       * @private
+       */
 
-            var _data = scope.clone();
-
-            return render(layout, _data);
-          }
-
-          return content;
-        });
-      } //
-
-
-      function require(name) {
-        var view = template(name, config.extension.module);
-        this.exports = {};
-        this.module = this;
-        return output(view, this).then(function () {
-          return this.exports;
-        }.bind(this));
-      } //
-
-
-      var expressInstance = null; //
-
-      function express(name, options, callback) {
+      view.__express = function (name, options, callback) {
         if (isFunction(options)) {
           callback = options;
           options = {};
@@ -844,88 +892,36 @@ var ejs = (function () {
         var viewPath = settings['views'];
         var viewOptions = settings['view options'] || {};
         var filename = path.relative(viewPath, name);
-
-        if (expressInstance === null) {
-          expressInstance = configure(viewOptions);
-        }
-
-        return expressInstance.render(filename, options).then(function (content) {
+        view.configure(viewOptions);
+        return view.render(filename, options).then(function (content) {
           callback(null, content);
         })["catch"](function (error) {
           callback(error);
         });
-      } //
-
-
-      extend(Scope.prototype, {
-        /**
-         * @memberOf global
-         * @param {string} path
-         * @return {string|{}}
-         */
-        require: require,
-
-        /**
-         * @memberOf global
-         * @param {string} path
-         * @return {string|{}}
-         */
-        render: render
-      });
+      };
       /**
-       * @memberOf global
+       *
        */
 
-      return {
-        /**
-         *
-         * @param path
-         * @param data
-         * @return {*}
-         */
-        render: render,
 
-        /**
-         *
-         * @param text
-         * @param path
-         * @return {Function}
-         */
-        compile: function compile(text, path) {
-          return compiler.compile(text, path);
+      view.configure({});
+      /**
+       *
+       */
+
+      view.helpers({
+        require: function require(name) {
+          return view.require(name, this);
         },
-
-        /**
-         *
-         * @param list
-         * @return {string}
-         */
-        wrapper: function wrapper(list) {
-          return _wrapper.browser(list);
-        },
-
-        /**
-         *
-         * @param methods
-         */
-        helpers: function helpers(methods) {
-          extend(Scope.prototype, methods || {});
-        },
-
-        /**
-         *  Configure EJS
-         */
-        configure: configure,
-
-        /**
-         *
-         */
-        __express: express
-      };
+        render: function render(name, data) {
+          return view.render(name, data);
+        }
+      });
+      return view;
     }
 
-    var index = configure({});
+    var index = init();
 
     return index;
 
-})();
+}));

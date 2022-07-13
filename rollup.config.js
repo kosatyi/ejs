@@ -2,7 +2,6 @@ import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import babel from '@rollup/plugin-babel'
 import ignore from 'rollup-plugin-ignore'
-import flow from 'rollup-plugin-flow'
 
 import pkg from './package.json'
 const external = ['path', 'fs', 'chokidar']
@@ -12,10 +11,7 @@ const iife = {
     output: {
         name: 'ejs',
         file: pkg.browser,
-        format: 'iife',
-        globals: {
-            global: 'window',
-        },
+        format: 'umd',
     },
     plugins: [
         ignore(external),
@@ -41,7 +37,15 @@ const cjs = {
         exports: 'default',
     },
     external: ['fs', 'path', 'chokidar'],
-    plugins: [resolve({}), commonjs({})],
+    plugins: [
+        resolve({}),
+        commonjs({}),
+        babel({
+            babelHelpers: 'bundled',
+            plugins: ['@babel/plugin-proposal-class-properties'],
+            presets: ['@babel/preset-env'],
+        }),
+    ],
 }
 
 const mjs = {
@@ -55,4 +59,4 @@ const mjs = {
     plugins: [resolve({}), commonjs({})],
 }
 
-export default [cjs, iife, mjs]
+export default [iife, cjs, mjs]

@@ -27,54 +27,56 @@ const tags = [
     },
 ]
 
-function Compiler(config) {
-    this.setup(config)
+const match = (regex, text, callback) => {
+    let index = 0
+    text.replace(regex, function () {
+        const params = [].slice.call(arguments, 0, -1)
+        const offset = params.pop()
+        const match = params.shift()
+        callback(params, index, offset)
+        index = offset + match.length
+        return match
+    })
 }
 
-Compiler.prototype = {
-    setup(config) {
-        this.extension = config.extension
-        this.token = config.token
-        this.vars = config.vars
-        this.matches = []
-        this.formats = []
-        tags.forEach(function (item) {
-            this.matches.push(
-                this.token.start
-                    .concat(item.symbol)
-                    .concat(this.token.regex)
-                    .concat(this.token.end)
-            )
-            this.formats.push(item.format.bind(this.vars))
-        }, this)
-        this.regex = new RegExp(this.matches.join('|').concat('|$'), 'g')
-    },
-    match(text, callback) {
-        let index = 0
-        callback = callback.bind(this)
-        text.replace(this.regex, function () {
-            const params = [].slice.call(arguments, 0, -1)
-            const offset = params.pop()
-            const match = params.shift()
-            callback(params, index, offset)
-            index = offset + match.length
-            return match
-        })
-    },
-    compile(content, path) {
-        const { SCOPE, SAFE, BUFFER } = this.vars
-        let result = null
+const Compiler = (config) => {
+    const token = config.token
+    const vars = config.vars
+    const module = config.extension.module
+    const matches = []
+    const formats = []
+    tags.forEach((item) => {
+        matches.push(
+            token.start
+                .concat(item.symbol)
+                .concat(token.regex)
+                .concat(token.end)
+        )
+        formats.push(item.format.bind(vars))
+    })
+    const regex = new RegExp(matches.join('|').concat('|$'), 'g')
+    /**
+     * @type Function
+     * @name Compile
+     */
+    return function (content, path) {
+        const { SCOPE, SAFE, BUFFER } = vars
+        const extension = path.split('.').pop()
+        if (extension === module) {
+            content = [token.start, content, token.end].join('\n')
+        }
         let source = `${BUFFER}('`
-        this.match(content, function (params, index, offset) {
+        match(regex, content, (params, index, offset) => {
             source += symbols(content.slice(index, offset))
             params.forEach(function (value, index) {
-                if (value) source += this.formats[index](value)
-            }, this)
+                if (value) source += formats[index](value)
+            })
         })
         source += `');`
         source = `with(${SCOPE}){${source}}`
         source = `${BUFFER}.start();${source}return ${BUFFER}.end();`
         source += `\n//# sourceURL=${path}`
+        let result = null
         try {
             result = new Function(SCOPE, BUFFER, SAFE, source)
             result.source = result.toString()
@@ -84,7 +86,7 @@ Compiler.prototype = {
             throw e
         }
         return result
-    },
+    }
 }
 
 export default Compiler

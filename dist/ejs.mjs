@@ -33,6 +33,19 @@ defaults.token = {
     regex: '([\\s\\S]+?)',
 };
 
+const typeProp = function () {
+    const args = [].slice.call(arguments);
+    const callback = args.shift();
+    return args.filter(callback).pop()
+};
+
+const isFunction = (v) => typeof v === 'function';
+const isString = (v) => typeof v === 'string';
+
+const isNode = new Function(
+    'try {return this===global;}catch(e){return false;}'
+);
+
 const symbolEntities = {
     "'": "'",
     '\\': '\\',
@@ -51,55 +64,53 @@ const htmlEntities = {
     "'": '&#x27;',
 };
 
-function regexKeys(obj) {
-    return new RegExp(['[', Object.keys(obj).join(''), ']'].join(''), 'g')
-}
+const regexKeys = (obj) =>
+    new RegExp(['[', Object.keys(obj).join(''), ']'].join(''), 'g');
 
 const htmlEntitiesMatch = regexKeys(htmlEntities);
+
 const symbolEntitiesMatch = regexKeys(symbolEntities);
 
-const entities = function (string = '') {
+const entities = (string = '') => {
     return ('' + string).replace(
         htmlEntitiesMatch,
         (match) => htmlEntities[match]
     )
 };
 
-const symbols = function (string) {
+const symbols = (string) => {
     return ('' + string).replace(
         symbolEntitiesMatch,
         (match) => '\\' + symbolEntities[match]
     )
 };
 
-const safeValue = function (value, escape, check) {
+const safeValue = (value, escape, check) => {
     return (check = value) == null ? '' : escape ? entities(check) : check
 };
 
-const getPath = function (context, name) {
+const getPath = (context, name) => {
     let data = context;
     let chunk = name.split('.');
     let prop = chunk.pop();
-    chunk.forEach(function (part) {
+    chunk.forEach((part) => {
         data = data[part] = data[part] || {};
     });
     return [data, prop]
 };
 
-const extend = function (target) {
-    return [].slice
-        .call(arguments, 1)
-        .filter(function (source) {
-            return source
-        })
-        .reduce(function (target, source) {
+const extend = (...args) => {
+    const target = args.shift();
+    return args
+        .filter((source) => source)
+        .reduce((target, source) => {
             return Object.assign(target, source)
         }, target)
 };
 
-const noop = function () {};
+const noop = () => {};
 
-const each = function (object, callback, context) {
+const each = (object, callback, context) => {
     let prop;
     for (prop in object) {
         if (hasProp(object, prop)) {
@@ -108,16 +119,12 @@ const each = function (object, callback, context) {
     }
 };
 
-const isNode = new Function(
-    'try {return this===global;}catch(e){return false;}'
-);
-
-const map = function (object, callback, context) {
+const map = (object, callback, context) => {
     const result = [];
     each(
         object,
-        function (value, key, object) {
-            let item = callback.call(this, value, key, object);
+        (value, key, object) => {
+            let item = callback.call(value, key, object);
             if (item !== undefined) {
                 result.push(item);
             }
@@ -127,13 +134,13 @@ const map = function (object, callback, context) {
     return result
 };
 
-const filter = function (object, callback, context) {
+const filter = (object, callback, context) => {
     const isArray = object instanceof Array;
     const result = isArray ? [] : {};
     each(
         object,
-        function (value, key, object) {
-            let item = callback.call(this, value, key, object);
+        (value, key, object) => {
+            let item = callback(value, key, object);
             if (item !== undefined) {
                 if (isArray) {
                     result.push(item);
@@ -147,24 +154,184 @@ const filter = function (object, callback, context) {
     return result
 };
 
-const omit = function (object, list) {
-    return filter(object, function (value, key) {
+const omit = (object, list) => {
+    return filter(object, (value, key) => {
         if (list.indexOf(key) === -1) {
             return value
         }
     })
 };
 
-const hasProp = function (object, prop) {
+const hasProp = (object, prop) => {
     return object && object.hasOwnProperty(prop)
 };
 
-const isFunction = function (v) {
-    return typeof v === 'function'
+const tags = [
+    {
+        symbol: '-',
+        format(value) {
+            return `'+\n${this.SAFE}(${value},1)+\n'`
+        },
+    },
+    {
+        symbol: '=',
+        format(value) {
+            return `'+\n${this.SAFE}(${value})+\n'`
+        },
+    },
+    {
+        symbol: '#',
+        format(value) {
+            return `'+\n/**${value}**/+\n'`
+        },
+    },
+    {
+        symbol: '',
+        format(value) {
+            return `')\n${value}\n${this.BUFFER}('`
+        },
+    },
+];
+
+const match = (regex, text, callback) => {
+    let index = 0;
+    text.replace(regex, function () {
+        const params = [].slice.call(arguments, 0, -1);
+        const offset = params.pop();
+        const match = params.shift();
+        callback(params, index, offset);
+        index = offset + match.length;
+        return match
+    });
 };
 
-const isString = function (v) {
-    return typeof v === 'string'
+const Compiler = (config) => {
+    const token = config.token;
+    const vars = config.vars;
+    const module = config.extension.module;
+    const matches = [];
+    const formats = [];
+    tags.forEach((item) => {
+        matches.push(
+            token.start
+                .concat(item.symbol)
+                .concat(token.regex)
+                .concat(token.end)
+        );
+        formats.push(item.format.bind(vars));
+    });
+    const regex = new RegExp(matches.join('|').concat('|$'), 'g');
+    /**
+     * @type Function
+     * @name Compile
+     */
+    return function (content, path) {
+        const { SCOPE, SAFE, BUFFER } = vars;
+        const extension = path.split('.').pop();
+        if (extension === module) {
+            content = [token.start, content, token.end].join('\n');
+        }
+        let source = `${BUFFER}('`;
+        match(regex, content, (params, index, offset) => {
+            source += symbols(content.slice(index, offset));
+            params.forEach(function (value, index) {
+                if (value) source += formats[index](value);
+            });
+        });
+        source += `');`;
+        source = `with(${SCOPE}){${source}}`;
+        source = `${BUFFER}.start();${source}return ${BUFFER}.end();`;
+        source += `\n//# sourceURL=${path}`;
+        let result = null;
+        try {
+            result = new Function(SCOPE, BUFFER, SAFE, source);
+            result.source = result.toString();
+        } catch (e) {
+            e.filename = path;
+            e.source = source;
+            throw e
+        }
+        return result
+    }
+};
+
+const Wrapper = (config) => {
+    const name = config.export;
+    return function (list) {
+        let out = '(function(o){\n';
+        list.forEach((item) => {
+            out +=
+                'o[' +
+                JSON.stringify(item.name) +
+                ']=' +
+                String(item.content) +
+                '\n';
+        });
+        out += '})(window["' + name + '"] = window["' + name + '"] || {});\n';
+        return out
+    }
+};
+
+const HttpRequest = (template) =>
+    window.fetch(template).then((response) => response.text());
+
+const FileSystem = (template) =>
+    new Promise((resolve, reject) => {
+        fs.readFile(template, (error, data) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(data.toString());
+            }
+        });
+    });
+
+const Watcher = (path, cache) =>
+    chokidar
+        .watch('.', {
+            cwd: path,
+        })
+        .on('change', (name) => {
+            cache.remove(name);
+        })
+        .on('error', (error) => {
+            console.log('watcher error: ' + error);
+        });
+
+const Template = (config, cache, compile) => {
+    const path = config.path;
+    config.token || {};
+    const resolver = isFunction(config.resolver)
+        ? config.resolver
+        : isNode()
+        ? FileSystem
+        : HttpRequest;
+
+    const normalize = (template) => {
+        template = [path, template].join('/');
+        template = template.replace(/\/\//g, '/');
+        return template
+    };
+    const resolve = (template) => {
+        return resolver(normalize(template))
+    };
+    const result = (content, template) => {
+        cache.set(template, content);
+        return content
+    };
+    const get = (template) => {
+        if (cache.exist(template)) {
+            return cache.resolve(template)
+        }
+        const content = resolve(template).then((content) =>
+            result(compile(content, template), template)
+        );
+        return result(content, template)
+    };
+    if (config.watch && isNode()) {
+        Watcher(path, cache);
+    }
+    return get
 };
 
 const selfClosed = [
@@ -212,16 +379,12 @@ function element(tag, attrs, content) {
     return result.join('')
 }
 
-function resolve(list) {
-    return Promise.all(list).then(function (list) {
-        return list.join('')
-    })
-}
+const resolve = (list) => Promise.all(list).then((list) => list.join(''));
 /**
  *
  * @return {function}
  */
-function Buffer() {
+const Buffer = () => {
     let store = [],
         array = [];
     function buffer(value) {
@@ -243,29 +406,35 @@ function Buffer() {
         return resolve(array)
     };
     return buffer
-}
+};
 
 /**
  *
  * @param {{}} instance
  * @method create
  */
-function Component(instance) {
-    this.props = extend({}, instance.props);
-    this.create = instance.create.bind(this);
-}
-/**
- *
- */
-Component.prototype = {
-    element,
-    render(props) {
-        return this.create(extend({}, this.props, props))
-    },
+const Component = (instance) => {
+    const defaults = extend({}, instance.props);
+    const create = instance.create;
+    return {
+        element,
+        create,
+        render(props) {
+            return this.create(extend({}, defaults, props))
+        },
+    }
 };
 
-function configure$1(config) {
-    const { EXTEND, MACROS, LAYOUT, PRINT, BLOCKS, BUFFER } = config.vars;
+const Scope = (config, methods) => {
+    /**
+     *
+     */
+    const { EXTEND, MACROS, LAYOUT, BLOCKS, BUFFER } = config.vars;
+    /**
+     *
+     * @param data
+     * @constructor
+     */
     function Scope(data = {}) {
         this.setBlocks();
         extend(this, data);
@@ -273,36 +442,100 @@ function configure$1(config) {
         this.setLayout(false);
         this.setExtend(false);
     }
-    Scope.helpers = function (methods) {
+
+    Object.defineProperties(Scope.prototype, {
+        setBuffer: {
+            value() {
+                Object.defineProperty(this, BUFFER, {
+                    value: Buffer(),
+                    writable: false,
+                    configurable: false,
+                });
+            },
+            writable: false,
+            configurable: false,
+        },
+        getBuffer: {
+            value() {
+                return this[BUFFER]
+            },
+            writable: false,
+            configurable: false,
+        },
+        setBlocks: {
+            value() {
+                Object.defineProperty(this, BLOCKS, {
+                    value: {},
+                    writable: true,
+                    enumerable: true,
+                    configurable: false,
+                });
+            },
+            writable: false,
+            configurable: false,
+        },
+        getBlocks: {
+            value() {
+                return this[BLOCKS]
+            },
+            writable: false,
+            configurable: false,
+        },
+        setExtend: {
+            value(state) {
+                Object.defineProperty(this, EXTEND, {
+                    value: state,
+                    writable: true,
+                    configurable: false,
+                });
+            },
+            writable: false,
+            configurable: false,
+        },
+        getExtend: {
+            value() {
+                return this[EXTEND]
+            },
+            writable: false,
+            configurable: false,
+        },
+        setLayout: {
+            value(layout) {
+                Object.defineProperty(this, LAYOUT, {
+                    value: layout,
+                    writable: true,
+                    configurable: false,
+                });
+            },
+            writable: false,
+            configurable: false,
+        },
+        getLayout: {
+            value() {
+                return this[LAYOUT]
+            },
+            writable: false,
+            configurable: false,
+        },
+    });
+
+    Scope.helpers = (methods) => {
         extend(Scope.prototype, methods);
     };
-    Scope.prototype = {
-        getBuffer() {
-            return this[BUFFER]
-        },
-        setBuffer() {
-            this[BUFFER] = Buffer();
-        },
-        setExtend(state) {
-            this[EXTEND] = state;
-        },
-        getExtend() {
-            return this[EXTEND]
-        },
-        getLayout() {
-            return this[LAYOUT]
-        },
-        setLayout(layout) {
-            this[LAYOUT] = layout;
-        },
-        setBlocks() {
-            this[BLOCKS] = {};
-        },
-        getBlocks() {
-            return this[BLOCKS]
-        },
+
+    /**
+     * @lends Scope.prototype
+     */
+    Scope.helpers(methods);
+    /**
+     * @lends Scope.prototype
+     */
+    Scope.helpers({
+        /**
+         * @return {*}
+         */
         clone(exclude_blocks) {
-            const filter = [LAYOUT, EXTEND, MACROS, PRINT, BUFFER];
+            const filter = [LAYOUT, EXTEND, MACROS, BUFFER];
             if (exclude_blocks === true) {
                 filter.push(BLOCKS);
             }
@@ -310,7 +543,6 @@ function configure$1(config) {
         },
         /**
          * Join values to output buffer
-         * @memberOf global
          * @type Function
          */
         echo() {
@@ -322,7 +554,6 @@ function configure$1(config) {
         },
         /**
          * Buffered output callback
-         * @memberOf global
          * @type Function
          * @param {Function} callback
          * @param {Boolean} [echo]
@@ -342,7 +573,7 @@ function configure$1(config) {
             return macro
         },
         /**
-         *
+         * @memberOf global
          * @param value
          * @param callback
          * @return {Promise<unknown>}
@@ -382,7 +613,7 @@ function configure$1(config) {
          * @param {Object} instance
          */
         component(instance) {
-            instance = new Component(instance);
+            instance = Component(instance);
             return function component(props) {
                 this.echo(instance.render(props));
             }.bind(this)
@@ -492,7 +723,7 @@ function configure$1(config) {
             this.echo(promise);
             return {
                 as(namespace) {
-                    promise.then(function (exports) {
+                    promise.then((exports) => {
                         scope.set(namespace, exports);
                     });
                     return this
@@ -510,8 +741,8 @@ function configure$1(config) {
             return {
                 use() {
                     const params = [].slice.call(arguments);
-                    promise.then(function (exports) {
-                        params.forEach(function (name) {
+                    promise.then((exports) => {
+                        params.forEach((name) => {
                             scope.set(name, exports[name]);
                         });
                     });
@@ -519,320 +750,114 @@ function configure$1(config) {
                 },
             }
         },
-    };
+    });
     return Scope
-}
-
-const tags = [
-    {
-        symbol: '-',
-        format(value) {
-            return `'+\n${this.SAFE}(${value},1)+\n'`
-        },
-    },
-    {
-        symbol: '=',
-        format(value) {
-            return `'+\n${this.SAFE}(${value})+\n'`
-        },
-    },
-    {
-        symbol: '#',
-        format(value) {
-            return `'+\n/**${value}**/+\n'`
-        },
-    },
-    {
-        symbol: '',
-        format(value) {
-            return `')\n${value}\n${this.BUFFER}('`
-        },
-    },
-];
-
-function Compiler(config) {
-    this.setup(config);
-}
-
-Compiler.prototype = {
-    setup(config) {
-        this.extension = config.extension;
-        this.token = config.token;
-        this.vars = config.vars;
-        this.matches = [];
-        this.formats = [];
-        tags.forEach(function (item) {
-            this.matches.push(
-                this.token.start
-                    .concat(item.symbol)
-                    .concat(this.token.regex)
-                    .concat(this.token.end)
-            );
-            this.formats.push(item.format.bind(this.vars));
-        }, this);
-        this.regex = new RegExp(this.matches.join('|').concat('|$'), 'g');
-    },
-    match(text, callback) {
-        let index = 0;
-        callback = callback.bind(this);
-        text.replace(this.regex, function () {
-            const params = [].slice.call(arguments, 0, -1);
-            const offset = params.pop();
-            const match = params.shift();
-            callback(params, index, offset);
-            index = offset + match.length;
-            return match
-        });
-    },
-    compile(content, path) {
-        const { SCOPE, SAFE, BUFFER } = this.vars;
-        let result = null;
-        let source = `${BUFFER}('`;
-        this.match(content, function (params, index, offset) {
-            source += symbols(content.slice(index, offset));
-            params.forEach(function (value, index) {
-                if (value) source += this.formats[index](value);
-            }, this);
-        });
-        source += `');`;
-        source = `with(${SCOPE}){${source}}`;
-        source = `${BUFFER}.start();${source}return ${BUFFER}.end();`;
-        source += `\n//# sourceURL=${path}`;
-        try {
-            result = new Function(SCOPE, BUFFER, SAFE, source);
-            result.source = result.toString();
-        } catch (e) {
-            e.filename = path;
-            e.source = source;
-            throw e
-        }
-        return result
-    },
-};
-
-function Wrapper(config) {
-    this.configure(config);
-}
-
-Wrapper.prototype = {
-    configure(config) {
-        this.name = config.export;
-    },
-    browser(list) {
-        let name = this.name;
-        let out = '(function(o){\n';
-        list.forEach((item) => {
-            out +=
-                'o[' +
-                JSON.stringify(item.name) +
-                ']=' +
-                String(item.content) +
-                '\n';
-        });
-        out += '})(window["' + name + '"] = window["' + name + '"] || {});\n';
-        return out
-    },
 };
 
 function Cache(config) {
-    this.list = {};
-    this.enabled = config.cache || false;
-    this.namespace = config.export;
-    this.preload();
-}
-
-Cache.prototype = {
-    exist(key) {
-        return hasProp(this.list, key)
-    },
-    get(key) {
-        return this.list[key]
-    },
-    remove(key) {
-        delete this.list[key];
-    },
-    resolve(key) {
-        return Promise.resolve(this.get(key))
-    },
-    set(key, value) {
-        this.list[key] = value;
-    },
-    preload() {
-        if (isNode() === false) {
-            extend(this.list, window[this.namespace]);
-        }
-    },
-    load(list) {
-        extend(this.list, list);
-    },
-};
-
-function HttpRequest(template) {
-    return window.fetch(template).then(function (response) {
-        return response.text()
-    })
-}
-
-function FileSystem(template) {
-    return new Promise(function (resolve, reject) {
-        fs.readFile(template, (error, data) => {
-            if (error) {
-                reject(error);
-            } else {
-                resolve(data.toString());
+    const namespace = config.export;
+    const list = {};
+    const cache = {
+        preload() {
+            if (isNode() === false) {
+                this.load(window[namespace]);
             }
-        });
-    })
-}
-
-function Loader(config, compiler) {
-    this.cache = new Cache(config);
-    this.compiler = compiler;
-    if (typeof config.resolver === 'function') {
-        this.resolver = config.resolver;
-    } else {
-        this.resolver = isNode() ? FileSystem : HttpRequest;
-    }
-    this.path = config.path;
-    this.token = config.token || {};
-    this.module = config.extension.module;
-    this.default = config.extension.default;
-    this.supported = config.extension.supported || [];
-    this.supported.push(this.module);
-    this.supported.push(this.default);
-    if (config.watch && isNode()) {
-        this.watch();
-    }
-}
-
-Loader.prototype = {
-    watch() {
-        this.watcher = chokidar.watch('.', {
-            cwd: this.path,
-        });
-        this.watcher.on(
-            'change',
-            function (name) {
-                this.cache.remove(name);
-            }.bind(this)
-        );
-        this.watcher.on(
-            'error',
-            function (error) {
-                console.log('watcher error: ' + error);
-            }.bind(this)
-        );
-    },
-    normalize(template) {
-        template = [this.path, template].join('/');
-        template = template.replace(/\/\//g, '/');
-        return template
-    },
-    extension(template) {
-        let ext = template.split('.').pop();
-        if (this.supported.indexOf(ext) === -1) {
-            template = [template, this.default].join('.');
-        }
-
-        return template
-    },
-    resolve(template) {
-        template = this.normalize(template);
-        return this.resolver(template, this).then(
-            function (content) {
-                return this.process(content, template)
-            }.bind(this)
-        )
-    },
-    process(content, template) {
-        let extension = template.split('.').pop();
-        if (this.module.indexOf(extension) > -1) {
-            content = [this.token.start, content, this.token.end].join('\n');
-        }
-        return content
-    },
-    get(path) {
-        let template = this.extension(path);
-        if (this.cache.exist(template)) {
-            return this.cache.resolve(template)
-        }
-        const content = this.resolve(template).then(
-            function (content) {
-                content = this.compiler.compile(content, template);
-                return this.result(content, template)
-            }.bind(this)
-        );
-        return this.result(content, template)
-    },
-    result(content, template) {
-        this.cache.set(template, content);
-        return content
-    },
-};
-
-function configure(options) {
-    /**
-     * @extends defaults
-     */
-    const config = extend(
-        {
-            loader: {},
-            extension: {},
-            token: {},
-            vars: {},
+            return this
         },
-        defaults,
-        options || {}
-    );
-    //
-    const Scope = configure$1(config);
-    //
-    const compiler = new Compiler(config);
-    const wrapper = new Wrapper(config);
-    const loader = new Loader(config, compiler);
-    //
-    function template(path, defaultExt) {
+        exist(key) {
+            return hasProp(list, key)
+        },
+        get(key) {
+            return list[key]
+        },
+        remove(key) {
+            delete list[key];
+        },
+        resolve(key) {
+            return Promise.resolve(this.get(key))
+        },
+        set(key, value) {
+            list[key] = value;
+            return this
+        },
+        load(data) {
+            extend(list, data);
+            return this
+        },
+    };
+    return cache.preload()
+}
+
+function init() {
+    const config = {};
+    const helpers = {};
+    const ext = function (path, defaultExt) {
         const ext = path.split('.').pop();
         if (config.extension.supported.indexOf(ext) === -1) {
             path = [path, defaultExt].join('.');
         }
         return path
-    }
-    //
-    function output(path, scope) {
-        return loader.get(path).then(function (template) {
-            return template.call(scope, scope, scope.getBuffer(), safeValue)
-        })
-    }
-    //
-    function render(name, data) {
-        const view = template(name, config.extension.default);
-        const scope = new Scope(data);
-        return output(view, scope).then(function (content) {
-            if (scope.getExtend()) {
-                scope.setExtend(false);
-                const layout = scope.getLayout();
-                const data = scope.clone();
-                return render(layout, data)
-            }
-            return content
-        })
-    }
-    //
-    function require(name) {
-        const view = template(name, config.extension.module);
-        this.exports = {};
-        this.module = this;
-        return output(view, this).then(
-            function () {
-                return this.exports
-            }.bind(this)
-        )
-    }
-    //
-    let expressInstance = null;
-    //
-    function express(name, options, callback) {
+    };
+    const view = {
+        output(path, scope) {
+            return view.template(path).then(function (template) {
+                return template.call(scope, scope, scope.getBuffer(), safeValue)
+            })
+        },
+        render(name, data) {
+            const filepath = ext(name, config.extension.default);
+            const scope = new view.scope(data);
+            return view.output(filepath, scope).then((content) => {
+                if (scope.getExtend()) {
+                    scope.setExtend(false);
+                    const layout = scope.getLayout();
+                    const data = scope.clone();
+                    return view.render(layout, data)
+                }
+                return content
+            })
+        },
+        require(name, context) {
+            const filepath = ext(name, config.extension.module);
+            context.exports = extend({}, context.exports);
+            context.module = context;
+            return view.output(filepath, context).then((content) => {
+                return context.exports
+            })
+        },
+        helpers(methods) {
+            methods = methods || {};
+            extend(helpers, methods);
+            view.scope.helpers(methods);
+        },
+        configure(options) {
+            config.export = typeProp(isString, defaults.export, options.export);
+            config.path = typeProp(isString, defaults.path, options.path);
+            config.resolver = typeProp(
+                isFunction,
+                defaults.resolver,
+                options.resolver
+            );
+            config.extension = extend({}, defaults.extension, options.extension);
+            config.token = extend({}, defaults.token, options.token);
+            config.vars = extend({}, defaults.vars, options.vars);
+            view.scope = Scope(config, helpers);
+            view.compile = Compiler(config);
+            view.wrapper = Wrapper(config);
+            view.cache = Cache(config);
+            view.template = Template(config, view.cache, view.compile);
+            return view
+        },
+    };
+    /**
+     *
+     * @param name
+     * @param options
+     * @param callback
+     * @return {*}
+     * @private
+     */
+    view.__express = function (name, options, callback) {
         if (isFunction(options)) {
             callback = options;
             options = {};
@@ -842,10 +867,8 @@ function configure(options) {
         const viewPath = settings['views'];
         const viewOptions = settings['view options'] || {};
         const filename = path.relative(viewPath, name);
-        if (expressInstance === null) {
-            expressInstance = configure(viewOptions);
-        }
-        return expressInstance
+        view.configure(viewOptions);
+        return view
             .render(filename, options)
             .then(function (content) {
                 callback(null, content);
@@ -853,69 +876,25 @@ function configure(options) {
             .catch(function (error) {
                 callback(error);
             })
-    }
-    //
-    extend(Scope.prototype, {
-        /**
-         * @memberOf global
-         * @param {string} path
-         * @return {string|{}}
-         */
-        require: require,
-        /**
-         * @memberOf global
-         * @param {string} path
-         * @return {string|{}}
-         */
-        render: render,
-    });
-
+    };
     /**
-     * @memberOf global
+     *
      */
-    return {
-        /**
-         *
-         * @param path
-         * @param data
-         * @return {*}
-         */
-        render: render,
-        /**
-         *
-         * @param text
-         * @param path
-         * @return {Function}
-         */
-        compile(text, path) {
-            return compiler.compile(text, path)
+    view.configure({});
+    /**
+     *
+     */
+    view.helpers({
+        require(name) {
+            return view.require(name, this)
         },
-        /**
-         *
-         * @param list
-         * @return {string}
-         */
-        wrapper(list) {
-            return wrapper.browser(list)
+        render(name, data) {
+            return view.render(name, data)
         },
-        /**
-         *
-         * @param methods
-         */
-        helpers(methods) {
-            extend(Scope.prototype, methods || {});
-        },
-        /**
-         *  Configure EJS
-         */
-        configure: configure,
-        /**
-         *
-         */
-        __express: express,
-    }
+    });
+    return view
 }
 
-var index = configure({});
+var index = init();
 
 export { index as default };

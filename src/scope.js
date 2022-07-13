@@ -1,11 +1,20 @@
-import { extend, omit, each, getPath, hasProp, noop } from './utils'
+import { extend, omit, map, each, getPath, hasProp, noop } from './utils'
 import { isFunction, isString } from './type'
+
 import element from './element'
 import Buffer from './buffer'
 import Component from './component'
 
-function configure(config) {
-    const { EXTEND, MACROS, LAYOUT, PRINT, BLOCKS, BUFFER } = config.vars
+const Scope = (config, methods) => {
+    /**
+     *
+     */
+    const { EXTEND, MACROS, LAYOUT, BLOCKS, BUFFER } = config.vars
+    /**
+     *
+     * @param data
+     * @constructor
+     */
     function Scope(data = {}) {
         this.setBlocks()
         extend(this, data)
@@ -13,36 +22,100 @@ function configure(config) {
         this.setLayout(false)
         this.setExtend(false)
     }
-    Scope.helpers = function (methods) {
+
+    Object.defineProperties(Scope.prototype, {
+        setBuffer: {
+            value() {
+                Object.defineProperty(this, BUFFER, {
+                    value: Buffer(),
+                    writable: false,
+                    configurable: false,
+                })
+            },
+            writable: false,
+            configurable: false,
+        },
+        getBuffer: {
+            value() {
+                return this[BUFFER]
+            },
+            writable: false,
+            configurable: false,
+        },
+        setBlocks: {
+            value() {
+                Object.defineProperty(this, BLOCKS, {
+                    value: {},
+                    writable: true,
+                    enumerable: true,
+                    configurable: false,
+                })
+            },
+            writable: false,
+            configurable: false,
+        },
+        getBlocks: {
+            value() {
+                return this[BLOCKS]
+            },
+            writable: false,
+            configurable: false,
+        },
+        setExtend: {
+            value(state) {
+                Object.defineProperty(this, EXTEND, {
+                    value: state,
+                    writable: true,
+                    configurable: false,
+                })
+            },
+            writable: false,
+            configurable: false,
+        },
+        getExtend: {
+            value() {
+                return this[EXTEND]
+            },
+            writable: false,
+            configurable: false,
+        },
+        setLayout: {
+            value(layout) {
+                Object.defineProperty(this, LAYOUT, {
+                    value: layout,
+                    writable: true,
+                    configurable: false,
+                })
+            },
+            writable: false,
+            configurable: false,
+        },
+        getLayout: {
+            value() {
+                return this[LAYOUT]
+            },
+            writable: false,
+            configurable: false,
+        },
+    })
+
+    Scope.helpers = (methods) => {
         extend(Scope.prototype, methods)
     }
-    Scope.prototype = {
-        getBuffer() {
-            return this[BUFFER]
-        },
-        setBuffer() {
-            this[BUFFER] = Buffer()
-        },
-        setExtend(state) {
-            this[EXTEND] = state
-        },
-        getExtend() {
-            return this[EXTEND]
-        },
-        getLayout() {
-            return this[LAYOUT]
-        },
-        setLayout(layout) {
-            this[LAYOUT] = layout
-        },
-        setBlocks() {
-            this[BLOCKS] = {}
-        },
-        getBlocks() {
-            return this[BLOCKS]
-        },
+
+    /**
+     * @lends Scope.prototype
+     */
+    Scope.helpers(methods)
+    /**
+     * @lends Scope.prototype
+     */
+    Scope.helpers({
+        /**
+         * @return {*}
+         */
         clone(exclude_blocks) {
-            const filter = [LAYOUT, EXTEND, MACROS, PRINT, BUFFER]
+            const filter = [LAYOUT, EXTEND, MACROS, BUFFER]
             if (exclude_blocks === true) {
                 filter.push(BLOCKS)
             }
@@ -50,7 +123,6 @@ function configure(config) {
         },
         /**
          * Join values to output buffer
-         * @memberOf global
          * @type Function
          */
         echo() {
@@ -62,7 +134,6 @@ function configure(config) {
         },
         /**
          * Buffered output callback
-         * @memberOf global
          * @type Function
          * @param {Function} callback
          * @param {Boolean} [echo]
@@ -82,7 +153,7 @@ function configure(config) {
             return macro
         },
         /**
-         *
+         * @memberOf global
          * @param value
          * @param callback
          * @return {Promise<unknown>}
@@ -122,7 +193,7 @@ function configure(config) {
          * @param {Object} instance
          */
         component(instance) {
-            instance = new Component(instance)
+            instance = Component(instance)
             return function component(props) {
                 this.echo(instance.render(props))
             }.bind(this)
@@ -232,7 +303,7 @@ function configure(config) {
             this.echo(promise)
             return {
                 as(namespace) {
-                    promise.then(function (exports) {
+                    promise.then((exports) => {
                         scope.set(namespace, exports)
                     })
                     return this
@@ -250,8 +321,8 @@ function configure(config) {
             return {
                 use() {
                     const params = [].slice.call(arguments)
-                    promise.then(function (exports) {
-                        params.forEach(function (name) {
+                    promise.then((exports) => {
+                        params.forEach((name) => {
                             scope.set(name, exports[name])
                         })
                     })
@@ -259,8 +330,8 @@ function configure(config) {
                 },
             }
         },
-    }
+    })
     return Scope
 }
 
-export default configure
+export default Scope

@@ -5,21 +5,16 @@ import element from './element'
  * @param {{}} instance
  * @method create
  */
-function Component(instance) {
-    this.props = extend({}, instance.props)
-    this.create = instance.create.bind(this)
+const Component = (instance) => {
+    const defaults = extend({}, instance.props)
+    const create = instance.create
+    return {
+        element,
+        create,
+        render(props) {
+            return this.create(extend({}, defaults, props))
+        },
+    }
 }
-/**
- *
- */
-Component.prototype = {
-    element,
-    render(props) {
-        return this.create(extend({}, this.props, props))
-    },
-}
-/**
- *  @type {function}
- */
 
 export default Component

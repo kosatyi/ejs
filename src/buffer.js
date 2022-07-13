@@ -1,13 +1,9 @@
-function resolve(list) {
-    return Promise.all(list).then(function (list) {
-        return list.join('')
-    })
-}
+const resolve = (list) => Promise.all(list).then((list) => list.join(''))
 /**
  *
  * @return {function}
  */
-function Buffer() {
+const Buffer = () => {
     let store = [],
         array = []
     function buffer(value) {
