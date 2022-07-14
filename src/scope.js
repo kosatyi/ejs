@@ -171,9 +171,7 @@ const Scope = (config, methods) => {
          */
         async(promise, callback) {
             this.echo(
-                this.resolve(promise, function (data) {
-                    return this.macro(callback)(data)
-                })
+                this.resolve(promise, (data) => this.macro(callback)(data))
             )
         },
         /**
@@ -188,9 +186,7 @@ const Scope = (config, methods) => {
                 content = this.macro(content)()
             }
             this.echo(
-                this.resolve(content, function (content) {
-                    return element(tag, attr, content)
-                })
+                this.resolve(content, (content) => element(tag, attr, content))
             )
         },
         /**
@@ -200,9 +196,12 @@ const Scope = (config, methods) => {
          */
         component(namespace, instance) {
             instance = Component(instance)
-            this.set(namespace, (props) => {
-                this.echo(instance.render(props))
-            })
+            this.set(
+                namespace,
+                function (props) {
+                    this.echo(instance.render(props))
+                }.bind(this)
+            )
         },
         /**
          * @memberOf global
@@ -277,10 +276,10 @@ const Scope = (config, methods) => {
                 blocks[name] = macro
             } else {
                 const block = blocks[name]
-                const parent = function () {
-                    this.echo(macro())
-                }.bind(block ? block.ctx : null)
                 if (block) {
+                    const parent = function () {
+                        this.echo(macro())
+                    }.bind(block.ctx)
                     this.echo(block(parent))
                 } else {
                     this.echo(macro(noop))
@@ -292,10 +291,10 @@ const Scope = (config, methods) => {
          * @param {string} path
          * @param {object} [data]
          * @param {boolean} [cx]
-         * @return {string|{}}
          */
-        include(path, data = {}, cx = true) {
-            const params = extend(cx ? this.clone(true) : {}, data)
+        include(path, data, cx) {
+            const context = cx === false ? {} : this.clone(true)
+            const params = extend(context, data || {})
             const promise = this.render(path, params)
             this.echo(promise)
         },

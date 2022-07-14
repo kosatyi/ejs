@@ -603,8 +603,10 @@ var Scope = function Scope(config, methods) {
      * @memberOf global
      */
     async: function async(promise, callback) {
+      var _this = this;
+
       this.echo(this.resolve(promise, function (data) {
-        return this.macro(callback)(data);
+        return _this.macro(callback)(data);
       }));
     },
 
@@ -632,12 +634,10 @@ var Scope = function Scope(config, methods) {
      * @param {Object} instance
      */
     component: function component(namespace, instance) {
-      var _this = this;
-
       instance = Component(instance);
       this.set(namespace, function (props) {
-        _this.echo(instance.render(props));
-      });
+        this.echo(instance.render(props));
+      }.bind(this));
     },
 
     /**
@@ -724,11 +724,11 @@ var Scope = function Scope(config, methods) {
       } else {
         var block = blocks[name];
 
-        var parent = function () {
-          this.echo(macro());
-        }.bind(block ? block.ctx : null);
-
         if (block) {
+          var parent = function () {
+            this.echo(macro());
+          }.bind(block.ctx);
+
           this.echo(block(parent));
         } else {
           this.echo(macro(noop));
@@ -741,12 +741,10 @@ var Scope = function Scope(config, methods) {
      * @param {string} path
      * @param {object} [data]
      * @param {boolean} [cx]
-     * @return {string|{}}
      */
-    include: function include(path) {
-      var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      var cx = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
-      var params = extend(cx ? this.clone(true) : {}, data);
+    include: function include(path, data, cx) {
+      var context = cx === false ? {} : this.clone(true);
+      var params = extend(context, data || {});
       var promise = this.render(path, params);
       this.echo(promise);
     },
