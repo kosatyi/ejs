@@ -9,12 +9,15 @@ import Scope from './scope'
 import Cache from './cache'
 
 function init() {
+    /**
+     * @type {Object}
+     */
     const config = {}
     const helpers = {}
-    const ext = function (path, defaultExt) {
+    const ext = function (path, defaults) {
         const ext = path.split('.').pop()
-        if (config.extension.supported.indexOf(ext) === -1) {
-            path = [path, defaultExt].join('.')
+        if (ext !== defaults) {
+            path = [path, defaults].join('.')
         }
         return path
     }
@@ -25,7 +28,7 @@ function init() {
             })
         },
         render(name, data) {
-            const filepath = ext(name, config.extension.default)
+            const filepath = ext(name, config.extension.template)
             const scope = new view.scope(data)
             return view.output(filepath, scope).then((content) => {
                 if (scope.getExtend()) {
@@ -37,12 +40,11 @@ function init() {
                 return content
             })
         },
-        require(name, context) {
+        require(name) {
             const filepath = ext(name, config.extension.module)
-            context.exports = extend({}, context.exports)
-            context.module = context
-            return view.output(filepath, context).then((content) => {
-                return context.exports
+            const scope = new view.scope({})
+            return view.output(filepath, scope).then(() => {
+                return scope
             })
         },
         helpers(methods) {

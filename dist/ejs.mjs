@@ -5,12 +5,13 @@ import chokidar from 'chokidar';
 const defaults = {};
 
 defaults.export = 'ejs.precompiled';
+
 defaults.path = 'views';
+
 defaults.resolver = null;
 
 defaults.extension = {
-    supported: ['ejs', 'js', 'html', 'svg', 'css'],
-    default: 'ejs',
+    template: 'ejs',
     module: 'js',
 };
 
@@ -204,7 +205,12 @@ const match = (regex, text, callback) => {
         return match
     });
 };
-
+/**
+ *
+ * @param {Object} config
+ * @return {function(*, *): Function}
+ * @constructor
+ */
 const Compiler = (config) => {
     const token = config.token;
     const vars = config.vars;
@@ -436,21 +442,39 @@ const Scope = (config, methods) => {
      * @constructor
      */
     function Scope(data = {}) {
-        this.setBlocks();
         extend(this, data);
-        this.setBuffer();
-        this.setLayout(false);
-        this.setExtend(false);
     }
-
+    /**
+     *
+     */
     Object.defineProperties(Scope.prototype, {
+        [BUFFER]: {
+            value: Buffer(),
+            writable: false,
+            configurable: false,
+            enumerable: false,
+        },
+        [BLOCKS]: {
+            value: {},
+            writable: false,
+            configurable: false,
+            enumerable: false,
+        },
+        [EXTEND]: {
+            value: false,
+            writable: true,
+            configurable: false,
+            enumerable: false,
+        },
+        [LAYOUT]: {
+            value: false,
+            writable: true,
+            configurable: false,
+            enumerable: false,
+        },
         setBuffer: {
-            value() {
-                Object.defineProperty(this, BUFFER, {
-                    value: Buffer(),
-                    writable: false,
-                    configurable: false,
-                });
+            value(value) {
+                this[BUFFER] = value;
             },
             writable: false,
             configurable: false,
@@ -463,13 +487,8 @@ const Scope = (config, methods) => {
             configurable: false,
         },
         setBlocks: {
-            value() {
-                Object.defineProperty(this, BLOCKS, {
-                    value: {},
-                    writable: true,
-                    enumerable: true,
-                    configurable: false,
-                });
+            value(value) {
+                this[BLOCKS] = value;
             },
             writable: false,
             configurable: false,
@@ -482,12 +501,8 @@ const Scope = (config, methods) => {
             configurable: false,
         },
         setExtend: {
-            value(state) {
-                Object.defineProperty(this, EXTEND, {
-                    value: state,
-                    writable: true,
-                    configurable: false,
-                });
+            value(value) {
+                this[EXTEND] = value;
             },
             writable: false,
             configurable: false,
@@ -501,11 +516,7 @@ const Scope = (config, methods) => {
         },
         setLayout: {
             value(layout) {
-                Object.defineProperty(this, LAYOUT, {
-                    value: layout,
-                    writable: true,
-                    configurable: false,
-                });
+                this[LAYOUT] = layout;
             },
             writable: false,
             configurable: false,
@@ -610,13 +621,14 @@ const Scope = (config, methods) => {
         },
         /**
          * @memberOf global
+         * @param {String} namespace
          * @param {Object} instance
          */
-        component(instance) {
+        component(namespace, instance) {
             instance = Component(instance);
-            return function component(props) {
+            this.set(namespace, (props) => {
                 this.echo(instance.render(props));
-            }.bind(this)
+            });
         },
         /**
          * @memberOf global
@@ -789,12 +801,15 @@ function Cache(config) {
 }
 
 function init() {
+    /**
+     * @type {Object}
+     */
     const config = {};
     const helpers = {};
-    const ext = function (path, defaultExt) {
+    const ext = function (path, defaults) {
         const ext = path.split('.').pop();
-        if (config.extension.supported.indexOf(ext) === -1) {
-            path = [path, defaultExt].join('.');
+        if (ext !== defaults) {
+            path = [path, defaults].join('.');
         }
         return path
     };
@@ -805,7 +820,7 @@ function init() {
             })
         },
         render(name, data) {
-            const filepath = ext(name, config.extension.default);
+            const filepath = ext(name, config.extension.template);
             const scope = new view.scope(data);
             return view.output(filepath, scope).then((content) => {
                 if (scope.getExtend()) {
@@ -817,12 +832,11 @@ function init() {
                 return content
             })
         },
-        require(name, context) {
+        require(name) {
             const filepath = ext(name, config.extension.module);
-            context.exports = extend({}, context.exports);
-            context.module = context;
-            return view.output(filepath, context).then((content) => {
-                return context.exports
+            const scope = new view.scope({});
+            return view.output(filepath, scope).then(() => {
+                return scope
             })
         },
         helpers(methods) {

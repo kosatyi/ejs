@@ -16,21 +16,39 @@ const Scope = (config, methods) => {
      * @constructor
      */
     function Scope(data = {}) {
-        this.setBlocks()
         extend(this, data)
-        this.setBuffer()
-        this.setLayout(false)
-        this.setExtend(false)
     }
-
+    /**
+     *
+     */
     Object.defineProperties(Scope.prototype, {
+        [BUFFER]: {
+            value: Buffer(),
+            writable: false,
+            configurable: false,
+            enumerable: false,
+        },
+        [BLOCKS]: {
+            value: {},
+            writable: false,
+            configurable: false,
+            enumerable: false,
+        },
+        [EXTEND]: {
+            value: false,
+            writable: true,
+            configurable: false,
+            enumerable: false,
+        },
+        [LAYOUT]: {
+            value: false,
+            writable: true,
+            configurable: false,
+            enumerable: false,
+        },
         setBuffer: {
-            value() {
-                Object.defineProperty(this, BUFFER, {
-                    value: Buffer(),
-                    writable: false,
-                    configurable: false,
-                })
+            value(value) {
+                this[BUFFER] = value
             },
             writable: false,
             configurable: false,
@@ -43,13 +61,8 @@ const Scope = (config, methods) => {
             configurable: false,
         },
         setBlocks: {
-            value() {
-                Object.defineProperty(this, BLOCKS, {
-                    value: {},
-                    writable: true,
-                    enumerable: true,
-                    configurable: false,
-                })
+            value(value) {
+                this[BLOCKS] = value
             },
             writable: false,
             configurable: false,
@@ -62,12 +75,8 @@ const Scope = (config, methods) => {
             configurable: false,
         },
         setExtend: {
-            value(state) {
-                Object.defineProperty(this, EXTEND, {
-                    value: state,
-                    writable: true,
-                    configurable: false,
-                })
+            value(value) {
+                this[EXTEND] = value
             },
             writable: false,
             configurable: false,
@@ -81,11 +90,7 @@ const Scope = (config, methods) => {
         },
         setLayout: {
             value(layout) {
-                Object.defineProperty(this, LAYOUT, {
-                    value: layout,
-                    writable: true,
-                    configurable: false,
-                })
+                this[LAYOUT] = layout
             },
             writable: false,
             configurable: false,
@@ -190,13 +195,14 @@ const Scope = (config, methods) => {
         },
         /**
          * @memberOf global
+         * @param {String} namespace
          * @param {Object} instance
          */
-        component(instance) {
+        component(namespace, instance) {
             instance = Component(instance)
-            return function component(props) {
+            this.set(namespace, (props) => {
                 this.echo(instance.render(props))
-            }.bind(this)
+            })
         },
         /**
          * @memberOf global

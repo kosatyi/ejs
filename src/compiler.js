@@ -38,7 +38,12 @@ const match = (regex, text, callback) => {
         return match
     })
 }
-
+/**
+ *
+ * @param {Object} config
+ * @return {function(*, *): Function}
+ * @constructor
+ */
 const Compiler = (config) => {
     const token = config.token
     const vars = config.vars

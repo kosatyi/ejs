@@ -11,8 +11,7 @@
     defaults.path = 'views';
     defaults.resolver = null;
     defaults.extension = {
-      supported: ['ejs', 'js', 'html', 'svg', 'css'],
-      "default": 'ejs',
+      template: 'ejs',
       module: 'js'
     };
     defaults.vars = {
@@ -185,6 +184,13 @@
         return match;
       });
     };
+    /**
+     *
+     * @param {Object} config
+     * @return {function(*, *): Function}
+     * @constructor
+     */
+
 
     var Compiler = function Compiler(config) {
       var token = config.token;
@@ -316,6 +322,21 @@
       return get;
     };
 
+    function _defineProperty(obj, key, value) {
+      if (key in obj) {
+        Object.defineProperty(obj, key, {
+          value: value,
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
+      } else {
+        obj[key] = value;
+      }
+
+      return obj;
+    }
+
     var selfClosed = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
     var space = ' ';
     var quote = '"';
@@ -404,6 +425,8 @@
     };
 
     var Scope = function Scope(config, methods) {
+      var _Object$definePropert;
+
       /**
        *
        */
@@ -421,88 +444,82 @@
 
       function Scope() {
         var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-        this.setBlocks();
         extend(this, data);
-        this.setBuffer();
-        this.setLayout(false);
-        this.setExtend(false);
       }
+      /**
+       *
+       */
 
-      Object.defineProperties(Scope.prototype, {
-        setBuffer: {
-          value: function value() {
-            Object.defineProperty(this, BUFFER, {
-              value: Buffer(),
-              writable: false,
-              configurable: false
-            });
-          },
-          writable: false,
-          configurable: false
+
+      Object.defineProperties(Scope.prototype, (_Object$definePropert = {}, _defineProperty(_Object$definePropert, BUFFER, {
+        value: Buffer(),
+        writable: false,
+        configurable: false,
+        enumerable: false
+      }), _defineProperty(_Object$definePropert, BLOCKS, {
+        value: {},
+        writable: false,
+        configurable: false,
+        enumerable: false
+      }), _defineProperty(_Object$definePropert, EXTEND, {
+        value: false,
+        writable: true,
+        configurable: false,
+        enumerable: false
+      }), _defineProperty(_Object$definePropert, LAYOUT, {
+        value: false,
+        writable: true,
+        configurable: false,
+        enumerable: false
+      }), _defineProperty(_Object$definePropert, "setBuffer", {
+        value: function value(_value) {
+          this[BUFFER] = _value;
         },
-        getBuffer: {
-          value: function value() {
-            return this[BUFFER];
-          },
-          writable: false,
-          configurable: false
+        writable: false,
+        configurable: false
+      }), _defineProperty(_Object$definePropert, "getBuffer", {
+        value: function value() {
+          return this[BUFFER];
         },
-        setBlocks: {
-          value: function value() {
-            Object.defineProperty(this, BLOCKS, {
-              value: {},
-              writable: true,
-              enumerable: true,
-              configurable: false
-            });
-          },
-          writable: false,
-          configurable: false
+        writable: false,
+        configurable: false
+      }), _defineProperty(_Object$definePropert, "setBlocks", {
+        value: function value(_value2) {
+          this[BLOCKS] = _value2;
         },
-        getBlocks: {
-          value: function value() {
-            return this[BLOCKS];
-          },
-          writable: false,
-          configurable: false
+        writable: false,
+        configurable: false
+      }), _defineProperty(_Object$definePropert, "getBlocks", {
+        value: function value() {
+          return this[BLOCKS];
         },
-        setExtend: {
-          value: function value(state) {
-            Object.defineProperty(this, EXTEND, {
-              value: state,
-              writable: true,
-              configurable: false
-            });
-          },
-          writable: false,
-          configurable: false
+        writable: false,
+        configurable: false
+      }), _defineProperty(_Object$definePropert, "setExtend", {
+        value: function value(_value3) {
+          this[EXTEND] = _value3;
         },
-        getExtend: {
-          value: function value() {
-            return this[EXTEND];
-          },
-          writable: false,
-          configurable: false
+        writable: false,
+        configurable: false
+      }), _defineProperty(_Object$definePropert, "getExtend", {
+        value: function value() {
+          return this[EXTEND];
         },
-        setLayout: {
-          value: function value(layout) {
-            Object.defineProperty(this, LAYOUT, {
-              value: layout,
-              writable: true,
-              configurable: false
-            });
-          },
-          writable: false,
-          configurable: false
+        writable: false,
+        configurable: false
+      }), _defineProperty(_Object$definePropert, "setLayout", {
+        value: function value(layout) {
+          this[LAYOUT] = layout;
         },
-        getLayout: {
-          value: function value() {
-            return this[LAYOUT];
-          },
-          writable: false,
-          configurable: false
-        }
-      });
+        writable: false,
+        configurable: false
+      }), _defineProperty(_Object$definePropert, "getLayout", {
+        value: function value() {
+          return this[LAYOUT];
+        },
+        writable: false,
+        configurable: false
+      }), _Object$definePropert));
 
       Scope.helpers = function (methods) {
         extend(Scope.prototype, methods);
@@ -607,13 +624,16 @@
 
         /**
          * @memberOf global
+         * @param {String} namespace
          * @param {Object} instance
          */
-        component: function component(instance) {
+        component: function component(namespace, instance) {
+          var _this = this;
+
           instance = Component(instance);
-          return function component(props) {
-            this.echo(instance.render(props));
-          }.bind(this);
+          this.set(namespace, function (props) {
+            _this.echo(instance.render(props));
+          });
         },
 
         /**
@@ -809,14 +829,17 @@
     }
 
     function init() {
+      /**
+       * @type {Object}
+       */
       var config = {};
       var _helpers = {};
 
-      var ext = function ext(path, defaultExt) {
+      var ext = function ext(path, defaults) {
         var ext = path.split('.').pop();
 
-        if (config.extension.supported.indexOf(ext) === -1) {
-          path = [path, defaultExt].join('.');
+        if (ext !== defaults) {
+          path = [path, defaults].join('.');
         }
 
         return path;
@@ -829,7 +852,7 @@
           });
         },
         render: function render(name, data) {
-          var filepath = ext(name, config.extension["default"]);
+          var filepath = ext(name, config.extension.template);
           var scope = new view.scope(data);
           return view.output(filepath, scope).then(function (content) {
             if (scope.getExtend()) {
@@ -844,12 +867,11 @@
             return content;
           });
         },
-        require: function require(name, context) {
+        require: function require(name) {
           var filepath = ext(name, config.extension.module);
-          context.exports = extend({}, context.exports);
-          context.module = context;
-          return view.output(filepath, context).then(function (content) {
-            return context.exports;
+          var scope = new view.scope({});
+          return view.output(filepath, scope).then(function () {
+            return scope;
           });
         },
         helpers: function helpers(methods) {
