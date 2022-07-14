@@ -9,7 +9,7 @@ import Template from './template'
 import Scope from './scope'
 import Cache from './cache'
 
-function init() {
+function init(options) {
     /**
      * @type {Object}
      */
@@ -91,20 +91,21 @@ function init() {
         const viewPath = settings['views']
         const viewOptions = settings['view options'] || {}
         const filename = path.relative(viewPath, name)
+        viewOptions.path = viewPath
         view.configure(viewOptions)
         return view
             .render(filename, options)
-            .then(function (content) {
+            .then((content) => {
                 callback(null, content)
             })
-            .catch(function (error) {
+            .catch((error) => {
                 callback(error)
             })
     }
     /**
      *
      */
-    view.configure({})
+    view.configure(options || {})
     /**
      *
      */
@@ -116,6 +117,7 @@ function init() {
             return view.render(name, data)
         },
     })
+
     return view
 }
 
