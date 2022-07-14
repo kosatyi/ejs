@@ -2,6 +2,7 @@ import path from 'path'
 import defaults from './defaults'
 import { extend, safeValue } from './utils'
 import { isFunction, isString, typeProp } from './type'
+import element from './element'
 import Compiler from './compiler'
 import Wrapper from './wrapper'
 import Template from './template'
@@ -22,6 +23,7 @@ function init() {
         return path
     }
     const view = {
+        element,
         output(path, scope) {
             return view.template(path).then(function (template) {
                 return template.call(scope, scope, scope.getBuffer(), safeValue)
