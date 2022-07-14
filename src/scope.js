@@ -128,6 +128,7 @@ const Scope = (config, methods) => {
         },
         /**
          * Join values to output buffer
+         * @memberOf global
          * @type Function
          */
         echo() {

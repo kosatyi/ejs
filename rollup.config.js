@@ -22,7 +22,6 @@ const iife = {
         commonjs({}),
         babel({
             babelHelpers: 'bundled',
-            plugins: ['@babel/plugin-proposal-class-properties'],
             presets: ['@babel/preset-env'],
         }),
     ],
@@ -42,7 +41,6 @@ const cjs = {
         commonjs({}),
         babel({
             babelHelpers: 'bundled',
-            plugins: ['@babel/plugin-proposal-class-properties'],
             presets: ['@babel/preset-env'],
         }),
     ],

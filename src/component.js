@@ -2,7 +2,7 @@ import { extend } from './utils'
 import element from './element'
 /**
  *
- * @param {{}} instance
+ * @param {{props:{},create:function}} instance
  * @method create
  */
 const Component = (instance) => {

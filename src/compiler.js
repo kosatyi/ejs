@@ -84,7 +84,8 @@ const Compiler = (config) => {
         let result = null
         try {
             result = new Function(SCOPE, BUFFER, SAFE, source)
-            result.source = result.toString()
+            result.source = `(function(${SCOPE},${BUFFER},${SAFE}){\n${source}\n})`
+            //result.source = result.toString()
         } catch (e) {
             e.filename = path
             e.source = source

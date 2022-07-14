@@ -44,7 +44,7 @@ function init() {
             const filepath = ext(name, config.extension.module)
             const scope = new view.scope({})
             return view.output(filepath, scope).then(() => {
-                return scope
+                return scope.clone(true)
             })
         },
         helpers(methods) {
