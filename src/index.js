@@ -72,35 +72,27 @@ function init(options) {
             view.template = Template(config, view.cache, view.compile)
             return view
         },
-    }
-    /**
-     *
-     * @param name
-     * @param options
-     * @param callback
-     * @return {*}
-     * @private
-     */
-    view.__express = function (name, options, callback) {
-        if (isFunction(options)) {
-            callback = options
-            options = {}
-        }
-        options = options || {}
-        const settings = options.settings || {}
-        const viewPath = settings['views']
-        const viewOptions = settings['view options'] || {}
-        const filename = path.relative(viewPath, name)
-        viewOptions.path = viewPath
-        view.configure(viewOptions)
-        return view
-            .render(filename, options)
-            .then((content) => {
-                callback(null, content)
-            })
-            .catch((error) => {
-                callback(error)
-            })
+        __express(name, options, callback) {
+            if (isFunction(options)) {
+                callback = options
+                options = {}
+            }
+            options = options || {}
+            const settings = options.settings || {}
+            const viewPath = settings['views']
+            const viewOptions = settings['view options'] || {}
+            const filename = path.relative(viewPath, name)
+            viewOptions.path = viewPath
+            view.configure(viewOptions)
+            return view
+                .render(filename, options)
+                .then((content) => {
+                    callback(null, content)
+                })
+                .catch((error) => {
+                    callback(error)
+                })
+        },
     }
     /**
      *
