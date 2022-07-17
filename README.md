@@ -33,8 +33,49 @@ ejs.helpers({
 })
 
 // load index.ejs template from `views` folder
-ejs.render('page/index').then((content)=>{
+ejs.render('page/index',{
+    posts:[{
+        title:'Post Title',
+        content:"<p>post content</p>"
+    }]
+}).then((content)=>{
     console.log(content)
+})
+```
+
+
+## Use with Express
+
+```bash
+$ npm install @kosatyi/ejs --save
+```
+
+```js
+const express = require('express')
+const ejs = require('@kosatyi/ejs')
+const app = express()
+app.engine('ejs', ejs.__express)
+app.set('views', 'views')
+app.set('view engine', 'ejs')
+app.set('view options', {
+    watch: true,
+})
+```
+
+or use `ejs` alias
+
+```bash
+$ npm install ejs@npm:@kosatyi/ejs --save
+```
+
+```js
+// const ejs = require('ejs')
+const express = require('express')
+const app = express()
+app.set('views', 'views')
+app.set('view engine', 'ejs')
+app.set('view options', {
+    watch: true,
 })
 ```
 
@@ -81,6 +122,13 @@ ejs.render('page/index').then((content)=>{
 <% }) %>
 
 <% block('content',()=>{ %>
-<%- ucase('make text upper') %>
+
+<% each('posts',(post)=>{ %>
+<article>
+    <h3><%-post.title%></h3>
+    <div><%=post.content%></div>
+</article>
+<% }) %>
+
 <% }) %>
 ```
