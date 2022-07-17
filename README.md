@@ -9,7 +9,7 @@ Embedded JavaScript templates
 
 ## Install
 
-You can get Mustache via [npm](http://npmjs.com).
+You can get EJS via [npm](http://npmjs.com).
 
 ```bash
 $ npm install @kosatyi/ejs --save
