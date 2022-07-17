@@ -83,7 +83,7 @@ app.set('view options', {
 
 **layout/default.ejs**
 
-```html
+```ejs
 <html>
     <head>
         <title><%-get('title')%></title>
@@ -111,7 +111,7 @@ app.set('view options', {
 
 **page/index.ejs**
 
-```html
+```ejs
 <% extend('layout/default') %>
 
 <% set('title','Page Title') %>
