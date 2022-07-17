@@ -10,9 +10,9 @@ projects: false
 
 baseurl: /ejs
 
-brand: ejs
-title: EJS
-description: Embedded JavaScript templates with extend/block support
+brand: @kosatyi/ejs
+title: Embedded JavaScript templates
+description: EJS with extend/block support
 analytics: UA-37629144-1
 adsense: ca-pub-3650650669153101
 
