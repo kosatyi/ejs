@@ -67,7 +67,6 @@ ejs.render('page/index').then((content)=>{
 **page/index.ejs**
 
 ```html
-
 <% extend('layout/default') %>
 
 <% set('title','Page Title') %>
@@ -80,5 +79,4 @@ ejs.render('page/index').then((content)=>{
 <% block('content',()=>{ %>
 Content
 <% }) %>
-
 ```
