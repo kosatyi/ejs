@@ -8,7 +8,7 @@ defaults.resolver = null
 
 defaults.extension = {
     template: 'ejs',
-    module: 'js',
+    module: 'mjs',
 }
 
 defaults.vars = {

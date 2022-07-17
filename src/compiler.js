@@ -50,6 +50,11 @@ const Compiler = (config) => {
     const module = config.extension.module
     const matches = []
     const formats = []
+    const slurp = {
+        match: '[ \\t]*',
+        start: [token.start, '_'],
+        end: ['_', token.end],
+    }
     tags.forEach((item) => {
         matches.push(
             token.start
@@ -60,6 +65,8 @@ const Compiler = (config) => {
         formats.push(item.format.bind(vars))
     })
     const regex = new RegExp(matches.join('|').concat('|$'), 'g')
+    const slurpStart = new RegExp([slurp.match, slurp.start].join(''), 'gm')
+    const slurpEnd = new RegExp([slurp.end, slurp.match].join(''), 'gm')
     /**
      * @type Function
      * @name Compile
@@ -67,6 +74,10 @@ const Compiler = (config) => {
     return function (content, path) {
         const { SCOPE, SAFE, BUFFER } = vars
         const extension = path.split('.').pop()
+        content = content.replace(/[\r\n]+/g, '\n').replace(/^\s+|\s+$/gm, '')
+        content = content
+            .replace(slurpStart, slurp.start)
+            .replace(slurpEnd, slurp.end)
         if (extension === module) {
             content = [token.start, content, token.end].join('\n')
         }

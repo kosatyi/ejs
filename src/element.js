@@ -27,7 +27,7 @@ const gt = '>'
 export default function element(tag, attrs, content) {
     const result = []
     const hasClosedTag = selfClosed.indexOf(tag) === -1
-    const attributes = map(attrs, function (value, key) {
+    const attributes = map(attrs, (value, key) => {
         if (value !== null && value !== undefined) {
             return [
                 entities(key),

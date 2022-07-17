@@ -80,11 +80,11 @@ export const format = (pattern, params) => {
     })
 }
 
-export const each = (object, callback, context) => {
+export const each = (object, callback) => {
     let prop
     for (prop in object) {
         if (hasProp(object, prop)) {
-            callback.call(context || null, object[prop], prop, object)
+            callback(object[prop], prop, object)
         }
     }
 }
@@ -94,7 +94,7 @@ export const map = (object, callback, context) => {
     each(
         object,
         (value, key, object) => {
-            let item = callback.call(value, key, object)
+            let item = callback(value, key, object)
             if (item !== undefined) {
                 result.push(item)
             }

@@ -1,8 +1,4 @@
-import resolve from '@rollup/plugin-node-resolve'
-import commonjs from '@rollup/plugin-commonjs'
-import babel from '@rollup/plugin-babel'
-import ignore from 'rollup-plugin-ignore'
-import { terser } from 'rollup-plugin-terser'
+import { ignore, resolve, commonjs, babel, terser } from '@kosatyi/rollup'
 
 import pkg from './package.json'
 
@@ -13,7 +9,7 @@ const babelConfig = {
     presets: ['@babel/preset-env'],
 }
 
-const iife = {
+const umd = {
     input: 'src/index.js',
     output: [
         {
@@ -54,4 +50,4 @@ const mjs = {
     plugins: [resolve({}), commonjs({})],
 }
 
-export default [iife, cjs, mjs]
+export default [umd, cjs, mjs]

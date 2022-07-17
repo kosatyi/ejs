@@ -117,7 +117,6 @@ function init(options) {
             return view.render(name, data)
         },
     })
-
     return view
 }
 
