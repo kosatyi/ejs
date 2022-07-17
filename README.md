@@ -2,10 +2,9 @@
 
 Embedded JavaScript templates
 
-![npm](https://img.shields.io/npm/v/@kosatyi/ejs.svg)
-![downloads](https://img.shields.io/npm/dt/@kosatyi/ejs.svg)
-![license](https://img.shields.io/npm/l/@kosatyi/ejs.svg)
-![github-issues](https://img.shields.io/github/issues/kosatyi/ejs.svg)
+[![npm](https://img.shields.io/npm/v/@kosatyi/ejs.svg)](https://www.npmjs.com/package/@kosatyi/ejs)
+[![github-issues](https://img.shields.io/github/issues/kosatyi/ejs.svg)](https://github.com/kosatyi/ejs/issues)
+[![license](https://img.shields.io/npm/l/@kosatyi/ejs.svg)](https://github.com/kosatyi/ejs/blob/master/LICENCE)
 
 ## Install
 
