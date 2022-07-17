@@ -19,7 +19,7 @@ $ npm install @kosatyi/ejs --save
 ```js
 const ejs = require('@kosatyi/ejs');
 
-// path where templates is located (views by default so you can skip this step)
+// path where templates is located 
 ejs.configure({
     path: 'views'
 })
