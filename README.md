@@ -38,6 +38,8 @@ ejs.render('page/index').then((content)=>{
 })
 ```
 
+## Template Example
+
 **layout/default.ejs**
 
 ```html
