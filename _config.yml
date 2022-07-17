@@ -6,7 +6,7 @@ plugins:
 remote_theme: kosatyi/sjt
 
 navigation: false
-projects: true
+projects: false
 
 baseurl: /ejs
 
