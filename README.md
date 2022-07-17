@@ -70,6 +70,8 @@ ejs.render('page/index').then((content)=>{
 
 <% extend('layout/default') %>
 
+<% set('title','Page Title') %>
+
 <% block('resources',(parent)=>{ %>
     <% parent() %>
     <script defer src="/dist/framework.js"></script>
