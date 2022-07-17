@@ -18,11 +18,13 @@ $ npm install @kosatyi/ejs --save
 ## Usage
 
 ```js
-var ejs = require('@kosatyi/ejs');
+const ejs = require('@kosatyi/ejs');
+
 // path where templates is located (views by default so you can skip this step)
 ejs.configure({
     path: 'views'
 })
+
 // add custom template helper functions
 ejs.helpers({
     ucase(text){
