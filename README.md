@@ -77,6 +77,6 @@ ejs.render('page/index').then((content)=>{
 <% }) %>
 
 <% block('content',()=>{ %>
-Content
+<%- ucase('make text upper') %>
 <% }) %>
 ```
