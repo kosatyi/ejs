@@ -12,11 +12,9 @@
     "chokidar": "^3.5.3"
   },
   "files": [
-    "dist",
-    "build.js"
+    "dist"
   ],
   "scripts": {
-    "gulp": "cd test && node build",
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "version": "npm run build",
