@@ -1,7 +1,7 @@
 import path from 'path'
 import defaults from './defaults'
 import { extend, safeValue } from './utils'
-import { isFunction, isString, typeProp } from './type'
+import { isFunction, isString, typeProp, isBoolean } from './type'
 import element from './element'
 import Compiler from './compiler'
 import Wrapper from './wrapper'
@@ -78,11 +78,21 @@ function init(options) {
                 options = {}
             }
             options = options || {}
-            const settings = options.settings || {}
-            const viewPath = settings['views']
-            const viewOptions = settings['view options'] || {}
+            const settings = extend({}, options.settings)
+            const viewPath = typeProp(
+                isString,
+                settings['views'],
+                defaults.path
+            )
+            const viewCache = typeProp(
+                isBoolean,
+                settings['view cache'],
+                defaults.cache
+            )
+            const viewOptions = extend({}, settings['view options'])
             const filename = path.relative(viewPath, name)
             viewOptions.path = viewPath
+            viewOptions.cache = viewCache
             view.configure(viewOptions)
             return view
                 .render(filename, options)
