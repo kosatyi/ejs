@@ -2,6 +2,8 @@ const defaults = {}
 
 defaults.export = 'ejs.precompiled'
 
+defaults.cache = true
+
 defaults.path = 'views'
 
 defaults.resolver = null
