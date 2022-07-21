@@ -274,7 +274,9 @@ const Scope = (config, methods) => {
             const blocks = this.getBlocks()
             const macro = this.macro(callback)
             if (this.getExtend()) {
-                blocks[name] = macro
+                if (hasProp(blocks, name) === false) {
+                    blocks[name] = macro
+                }
             } else {
                 const block = blocks[name]
                 if (block) {
