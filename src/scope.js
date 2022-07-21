@@ -273,17 +273,18 @@ const Scope = (config, methods) => {
         block(name, callback) {
             const blocks = this.getBlocks()
             const macro = this.macro(callback)
+            const block = blocks[name]
             if (this.getExtend()) {
-                if (hasProp(blocks, name) === false) {
+                if (block) {
+                    block.parent = function () {
+                        this.echo(macro())
+                    }.bind(block.ctx)
+                } else {
                     blocks[name] = macro
                 }
             } else {
-                const block = blocks[name]
                 if (block) {
-                    const parent = function () {
-                        this.echo(macro())
-                    }.bind(block.ctx)
-                    this.echo(block(parent))
+                    this.echo(block(block.parent))
                 } else {
                     this.echo(macro(noop))
                 }
