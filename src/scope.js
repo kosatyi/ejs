@@ -22,6 +22,7 @@ const Scope = (config, methods) => {
         this.setLayout(false)
         this.setExtend(false)
     }
+
     /**
      *
      */
@@ -280,21 +281,23 @@ const Scope = (config, methods) => {
             const blocks = this.getBlocks()
             blocks[name] = blocks[name] || []
             blocks[name].push(this.macro(callback))
-            if (this.getExtend() === false) {
-                const list = blocks[name]
-                const callback = function(){
-                    const parent = list.shift()
-                    if( parent ) {
-                        const context = parent.__context
-                        return function(){
-                            context.echo(parent(callback()))
-                        }
-                    } else {
-                        return function(){}
+            if (this.getExtend()) return
+            const current = function(){
+                return blocks[name].shift()
+            }
+            const next = function() {
+                const parent = current()
+                if (parent) {
+                    const context = parent.__context
+                    return function() {
+                        context.echo(parent(next()))
+                    }
+                } else {
+                    return function() {
                     }
                 }
-                this.echo(list.shift()(callback()))
             }
+            this.echo(current()(next()))
         },
         /**
          * @memberOf global
