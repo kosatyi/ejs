@@ -1,4 +1,4 @@
-import { extend, omit, map, each, getPath, hasProp, noop } from './utils'
+import { extend, omit, map, each, getPath, hasProp, noop, isPromise } from './utils'
 import { isFunction, isString } from './type'
 
 import element from './element'
@@ -10,13 +10,17 @@ const Scope = (config, methods) => {
      *
      */
     const { EXTEND, MACROS, LAYOUT, BLOCKS, BUFFER } = config.vars
+
     /**
      *
      * @param data
      * @constructor
      */
     function Scope(data = {}) {
+        this.setBlocks({})
         extend(this, data)
+        this.setLayout(false)
+        this.setExtend(false)
     }
     /**
      *
@@ -26,82 +30,82 @@ const Scope = (config, methods) => {
             value: Buffer(),
             writable: false,
             configurable: false,
-            enumerable: false,
+            enumerable: false
         },
-        [BLOCKS]: {
-            value: {},
-            writable: false,
-            configurable: false,
-            enumerable: false,
-        },
-        [EXTEND]: {
-            value: false,
-            writable: true,
-            configurable: false,
-            enumerable: false,
-        },
-        [LAYOUT]: {
-            value: false,
-            writable: true,
-            configurable: false,
-            enumerable: false,
-        },
-        setBuffer: {
-            value(value) {
-                this[BUFFER] = value
-            },
-            writable: false,
-            configurable: false,
-        },
+        // [BLOCKS]: {
+        //     value: {},
+        //     writable: true,
+        //     configurable: false,
+        //     enumerable: false
+        // },
+        // [EXTEND]: {
+        //     value: false,
+        //     writable: true,
+        //     configurable: false,
+        //     enumerable: false
+        // },
+        // [LAYOUT]: {
+        //     value: false,
+        //     writable: true,
+        //     configurable: false,
+        //     enumerable: false
+        // },
+        // setBuffer: {
+        //     value(value) {
+        //         this[BUFFER] = value
+        //     },
+        //     writable: false,
+        //     configurable: false
+        // },
         getBuffer: {
             value() {
                 return this[BUFFER]
             },
             writable: false,
-            configurable: false,
+            configurable: false
         },
         setBlocks: {
             value(value) {
                 this[BLOCKS] = value
             },
             writable: false,
-            configurable: false,
+            configurable: false
         },
         getBlocks: {
             value() {
                 return this[BLOCKS]
             },
             writable: false,
-            configurable: false,
+            configurable: false
         },
         setExtend: {
             value(value) {
                 this[EXTEND] = value
             },
             writable: false,
-            configurable: false,
+            configurable: false
         },
         getExtend: {
             value() {
                 return this[EXTEND]
             },
             writable: false,
-            configurable: false,
+            configurable: false
         },
         setLayout: {
             value(layout) {
                 this[LAYOUT] = layout
             },
             writable: false,
-            configurable: false,
+            configurable: false
         },
         getLayout: {
             value() {
                 return this[LAYOUT]
             },
             writable: false,
-            configurable: false,
-        },
+            configurable: false
+        }
     })
 
     Scope.helpers = (methods) => {
@@ -134,7 +138,7 @@ const Scope = (config, methods) => {
         echo() {
             const buffer = this.getBuffer()
             const params = [].slice.call(arguments)
-            params.forEach(function (item) {
+            params.forEach(function(item) {
                 buffer(item)
             })
         },
@@ -147,7 +151,7 @@ const Scope = (config, methods) => {
          */
         macro(callback, echo) {
             const buffer = this.getBuffer()
-            const macro = function () {
+            const macro = function() {
                 buffer.backup()
                 if (isFunction(callback)) {
                     callback.apply(this, arguments)
@@ -155,7 +159,9 @@ const Scope = (config, methods) => {
                 const result = buffer.restore()
                 return echo === true ? this.echo(result) : result
             }.bind(this)
-            macro.ctx = this
+            macro.__context = this
+            macro.__source = callback
+            macro.__layout = this.getLayout()
             return macro
         },
         /**
@@ -199,7 +205,7 @@ const Scope = (config, methods) => {
             instance = Component(instance)
             this.set(
                 namespace,
-                function (props) {
+                function(props) {
                     this.echo(instance.render(props))
                 }.bind(this)
             )
@@ -272,22 +278,22 @@ const Scope = (config, methods) => {
          */
         block(name, callback) {
             const blocks = this.getBlocks()
-            const macro = this.macro(callback)
-            const block = blocks[name]
-            if (this.getExtend()) {
-                if (block) {
-                    block.parent = function () {
-                        this.echo(macro())
-                    }.bind(block.ctx)
-                } else {
-                    blocks[name] = macro
+            blocks[name] = blocks[name] || []
+            blocks[name].push(this.macro(callback))
+            if (this.getExtend() === false) {
+                const list = blocks[name]
+                const callback = function(){
+                    const parent = list.shift()
+                    if( parent ) {
+                        const context = parent.__context
+                        return function(){
+                            context.echo(parent(callback()))
+                        }
+                    } else {
+                        return function(){}
+                    }
                 }
-            } else {
-                if (block) {
-                    this.echo(block(block.parent))
-                } else {
-                    this.echo(macro(noop))
-                }
+                this.echo(list.shift()(callback()))
             }
         },
         /**
@@ -316,7 +322,7 @@ const Scope = (config, methods) => {
                         scope.set(namespace, exports)
                     })
                     return this
-                },
+                }
             }
         },
         /**
@@ -336,9 +342,9 @@ const Scope = (config, methods) => {
                         })
                     })
                     return this
-                },
+                }
             }
-        },
+        }
     })
     return Scope
 }
