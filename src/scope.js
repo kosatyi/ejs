@@ -1,256 +1,338 @@
-import { extend, omit, map, each, getPath, hasProp, noop, isPromise } from './utils'
+import { extend, omit, each, getPath, hasProp, noop, resolve, defineProp } from './utils'
 import { isFunction, isString } from './type'
 
 import element from './element'
 import Buffer from './buffer'
-import Component from './component'
 
-const Scope = (config, methods) => {
+const configure = (config, methods) => {
     /**
      *
      */
-    const { EXTEND, MACROS, LAYOUT, BLOCKS, BUFFER } = config.vars
-
+    const { EXTEND, LAYOUT, BLOCKS, BUFFER, MACRO, SCOPE } = config.vars
     /**
-     *
+     * @memberOf global
+     * @name [SCOPE]
      * @param data
      * @constructor
      */
     function Scope(data = {}) {
-        this.setBlocks({})
+        this.initBlocks()
+        this.initMacro()
         extend(this, data)
-        this.setLayout(false)
-        this.setExtend(false)
     }
-
     /**
-     *
+     * @static
+     * @param methods
      */
-    Object.defineProperties(Scope.prototype, {
-        [BUFFER]: {
-            value: Buffer(),
-            writable: false,
-            configurable: false,
-            enumerable: false
-        },
-        // [BLOCKS]: {
-        //     value: {},
-        //     writable: true,
-        //     configurable: false,
-        //     enumerable: false
-        // },
-        // [EXTEND]: {
-        //     value: false,
-        //     writable: true,
-        //     configurable: false,
-        //     enumerable: false
-        // },
-        // [LAYOUT]: {
-        //     value: false,
-        //     writable: true,
-        //     configurable: false,
-        //     enumerable: false
-        // },
-        // setBuffer: {
-        //     value(value) {
-        //         this[BUFFER] = value
-        //     },
-        //     writable: false,
-        //     configurable: false
-        // },
-        getBuffer: {
-            value() {
-                return this[BUFFER]
-            },
-            writable: false,
-            configurable: false
-        },
-        setBlocks: {
-            value(value) {
-                this[BLOCKS] = value
-            },
-            writable: false,
-            configurable: false
-        },
-        getBlocks: {
-            value() {
-                return this[BLOCKS]
-            },
-            writable: false,
-            configurable: false
-        },
-        setExtend: {
-            value(value) {
-                this[EXTEND] = value
-            },
-            writable: false,
-            configurable: false
-        },
-        getExtend: {
-            value() {
-                return this[EXTEND]
-            },
-            writable: false,
-            configurable: false
-        },
-        setLayout: {
-            value(layout) {
-                this[LAYOUT] = layout
-            },
-            writable: false,
-            configurable: false
-        },
-        getLayout: {
-            value() {
-                return this[LAYOUT]
-            },
-            writable: false,
-            configurable: false
-        }
-    })
-
     Scope.helpers = (methods) => {
         extend(Scope.prototype, methods)
     }
-
     /**
-     * @lends Scope.prototype
+     * @static
+     * @param name
+     * @param descriptor
      */
+    Scope.property = (name, descriptor) => {
+        Object.defineProperty(Scope.prototype, name, descriptor)
+    }
+    /**
+     * @static
+     * @param name
+     * @param method
+     */
+    Scope.method = (name, method) => {
+        return Scope.property(name,{
+            value: method,
+            writable: false,
+            configurable: false,
+            enumerable: false
+        })
+    }
+    /**
+     *
+     */
+    Scope.property(BUFFER, {
+        value: Buffer(),
+        writable: false,
+        configurable: false,
+        enumerable: false
+    })
+    /**
+     *
+     */
+    Scope.property(BLOCKS, {
+        value: {},
+        writable: true,
+        configurable: false,
+        enumerable: false
+    })
+    /**
+     *
+     */
+    Scope.property(MACRO, {
+        value: {},
+        writable: true,
+        configurable: false,
+        enumerable: false
+    })
+    /**
+     *
+     */
+    Scope.property(LAYOUT, {
+        value: false,
+        writable: true,
+        configurable: false,
+        enumerable: false
+    })
+    /**
+     *
+     */
+    Scope.property(EXTEND, {
+        value: false,
+        writable: true,
+        configurable: false,
+        enumerable: false
+    })
+    /**
+     *
+     */
+    Scope.method('initBlocks', function() {
+        this[BLOCKS] = {}
+    })
+    /**
+     *
+     */
+    Scope.method('initMacro', function() {
+        this[MACRO] = {}
+    })
+    /**
+     *
+     */
+    Scope.method('getMacro', function() {
+        return this[MACRO]
+    })
+    /**
+     *
+     */
+    Scope.method('getBuffer', function() {
+        return this[BUFFER]
+    })
+    /**
+     *
+     */
+    Scope.method('getBlocks', function() {
+        return this[BLOCKS]
+    })
+    /**
+     *
+     */
+    Scope.method('setExtend', function(value) {
+        this[EXTEND] = value
+    })
+    /**
+     *
+     */
+    Scope.method('getExtend', function() {
+        return this[EXTEND]
+    })
+    /**
+     *
+     */
+    Scope.method('setLayout', function(layout) {
+        this[LAYOUT] = layout
+    })
+    /**
+     *
+     */
+    Scope.method('getLayout', function() {
+        return this[LAYOUT]
+    })
+    /**
+     *
+     */
+    Scope.method('clone', function(exclude_blocks) {
+        const filter = [LAYOUT, EXTEND, BUFFER]
+        if (exclude_blocks === true) {
+            filter.push(BLOCKS)
+        }
+        return omit(this, filter)
+    })
+    /**
+     * @methodOf global
+     * @function extend
+     * @param layout
+     */
+    Scope.method('extend', function(layout) {
+        this.setExtend(true)
+        this.setLayout(layout)
+    })
+    /**
+     * @memberOf global
+     * @function echo
+     */
+    Scope.method('echo', function() {
+        const buffer = this.getBuffer()
+        const params = [].slice.call(arguments)
+        params.forEach(function(item) {
+            buffer(item)
+        })
+    })
+    /**
+     * @memberOf global
+     * @function fn
+     * @param callback
+     */
+    Scope.method('fn', function(callback) {
+        const buffer = this.getBuffer()
+        const context = this
+        return function() {
+            buffer.backup()
+            if (isFunction(callback)) {
+                callback.apply(context, arguments)
+            }
+            return buffer.restore()
+        }
+    })
+    /**
+     * @memberOf global
+     * @function get
+     * @param name
+     * @param [defaults]
+     */
+    Scope.method('get', function(name,defaults) {
+        const path = getPath(this, name)
+        const result = path.shift()
+        const prop = path.pop()
+        return hasProp(result, prop) ? result[prop] : defaults
+    })
+    /**
+     * @memberOf global
+     * @function set
+     * @param name
+     * @param value
+     */
+    Scope.method('set', function(name,value) {
+        const path = getPath(this, name)
+        const result = path.shift()
+        const prop = path.pop()
+        if (this.getExtend() && hasProp(result, prop)) {
+            return result[prop]
+        }
+        return result[prop] = value
+    })
+    /**
+     * @memberOf global
+     * @function macro
+     * @param name
+     * @param callback
+     */
+    Scope.method('macro', function(name, callback) {
+        const list = this.getMacro()
+        const macro = this.fn(callback)
+        const context = this
+        list[name] = function() {
+            return context.echo(macro.apply(undefined, arguments))
+        }
+    })
+    /**
+     * @memberOf global
+     * @function call
+     * @param name
+     * @param {...*} args
+     */
+    Scope.method('call', function(name) {
+        const list = this.getMacro()
+        const macro = list[name]
+        const params = [].slice.call(arguments, 1)
+        if (isFunction(macro)) {
+            return macro.apply(macro, params)
+        }
+    })
+    /**
+     * @memberOf global
+     * @function block
+     * @param name
+     * @param callback
+     */
+    Scope.method('block',function(name,callback){
+        const blocks = this.getBlocks()
+        blocks[name] = blocks[name] || []
+        blocks[name].push(this.fn(callback))
+        if (this.getExtend()) return
+        const list = Object.assign([], blocks[name])
+        const current = function() {
+            return list.shift()
+        }
+        const next = () => {
+            const parent = current()
+            if (parent) {
+                return () => {
+                    this.echo(parent(next()))
+                }
+            } else {
+                return noop
+            }
+        }
+        this.echo(current()(next()))
+    })
+    /**
+     *  @memberOf global
+     *  @function include
+     *  @param path
+     *  @param [data]
+     *  @param [cx]
+     */
+    Scope.method('include',function(path, data, cx){
+        const context = cx === false ? {} : this.clone(true)
+        const params = extend(context, data || {})
+        const promise = this.render(path, params)
+        this.echo(promise)
+    })
+    /**
+     * @memberOf global
+     * @function use
+     * @param path
+     * @param namespace
+     */
+    Scope.method('use',function(path, namespace){
+        const promise = this.require(path)
+        this.echo(resolve(promise,function(exports){
+            const list = this.getMacro()
+            each(exports, function(macro, name) {
+                list[[namespace, name].join('.')] = macro
+            })
+        },this))
+    })
+    /**
+     *  @memberOf global
+     *  @function async
+     *  @param promise
+     *  @param callback
+     */
+    Scope.method('async',function(promise,callback){
+        this.echo(
+            resolve(promise, function(data) {
+                return this.fn(callback)(data)
+            }, this)
+        )
+    })
     Scope.helpers(methods)
-    /**
-     * @lends Scope.prototype
-     */
     Scope.helpers({
         /**
-         * @return {*}
-         */
-        clone(exclude_blocks) {
-            const filter = [LAYOUT, EXTEND, MACROS, BUFFER]
-            if (exclude_blocks === true) {
-                filter.push(BLOCKS)
-            }
-            return omit(this, filter)
-        },
-        /**
-         * Join values to output buffer
          * @memberOf global
-         * @type Function
+         * @param tag
+         * @param attr
+         * @param content
          */
-        echo() {
-            const buffer = this.getBuffer()
-            const params = [].slice.call(arguments)
-            params.forEach(function(item) {
-                buffer(item)
-            })
-        },
-        /**
-         * Buffered output callback
-         * @type Function
-         * @param {Function} callback
-         * @param {Boolean} [echo]
-         * @return {Function}
-         */
-        macro(callback, echo) {
-            const buffer = this.getBuffer()
-            const macro = function() {
-                buffer.backup()
-                if (isFunction(callback)) {
-                    callback.apply(this, arguments)
-                }
-                const result = buffer.restore()
-                return echo === true ? this.echo(result) : result
-            }.bind(this)
-            macro.__context = this
-            macro.__source = callback
-            macro.__layout = this.getLayout()
-            return macro
-        },
-        /**
-         * @memberOf global
-         * @param value
-         * @param callback
-         * @return {Promise<unknown>}
-         */
-        resolve(value, callback) {
-            return Promise.resolve(value).then(callback.bind(this))
-        },
-        /**
-         * @memberOf global
-         */
-        async(promise, callback) {
-            this.echo(
-                this.resolve(promise, (data) => this.macro(callback)(data))
-            )
-        },
-        /**
-         * @memberOf global
-         */
-        node: element,
-        /**
-         * @memberOf global
-         */
-        element(tag, attr, content) {
+        el(tag, attr, content) {
             if (isFunction(content)) {
-                content = this.macro(content)()
+                content = this.fn(content)()
             }
             this.echo(
-                this.resolve(content, (content) => element(tag, attr, content))
+                resolve(content, function(content) {
+                    return element(tag, attr, content)
+                }, this)
             )
-        },
-        /**
-         * @memberOf global
-         * @param {String} namespace
-         * @param {Object} instance
-         */
-        component(namespace, instance) {
-            instance = Component(instance)
-            this.set(
-                namespace,
-                function(props) {
-                    this.echo(instance.render(props))
-                }.bind(this)
-            )
-        },
-        /**
-         * @memberOf global
-         * @param name
-         * @param defaults
-         */
-        get(name, defaults) {
-            const path = getPath(this, name)
-            const result = path.shift()
-            const prop = path.pop()
-            return hasProp(result, prop) ? result[prop] : defaults
-        },
-        /**
-         * @memberOf global
-         * @param {String} name
-         * @param value
-         * @return
-         */
-        set(name, value) {
-            const path = getPath(this, name)
-            const result = path.shift()
-            const prop = path.pop()
-            if (this.getExtend()) {
-                if (hasProp(result, prop)) {
-                    return result[prop]
-                }
-            }
-            result[prop] = value
-        },
-        /**
-         * @memberOf global
-         * @param name
-         */
-        call(name) {
-            const params = [].slice.call(arguments, 1)
-            const path = getPath(this, name)
-            const result = path.shift()
-            const prop = path.pop()
-            if (isFunction(result[prop])) {
-                return result[prop].apply(result, params)
-            }
         },
         /**
          * @memberOf global
@@ -261,95 +343,10 @@ const Scope = (config, methods) => {
             if (isString(object)) {
                 object = this.get(object, [])
             }
-            each(object, callback, this)
-        },
-        /**
-         * @memberOf global
-         * @param {String} layout
-         */
-        extend(layout) {
-            this.setExtend(true)
-            this.setLayout(layout)
-        },
-        /**
-         * @memberOf global
-         * @param name
-         * @param callback
-         * @return {*}
-         */
-        block(name, callback) {
-            const blocks = this.getBlocks()
-            blocks[name] = blocks[name] || []
-            blocks[name].push(this.macro(callback))
-            if (this.getExtend()) return
-            const current = function(){
-                return blocks[name].shift()
-            }
-            const next = function() {
-                const parent = current()
-                if (parent) {
-                    const context = parent.__context
-                    return function() {
-                        context.echo(parent(next()))
-                    }
-                } else {
-                    return function() {
-                    }
-                }
-            }
-            this.echo(current()(next()))
-        },
-        /**
-         * @memberOf global
-         * @param {string} path
-         * @param {object} [data]
-         * @param {boolean} [cx]
-         */
-        include(path, data, cx) {
-            const context = cx === false ? {} : this.clone(true)
-            const params = extend(context, data || {})
-            const promise = this.render(path, params)
-            this.echo(promise)
-        },
-        /**
-         * @memberOf global
-         * @param {string} path
-         */
-        use(path) {
-            const scope = this
-            const promise = this.require(path)
-            this.echo(promise)
-            return {
-                as(namespace) {
-                    promise.then((exports) => {
-                        scope.set(namespace, exports)
-                    })
-                    return this
-                }
-            }
-        },
-        /**
-         * @memberOf global
-         * @param {string} path
-         */
-        from(path) {
-            const scope = this
-            const promise = this.require(path)
-            this.echo(promise)
-            return {
-                use() {
-                    const params = [].slice.call(arguments)
-                    promise.then((exports) => {
-                        params.forEach((name) => {
-                            scope.set(name, exports[name])
-                        })
-                    })
-                    return this
-                }
-            }
+            each(object, callback)
         }
     })
     return Scope
 }
 
-export default Scope
+export default configure

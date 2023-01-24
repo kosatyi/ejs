@@ -30,7 +30,7 @@ function init(options) {
             })
         },
         render(name, data) {
-            const filepath = ext(name, config.extension.template)
+            const filepath = ext(name, config.extension)
             const scope = new view.scope(data)
             return view.output(filepath, scope).then((content) => {
                 if (scope.getExtend()) {
@@ -43,10 +43,10 @@ function init(options) {
             })
         },
         require(name) {
-            const filepath = ext(name, config.extension.module)
+            const filepath = ext(name, config.extension)
             const scope = new view.scope({})
             return view.output(filepath, scope).then(() => {
-                return scope.clone(true)
+                return scope.getMacro()
             })
         },
         helpers(methods) {
@@ -62,7 +62,11 @@ function init(options) {
                 defaults.resolver,
                 options.resolver
             )
-            config.extension = extend({}, defaults.extension, options.extension)
+            config.extension = typeProp(
+                isString,
+                defaults.extension,
+                options.extension
+            )
             config.token = extend({}, defaults.token, options.token)
             config.vars = extend({}, defaults.vars, options.vars)
             view.scope = Scope(config, helpers)

@@ -24,7 +24,12 @@ const umd = {
             plugins: [terser()],
         },
     ],
-    plugins: [ignore(external), resolve({}), commonjs({}), babel(babelConfig)],
+    plugins: [
+        ignore(external),
+        resolve({}),
+        commonjs({}),
+        babel(babelConfig)
+    ],
 }
 
 const cjs = {

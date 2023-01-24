@@ -144,6 +144,12 @@ export const uuid = (str) => {
     return (hash1 >>> 0) * 4096 + (hash2 >>> 0)
 }
 
+export const resolve = (value,callback,context) =>
+    Promise.resolve(value).then(callback.bind(context));
+
+export const defineProp = (obj,key,descriptor) =>
+    Object.defineProperty(obj, key, descriptor);
+
 export const random = (size) => {
     let string = ''
     let chars =

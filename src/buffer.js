@@ -21,6 +21,9 @@ const Buffer = () => {
         array = store.pop()
         return resolve(result)
     }
+    buffer.error = function(e){
+        throw e
+    }
     buffer.end = function () {
         return resolve(array)
     }

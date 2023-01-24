@@ -40,14 +40,13 @@ const match = (regex, text, callback) => {
 }
 /**
  *
- * @param {Object} config
+ * @param {object} config
  * @return {function(*, *): Function}
  * @constructor
  */
 const Compiler = (config) => {
     const token = config.token
     const vars = config.vars
-    const module = config.extension.module
     const matches = []
     const formats = []
     const slurp = {
@@ -68,19 +67,15 @@ const Compiler = (config) => {
     const slurpStart = new RegExp([slurp.match, slurp.start].join(''), 'gm')
     const slurpEnd = new RegExp([slurp.end, slurp.match].join(''), 'gm')
     /**
-     * @type Function
+     * @type function
      * @name Compile
      */
     return function (content, path) {
         const { SCOPE, SAFE, BUFFER } = vars
-        const extension = path.split('.').pop()
         content = content.replace(/[\r\n]+/g, '\n').replace(/^\s+|\s+$/gm, '')
         content = content
             .replace(slurpStart, slurp.start)
             .replace(slurpEnd, slurp.end)
-        if (extension === module) {
-            content = [token.start, content, token.end].join('\n')
-        }
         let source = `${BUFFER}('`
         match(regex, content, (params, index, offset) => {
             source += symbols(content.slice(index, offset))
@@ -89,6 +84,7 @@ const Compiler = (config) => {
             })
         })
         source += `');`
+        source = `try{${source}}catch(e){console.info(e)}`
         source = `with(${SCOPE}){${source}}`
         source = `${BUFFER}.start();${source}return ${BUFFER}.end();`
         source += `\n//# sourceURL=${path}`
@@ -98,6 +94,7 @@ const Compiler = (config) => {
             result.source = `(function(${SCOPE},${BUFFER},${SAFE}){\n${source}\n})`
             //result.source = result.toString()
         } catch (e) {
+            console.log(e)
             e.filename = path
             e.source = source
             throw e
