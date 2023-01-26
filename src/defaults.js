@@ -10,7 +10,7 @@ defaults.resolver = null
 
 defaults.extension = 'ejs'
 
-defaults.withObject = true
+defaults.withObject = false
 
 defaults.vars = {
     SCOPE: 'ejs',
