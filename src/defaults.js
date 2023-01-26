@@ -10,15 +10,15 @@ defaults.resolver = null
 
 defaults.extension = 'ejs'
 
+defaults.withObject = true
+
 defaults.vars = {
-    EXTEND: '$$$',
+    SCOPE: 'ejs',
+    EXTEND: '$$e',
     BUFFER: '$$a',
-    OUTPUT: '$$i',
     LAYOUT: '$$l',
     BLOCKS: '$$b',
     MACRO: '$$m',
-    ERROR: '$$e',
-    SCOPE: '$$s',
     SAFE: '$$v',
 }
 

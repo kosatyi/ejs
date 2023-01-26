@@ -4,14 +4,20 @@ import { isFunction, isString } from './type'
 import element from './element'
 import Buffer from './buffer'
 
+/**
+ * @memberOf global
+ * @class
+ * @alias ejs
+ * @param config
+ * @param methods
+ * @return {Scope}
+ */
+
 const configure = (config, methods) => {
+    const { EXTEND, LAYOUT, BLOCKS, BUFFER, MACRO } = config.vars
+
     /**
      *
-     */
-    const { EXTEND, LAYOUT, BLOCKS, BUFFER, MACRO, SCOPE } = config.vars
-    /**
-     * @memberOf global
-     * @name [SCOPE]
      * @param data
      * @constructor
      */
@@ -20,136 +26,77 @@ const configure = (config, methods) => {
         this.initMacro()
         extend(this, data)
     }
-    /**
-     * @static
-     * @param methods
-     */
     Scope.helpers = (methods) => {
         extend(Scope.prototype, methods)
     }
-    /**
-     * @static
-     * @param name
-     * @param descriptor
-     */
     Scope.property = (name, descriptor) => {
         Object.defineProperty(Scope.prototype, name, descriptor)
     }
-    /**
-     * @static
-     * @param name
-     * @param method
-     */
     Scope.method = (name, method) => {
-        return Scope.property(name,{
+        Object.defineProperty(Scope.prototype, name, {
             value: method,
             writable: false,
             configurable: false,
             enumerable: false
         })
     }
-    /**
-     *
-     */
     Scope.property(BUFFER, {
         value: Buffer(),
         writable: false,
         configurable: false,
         enumerable: false
     })
-    /**
-     *
-     */
     Scope.property(BLOCKS, {
         value: {},
         writable: true,
         configurable: false,
         enumerable: false
     })
-    /**
-     *
-     */
     Scope.property(MACRO, {
         value: {},
         writable: true,
         configurable: false,
         enumerable: false
     })
-    /**
-     *
-     */
     Scope.property(LAYOUT, {
         value: false,
         writable: true,
         configurable: false,
         enumerable: false
     })
-    /**
-     *
-     */
     Scope.property(EXTEND, {
         value: false,
         writable: true,
         configurable: false,
         enumerable: false
     })
-    /**
-     *
-     */
     Scope.method('initBlocks', function() {
         this[BLOCKS] = {}
     })
-    /**
-     *
-     */
     Scope.method('initMacro', function() {
         this[MACRO] = {}
     })
-    /**
-     *
-     */
     Scope.method('getMacro', function() {
         return this[MACRO]
     })
-    /**
-     *
-     */
     Scope.method('getBuffer', function() {
         return this[BUFFER]
     })
-    /**
-     *
-     */
     Scope.method('getBlocks', function() {
         return this[BLOCKS]
     })
-    /**
-     *
-     */
     Scope.method('setExtend', function(value) {
         this[EXTEND] = value
     })
-    /**
-     *
-     */
     Scope.method('getExtend', function() {
         return this[EXTEND]
     })
-    /**
-     *
-     */
     Scope.method('setLayout', function(layout) {
         this[LAYOUT] = layout
     })
-    /**
-     *
-     */
     Scope.method('getLayout', function() {
         return this[LAYOUT]
     })
-    /**
-     *
-     */
     Scope.method('clone', function(exclude_blocks) {
         const filter = [LAYOUT, EXTEND, BUFFER]
         if (exclude_blocks === true) {
@@ -157,19 +104,10 @@ const configure = (config, methods) => {
         }
         return omit(this, filter)
     })
-    /**
-     * @methodOf global
-     * @function extend
-     * @param layout
-     */
     Scope.method('extend', function(layout) {
         this.setExtend(true)
         this.setLayout(layout)
     })
-    /**
-     * @memberOf global
-     * @function echo
-     */
     Scope.method('echo', function() {
         const buffer = this.getBuffer()
         const params = [].slice.call(arguments)
@@ -177,11 +115,6 @@ const configure = (config, methods) => {
             buffer(item)
         })
     })
-    /**
-     * @memberOf global
-     * @function fn
-     * @param callback
-     */
     Scope.method('fn', function(callback) {
         const buffer = this.getBuffer()
         const context = this
@@ -193,24 +126,12 @@ const configure = (config, methods) => {
             return buffer.restore()
         }
     })
-    /**
-     * @memberOf global
-     * @function get
-     * @param name
-     * @param [defaults]
-     */
     Scope.method('get', function(name,defaults) {
         const path = getPath(this, name)
         const result = path.shift()
         const prop = path.pop()
         return hasProp(result, prop) ? result[prop] : defaults
     })
-    /**
-     * @memberOf global
-     * @function set
-     * @param name
-     * @param value
-     */
     Scope.method('set', function(name,value) {
         const path = getPath(this, name)
         const result = path.shift()
@@ -220,12 +141,6 @@ const configure = (config, methods) => {
         }
         return result[prop] = value
     })
-    /**
-     * @memberOf global
-     * @function macro
-     * @param name
-     * @param callback
-     */
     Scope.method('macro', function(name, callback) {
         const list = this.getMacro()
         const macro = this.fn(callback)
@@ -234,12 +149,6 @@ const configure = (config, methods) => {
             return context.echo(macro.apply(undefined, arguments))
         }
     })
-    /**
-     * @memberOf global
-     * @function call
-     * @param name
-     * @param {...*} args
-     */
     Scope.method('call', function(name) {
         const list = this.getMacro()
         const macro = list[name]
@@ -248,12 +157,6 @@ const configure = (config, methods) => {
             return macro.apply(macro, params)
         }
     })
-    /**
-     * @memberOf global
-     * @function block
-     * @param name
-     * @param callback
-     */
     Scope.method('block',function(name,callback){
         const blocks = this.getBlocks()
         blocks[name] = blocks[name] || []
@@ -275,25 +178,12 @@ const configure = (config, methods) => {
         }
         this.echo(current()(next()))
     })
-    /**
-     *  @memberOf global
-     *  @function include
-     *  @param path
-     *  @param [data]
-     *  @param [cx]
-     */
     Scope.method('include',function(path, data, cx){
         const context = cx === false ? {} : this.clone(true)
         const params = extend(context, data || {})
         const promise = this.render(path, params)
         this.echo(promise)
     })
-    /**
-     * @memberOf global
-     * @function use
-     * @param path
-     * @param namespace
-     */
     Scope.method('use',function(path, namespace){
         const promise = this.require(path)
         this.echo(resolve(promise,function(exports){
@@ -303,12 +193,6 @@ const configure = (config, methods) => {
             })
         },this))
     })
-    /**
-     *  @memberOf global
-     *  @function async
-     *  @param promise
-     *  @param callback
-     */
     Scope.method('async',function(promise,callback){
         this.echo(
             resolve(promise, function(data) {
@@ -318,12 +202,6 @@ const configure = (config, methods) => {
     })
     Scope.helpers(methods)
     Scope.helpers({
-        /**
-         * @memberOf global
-         * @param tag
-         * @param attr
-         * @param content
-         */
         el(tag, attr, content) {
             if (isFunction(content)) {
                 content = this.fn(content)()
@@ -334,11 +212,6 @@ const configure = (config, methods) => {
                 }, this)
             )
         },
-        /**
-         * @memberOf global
-         * @param object
-         * @param callback
-         */
         each(object, callback) {
             if (isString(object)) {
                 object = this.get(object, [])

@@ -45,6 +45,7 @@ const match = (regex, text, callback) => {
  * @constructor
  */
 const Compiler = (config) => {
+    const withObject = config.withObject
     const token = config.token
     const vars = config.vars
     const matches = []
@@ -85,14 +86,15 @@ const Compiler = (config) => {
         })
         source += `');`
         source = `try{${source}}catch(e){console.info(e)}`
-        source = `with(${SCOPE}){${source}}`
+        if(withObject) {
+            source = `with(${SCOPE}){${source}}`
+        }
         source = `${BUFFER}.start();${source}return ${BUFFER}.end();`
         source += `\n//# sourceURL=${path}`
         let result = null
         try {
             result = new Function(SCOPE, BUFFER, SAFE, source)
             result.source = `(function(${SCOPE},${BUFFER},${SAFE}){\n${source}\n})`
-            //result.source = result.toString()
         } catch (e) {
             console.log(e)
             e.filename = path
