@@ -15,7 +15,8 @@
     "terser": "^5.16.1"
   },
   "files": [
-    "dist"
+    "dist",
+    "ejs.d.ts"
   ],
   "scripts": {
     "build": "rollup -c",

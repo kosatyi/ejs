@@ -4,23 +4,8 @@ import { isFunction, isString } from './type'
 import element from './element'
 import Buffer from './buffer'
 
-/**
- * @memberOf global
- * @class
- * @alias ejs
- * @param config
- * @param methods
- * @return {Scope}
- */
-
 const configure = (config, methods) => {
     const { EXTEND, LAYOUT, BLOCKS, BUFFER, MACRO } = config.vars
-
-    /**
-     *
-     * @param data
-     * @constructor
-     */
     function Scope(data = {}) {
         this.initBlocks()
         this.initMacro()
@@ -200,25 +185,23 @@ const configure = (config, methods) => {
             }, this)
         )
     })
-    Scope.helpers(methods)
-    Scope.helpers({
-        el(tag, attr, content) {
-            if (isFunction(content)) {
-                content = this.fn(content)()
-            }
-            this.echo(
-                resolve(content, function(content) {
-                    return element(tag, attr, content)
-                }, this)
-            )
-        },
-        each(object, callback) {
-            if (isString(object)) {
-                object = this.get(object, [])
-            }
-            each(object, callback)
+    Scope.method('el',function(tag, attr, content){
+        if (isFunction(content)) {
+            content = this.fn(content)()
         }
+        this.echo(
+            resolve(content, function(content) {
+                return element(tag, attr, content)
+            }, this)
+        )
     })
+    Scope.method('each',function(object, callback){
+        if (isString(object)) {
+            object = this.get(object, [])
+        }
+        each(object, callback)
+    })
+    Scope.helpers(methods)
     return Scope
 }
 
