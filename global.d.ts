@@ -24,7 +24,7 @@ declare global {
      * @param path
      * @param defaults
      */
-    function get(path: string, defaults: any);
+    function get(path: string, defaults?: any);
 
     /**
      * import macro from file **path** and set to current scope **name** property
@@ -60,6 +60,14 @@ declare global {
      * @param callback
      */
     function fn(callback: Function);
+
+    /**
+     *
+     * @param {string} tag
+     * @param {object} attrs
+     * @param {function} content
+     */
+    function el(tag: string, attrs?: object, content?: any);
 
     /**
      * buffer output
