@@ -13,7 +13,8 @@
   },
   "files": [
     "dist",
-    "ejs.d.ts"
+    "ejs.d.ts",
+    "global.d.ts"
   ],
   "scripts": {
     "build": "rollup -c",
