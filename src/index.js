@@ -67,6 +67,11 @@ function init(options) {
                 defaults.extension,
                 options.extension
             )
+            config.withObject = typeProp(
+                isBoolean,
+                defaults.withObject,
+                options.withObject
+            )
             config.token = extend({}, defaults.token, options.token)
             config.vars = extend({}, defaults.vars, options.vars)
             view.scope = Scope(config, helpers)

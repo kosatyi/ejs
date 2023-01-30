@@ -96,7 +96,6 @@ const Compiler = (config) => {
             result = new Function(SCOPE, BUFFER, SAFE, source)
             result.source = `(function(${SCOPE},${BUFFER},${SAFE}){\n${source}\n})`
         } catch (e) {
-            console.log(e)
             e.filename = path
             e.source = source
             throw e

@@ -9,10 +9,7 @@
   "minified": "dist/ejs.min.js",
   "author": "Stepan Kosatyi (https://kosatyi.com)",
   "dependencies": {
-    "@babel/preset-env": "^7.20.2",
-    "chokidar": "^3.5.3",
-    "glob": "^8.1.0",
-    "terser": "^5.16.1"
+    "chokidar": "^3.5.3"
   },
   "files": [
     "dist",
@@ -26,7 +23,11 @@
     "postversion": "git push && git push --tags"
   },
   "devDependencies": {
-    "@kosatyi/rollup": "^0.0.1"
+    "@kosatyi/rollup": "^0.0.1",
+    "@babel/core": "^7.20.12",
+    "@babel/preset-env": "^7.20.2",
+    "glob": "^8.1.0",
+    "terser": "^5.16.1"
   },
   "directories": {
     "test": "test"
