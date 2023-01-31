@@ -10,7 +10,7 @@ declare global {
      * @param name
      * @param callback
      */
-    function block(name: string, callback);
+    function block(name: string, callback?);
 
     /**
      * set property in current scope
