@@ -23,6 +23,7 @@ function init(options) {
         return path
     }
     const view = {
+        safeValue,
         element,
         output(path, scope) {
             return view.template(path).then(function (template) {
