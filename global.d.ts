@@ -8,7 +8,7 @@ declare global {
     /**
      * define block with custom **name** and callback
      * @param name
-     * @param callback
+     * @param [callback]
      */
     function block(name: string, callback?);
 
