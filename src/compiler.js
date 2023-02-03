@@ -4,25 +4,25 @@ const tags = [
     {
         symbol: '-',
         format(value) {
-            return `'+\n${this.SAFE}(${value},1)+\n'`
+            return `')\n${this.BUFFER}(${this.SAFE}(${value},1))\n${this.BUFFER}('`
         },
     },
     {
         symbol: '=',
         format(value) {
-            return `'+\n${this.SAFE}(${value})+\n'`
+            return `')\n${this.BUFFER}(${this.SAFE}(${value}))\n${this.BUFFER}('`
         },
     },
     {
         symbol: '#',
         format(value) {
-            return `'+\n/**${value}**/+\n'`
+            return `')\n/**${value}**/\n${this.BUFFER}('`
         },
     },
     {
         symbol: '',
         format(value) {
-            return `')\n${value}\n${this.BUFFER}('`
+            return `')\n${value.trim()}\n${this.BUFFER}('`
         },
     },
 ]
