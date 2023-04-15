@@ -8,7 +8,7 @@ remote_theme: kosatyi/sjt
 navigation: false
 projects: false
 
-domain: kosatyi.com
+url: https://kosatyi.com
 baseurl: /ejs
 
 brand: @kosatyi/ejs
