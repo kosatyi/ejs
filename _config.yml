@@ -6,14 +6,14 @@ plugins:
 remote_theme: kosatyi/sjt
 
 navigation: false
-projects: false
+projects: true
 
 url: https://kosatyi.com
 baseurl: /ejs
 
-brand: @kosatyi/ejs
-title: Embedded JavaScript templates
-description: EJS with extend/block support
+brand: ejs
+title: EJS
+description: EJS template engine
 analytics: UA-37629144-1
 adsense: ca-pub-3650650669153101
 
