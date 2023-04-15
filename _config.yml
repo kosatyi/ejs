@@ -9,7 +9,7 @@ navigation: false
 projects: false
 
 baseurl: /ejs
-
+host: https://kosatyi.com
 brand: @kosatyi/ejs
 title: Embedded JavaScript templates
 description: EJS with extend/block support
