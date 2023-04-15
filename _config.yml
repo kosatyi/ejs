@@ -8,8 +8,9 @@ remote_theme: kosatyi/sjt
 navigation: false
 projects: false
 
+domain: kosatyi.com
 baseurl: /ejs
-host: https://kosatyi.com
+
 brand: @kosatyi/ejs
 title: Embedded JavaScript templates
 description: EJS with extend/block support
