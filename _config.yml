@@ -11,8 +11,6 @@ projects: false
 url: https://kosatyi.com
 baseurl: /ejs
 
-
-
 brand: @kosatyi/ejs
 title: Embedded JavaScript templates
 description: EJS with extend/block support
