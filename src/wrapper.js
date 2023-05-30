@@ -1,6 +1,6 @@
 const configureWrapper = (config) => {
     const name = config.export
-    const useStrict = config.withObject !== true
+    const useStrict = config.withObject === false
     return function Wrapper(list) {
         let out = ''
         out += '(function(global,factory){'
