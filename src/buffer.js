@@ -1,9 +1,6 @@
 const resolve = (list) => Promise.all(list).then((list) => list.join(''))
-/**
- *
- * @return {function}
- */
-const Buffer = () => {
+
+const createBuffer = () => {
     let store = [],
         array = []
     function buffer(value) {
@@ -21,7 +18,7 @@ const Buffer = () => {
         array = store.pop()
         return resolve(result)
     }
-    buffer.error = function(e){
+    buffer.error = function (e) {
         throw e
     }
     buffer.end = function () {
@@ -30,4 +27,4 @@ const Buffer = () => {
     return buffer
 }
 
-export default Buffer
+export default createBuffer

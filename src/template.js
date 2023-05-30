@@ -3,10 +3,11 @@ import chokidar from 'chokidar'
 import { isNode } from './utils'
 import { isFunction } from './type'
 
-const HttpRequest = (template) =>
-    window.fetch(template).then((response) => response.text())
+const httpRequest = (template) => {
+    return fetch(template).then((response) => response.text())
+}
 
-const FileSystem = (template) =>
+const fileSystem = (template) =>
     new Promise((resolve, reject) => {
         fs.readFile(template, (error, data) => {
             if (error) {
@@ -17,7 +18,7 @@ const FileSystem = (template) =>
         })
     })
 
-const Watcher = (path, cache) =>
+const enableWatcher = (path, cache) =>
     chokidar
         .watch('.', {
             cwd: path,
@@ -29,15 +30,14 @@ const Watcher = (path, cache) =>
             console.log('watcher error: ' + error)
         })
 
-const Template = (config, cache, compile) => {
+const configureTemplate = (ejs, config) => {
     const path = config.path
-    const token = config.token || {}
+    const { cache, compile } = ejs
     const resolver = isFunction(config.resolver)
         ? config.resolver
         : isNode()
-        ? FileSystem
-        : HttpRequest
-
+        ? fileSystem
+        : httpRequest
     const normalize = (template) => {
         template = [path, template].join('/')
         template = template.replace(/\/\//g, '/')
@@ -50,7 +50,7 @@ const Template = (config, cache, compile) => {
         cache.set(template, content)
         return content
     }
-    const get = (template) => {
+    const template = (template) => {
         if (cache.exist(template)) {
             return cache.resolve(template)
         }
@@ -60,9 +60,9 @@ const Template = (config, cache, compile) => {
         return result(content, template)
     }
     if (config.watch && isNode()) {
-        Watcher(path, cache)
+        enableWatcher(path, cache)
     }
-    return get
+    return template
 }
 
-export default Template
+export default configureTemplate

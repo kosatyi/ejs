@@ -1,10 +1,10 @@
-import { extend, omit, each, getPath, hasProp, noop, resolve, defineProp } from './utils'
+import { extend, omit, each, getPath, hasProp, noop, resolve } from './utils'
 import { isFunction, isString } from './type'
 
 import element from './element'
-import Buffer from './buffer'
+import createBuffer from './buffer'
 
-const configure = (config, methods) => {
+const configureScope = (ejs, config) => {
     const { EXTEND, LAYOUT, BLOCKS, BUFFER, MACRO } = config.vars
     function Scope(data = {}) {
         this.initBlocks()
@@ -22,88 +22,88 @@ const configure = (config, methods) => {
             value: method,
             writable: false,
             configurable: false,
-            enumerable: false
+            enumerable: false,
         })
     }
     Scope.property(BUFFER, {
-        value: Buffer(),
+        value: createBuffer(),
         writable: false,
         configurable: false,
-        enumerable: false
+        enumerable: false,
     })
     Scope.property(BLOCKS, {
         value: {},
         writable: true,
         configurable: false,
-        enumerable: false
+        enumerable: false,
     })
     Scope.property(MACRO, {
         value: {},
         writable: true,
         configurable: false,
-        enumerable: false
+        enumerable: false,
     })
     Scope.property(LAYOUT, {
         value: false,
         writable: true,
         configurable: false,
-        enumerable: false
+        enumerable: false,
     })
     Scope.property(EXTEND, {
         value: false,
         writable: true,
         configurable: false,
-        enumerable: false
+        enumerable: false,
     })
-    Scope.method('initBlocks', function() {
+    Scope.method('initBlocks', function () {
         this[BLOCKS] = {}
     })
-    Scope.method('initMacro', function() {
+    Scope.method('initMacro', function () {
         this[MACRO] = {}
     })
-    Scope.method('getMacro', function() {
+    Scope.method('getMacro', function () {
         return this[MACRO]
     })
-    Scope.method('getBuffer', function() {
+    Scope.method('getBuffer', function () {
         return this[BUFFER]
     })
-    Scope.method('getBlocks', function() {
+    Scope.method('getBlocks', function () {
         return this[BLOCKS]
     })
-    Scope.method('setExtend', function(value) {
+    Scope.method('setExtend', function (value) {
         this[EXTEND] = value
     })
-    Scope.method('getExtend', function() {
+    Scope.method('getExtend', function () {
         return this[EXTEND]
     })
-    Scope.method('setLayout', function(layout) {
+    Scope.method('setLayout', function (layout) {
         this[LAYOUT] = layout
     })
-    Scope.method('getLayout', function() {
+    Scope.method('getLayout', function () {
         return this[LAYOUT]
     })
-    Scope.method('clone', function(exclude_blocks) {
+    Scope.method('clone', function (exclude_blocks) {
         const filter = [LAYOUT, EXTEND, BUFFER]
         if (exclude_blocks === true) {
             filter.push(BLOCKS)
         }
         return omit(this, filter)
     })
-    Scope.method('extend', function(layout) {
+    Scope.method('extend', function (layout) {
         this.setExtend(true)
         this.setLayout(layout)
     })
-    Scope.method('echo', function() {
+    Scope.method('echo', function () {
         const buffer = this.getBuffer()
         const params = [].slice.call(arguments)
-        params.forEach(function(item) {
+        params.forEach(function (item) {
             buffer(item)
         })
     })
-    Scope.method('fn', function(callback) {
+    Scope.method('fn', function (callback) {
         const buffer = this.getBuffer()
         const context = this
-        return function() {
+        return function () {
             buffer.backup()
             if (isFunction(callback)) {
                 callback.apply(context, arguments)
@@ -111,30 +111,30 @@ const configure = (config, methods) => {
             return buffer.restore()
         }
     })
-    Scope.method('get', function(name,defaults) {
+    Scope.method('get', function (name, defaults) {
         const path = getPath(this, name)
         const result = path.shift()
         const prop = path.pop()
         return hasProp(result, prop) ? result[prop] : defaults
     })
-    Scope.method('set', function(name,value) {
+    Scope.method('set', function (name, value) {
         const path = getPath(this, name)
         const result = path.shift()
         const prop = path.pop()
         if (this.getExtend() && hasProp(result, prop)) {
             return result[prop]
         }
-        return result[prop] = value
+        return (result[prop] = value)
     })
-    Scope.method('macro', function(name, callback) {
+    Scope.method('macro', function (name, callback) {
         const list = this.getMacro()
         const macro = this.fn(callback)
         const context = this
-        list[name] = function() {
+        list[name] = function () {
             return context.echo(macro.apply(undefined, arguments))
         }
     })
-    Scope.method('call', function(name) {
+    Scope.method('call', function (name) {
         const list = this.getMacro()
         const macro = list[name]
         const params = [].slice.call(arguments, 1)
@@ -142,13 +142,13 @@ const configure = (config, methods) => {
             return macro.apply(macro, params)
         }
     })
-    Scope.method('block',function(name,callback){
+    Scope.method('block', function (name, callback) {
         const blocks = this.getBlocks()
         blocks[name] = blocks[name] || []
         blocks[name].push(this.fn(callback))
         if (this.getExtend()) return
         const list = Object.assign([], blocks[name])
-        const current = function() {
+        const current = function () {
             return list.shift()
         }
         const next = () => {
@@ -163,46 +163,59 @@ const configure = (config, methods) => {
         }
         this.echo(current()(next()))
     })
-    Scope.method('include',function(path, data, cx){
+    Scope.method('include', function (path, data, cx) {
         const context = cx === false ? {} : this.clone(true)
         const params = extend(context, data || {})
         const promise = this.render(path, params)
         this.echo(promise)
     })
-    Scope.method('use',function(path, namespace){
+    Scope.method('use', function (path, namespace) {
         const promise = this.require(path)
-        this.echo(resolve(promise,function(exports){
-            const list = this.getMacro()
-            each(exports, function(macro, name) {
-                list[[namespace, name].join('.')] = macro
-            })
-        },this))
-    })
-    Scope.method('async',function(promise,callback){
         this.echo(
-            resolve(promise, function(data) {
-                return this.fn(callback)(data)
-            }, this)
+            resolve(
+                promise,
+                function (exports) {
+                    const list = this.getMacro()
+                    each(exports, function (macro, name) {
+                        list[[namespace, name].join('.')] = macro
+                    })
+                },
+                this
+            )
         )
     })
-    Scope.method('el',function(tag, attr, content){
+    Scope.method('async', function (promise, callback) {
+        this.echo(
+            resolve(
+                promise,
+                function (data) {
+                    return this.fn(callback)(data)
+                },
+                this
+            )
+        )
+    })
+    Scope.method('el', function (tag, attr, content) {
         if (isFunction(content)) {
             content = this.fn(content)()
         }
         this.echo(
-            resolve(content, function(content) {
-                return element(tag, attr, content)
-            }, this)
+            resolve(
+                content,
+                function (content) {
+                    return element(tag, attr, content)
+                },
+                this
+            )
         )
     })
-    Scope.method('each',function(object, callback){
+    Scope.method('each', function (object, callback) {
         if (isString(object)) {
             object = this.get(object, [])
         }
         each(object, callback)
     })
-    Scope.helpers(methods)
     return Scope
 }
 
-export default configure
+export default configureScope

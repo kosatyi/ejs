@@ -1,12 +1,14 @@
 import { extend, hasProp, isNode } from './utils'
 
-function Cache(config) {
+const global = typeof globalThis !== 'undefined' ? globalThis : window || self
+
+function configureCache(config) {
     const namespace = config.export
     const list = {}
     const cache = {
         preload() {
             if (isNode() === false) {
-                this.load(window[namespace])
+                this.load(global[namespace])
             }
             return this
         },
@@ -34,4 +36,4 @@ function Cache(config) {
     return cache.preload()
 }
 
-export default Cache
+export default configureCache

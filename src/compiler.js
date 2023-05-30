@@ -38,13 +38,8 @@ const match = (regex, text, callback) => {
         return match
     })
 }
-/**
- *
- * @param {object} config
- * @return {function(*, *): Function}
- * @constructor
- */
-const Compiler = (config) => {
+
+const configureCompiler = (ejs, config) => {
     const withObject = config.withObject
     const token = config.token
     const vars = config.vars
@@ -67,11 +62,7 @@ const Compiler = (config) => {
     const regex = new RegExp(matches.join('|').concat('|$'), 'g')
     const slurpStart = new RegExp([slurp.match, slurp.start].join(''), 'gm')
     const slurpEnd = new RegExp([slurp.end, slurp.match].join(''), 'gm')
-    /**
-     * @type function
-     * @name Compile
-     */
-    return function (content, path) {
+    return function compiler(content, path) {
         const { SCOPE, SAFE, BUFFER } = vars
         content = content.replace(/[\r\n]+/g, '\n').replace(/^\s+|\s+$/gm, '')
         content = content
@@ -86,7 +77,7 @@ const Compiler = (config) => {
         })
         source += `');`
         source = `try{${source}}catch(e){console.info(e)}`
-        if(withObject) {
+        if (withObject) {
             source = `with(${SCOPE}){${source}}`
         }
         source = `${BUFFER}.start();${source}return ${BUFFER}.end();`
@@ -104,4 +95,4 @@ const Compiler = (config) => {
     }
 }
 
-export default Compiler
+export default configureCompiler

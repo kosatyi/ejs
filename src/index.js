@@ -1,59 +1,47 @@
 import path from 'path'
 import defaults from './defaults'
-import { extend, safeValue } from './utils'
+import { extend, safeValue, ext } from './utils'
 import { isFunction, isString, typeProp, isBoolean } from './type'
 import element from './element'
-import Compiler from './compiler'
-import Wrapper from './wrapper'
-import Template from './template'
-import Scope from './scope'
-import Cache from './cache'
 
-function init(options) {
-    /**
-     * @type {Object}
-     */
+import configureCompiler from './compiler'
+import configureWrapper from './wrapper'
+import configureTemplate from './template'
+import configureScope from './scope'
+import configureCache from './cache'
+
+function create(options) {
     const config = {}
-    const helpers = {}
-    const ext = function (path, defaults) {
-        const ext = path.split('.').pop()
-        if (ext !== defaults) {
-            path = [path, defaults].join('.')
-        }
-        return path
-    }
-    const view = {
-        safeValue,
-        element,
+    const ejs = {
+        safeValue: safeValue,
+        element: element,
         output(path, scope) {
-            return view.template(path).then(function (template) {
+            return ejs.template(path).then(function (template) {
                 return template.call(scope, scope, scope.getBuffer(), safeValue)
             })
         },
         render(name, data) {
             const filepath = ext(name, config.extension)
-            const scope = new view.scope(data)
-            return view.output(filepath, scope).then((content) => {
+            const scope = new ejs.scope(data)
+            return ejs.output(filepath, scope).then((content) => {
                 if (scope.getExtend()) {
                     scope.setExtend(false)
                     const layout = scope.getLayout()
                     const data = scope.clone()
-                    return view.render(layout, data)
+                    return ejs.render(layout, data)
                 }
                 return content
             })
         },
         require(name) {
             const filepath = ext(name, config.extension)
-            const scope = new view.scope({})
-            return view.output(filepath, scope).then(() => {
+            const scope = new ejs.scope({})
+            return ejs.output(filepath, scope).then(() => {
                 return scope.getMacro()
             })
         },
         helpers(methods) {
-            methods = methods || {}
-            extend(helpers, methods)
-            view.scope.helpers(methods)
+            ejs.scope.helpers(methods)
         },
         configure(options) {
             config.export = typeProp(isString, defaults.export, options.export)
@@ -75,12 +63,12 @@ function init(options) {
             )
             config.token = extend({}, defaults.token, options.token)
             config.vars = extend({}, defaults.vars, options.vars)
-            view.scope = Scope(config, helpers)
-            view.compile = Compiler(config)
-            view.wrapper = Wrapper(config)
-            view.cache = Cache(config)
-            view.template = Template(config, view.cache, view.compile)
-            return view
+            ejs.scope = configureScope(ejs, config)
+            ejs.compile = configureCompiler(ejs, config)
+            ejs.wrapper = configureWrapper(ejs, config)
+            ejs.cache = configureCache(ejs, config)
+            ejs.template = configureTemplate(ejs, config)
+            return ejs
         },
         __express(name, options, callback) {
             if (isFunction(options)) {
@@ -103,8 +91,8 @@ function init(options) {
             const filename = path.relative(viewPath, name)
             viewOptions.path = viewPath
             viewOptions.cache = viewCache
-            view.configure(viewOptions)
-            return view
+            ejs.configure(viewOptions)
+            return ejs
                 .render(filename, options)
                 .then((content) => {
                     callback(null, content)
@@ -114,22 +102,20 @@ function init(options) {
                 })
         },
     }
-    /**
-     *
-     */
-    view.configure(options || {})
-    /**
-     *
-     */
-    view.helpers({
+    ejs.configure(options || {})
+    ejs.helpers({
         require(name) {
-            return view.require(name, this)
+            return ejs.require(name, this)
         },
         render(name, data) {
-            return view.render(name, data)
+            return ejs.render(name, data)
         },
     })
-    return view
+    return ejs
 }
 
-export default init()
+const instance = create()
+
+instance.create = create
+
+export default instance

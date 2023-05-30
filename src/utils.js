@@ -1,8 +1,8 @@
 import { isFunction } from './type'
 
-export const isNode = new Function(
-    'try {return this===global;}catch(e){return false;}'
-)
+const isNodeEnv = Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]';
+
+export const isNode = () => isNodeEnv
 
 export const symbolEntities = {
     "'": "'",
@@ -59,6 +59,14 @@ export const getPath = (context, name) => {
 
 export const isPromise = (p) => {
     return Boolean(p && isFunction(p.then))
+}
+
+export const ext = (path, defaults) => {
+    const ext = path.split('.').pop()
+    if (ext !== defaults) {
+        path = [path, defaults].join('.')
+    }
+    return path
 }
 
 export const extend = (...args) => {

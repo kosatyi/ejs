@@ -1,18 +1,28 @@
-const Wrapper = (config) => {
+const configureWrapper = (config) => {
     const name = config.export
-    return function (list) {
-        let out = '(function(o){\n'
+    const useStrict = config.withObject !== true
+    return function Wrapper(list) {
+        let out = ''
+        out += '(function(global,factory){'
+        out += 'typeof exports === "object" && typeof module !== "undefined" ?'
+        out += 'module.exports = factory():'
+        out += 'typeof define === "function" && define.amd ? define(factory):'
+        out += '(global = typeof globalThis !== "undefined" ? globalThis:'
+        out += 'global || self,global["' + name + '"] = factory())'
+        out += '})(this,(function(){'
+        if (useStrict) out += "'use strict';\n"
+        out += 'var list = {};\n'
         list.forEach((item) => {
             out +=
-                'o[' +
+                'list[' +
                 JSON.stringify(item.name) +
                 ']=' +
                 String(item.content) +
-                '\n'
+                ';\n'
         })
-        out += '})(window["' + name + '"] = window["' + name + '"] || {});\n'
+        out += 'return list;}));\n'
         return out
     }
 }
 
-export default Wrapper
+export default configureWrapper
