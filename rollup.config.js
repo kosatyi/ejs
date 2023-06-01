@@ -24,12 +24,7 @@ const umd = {
             plugins: [terser()],
         },
     ],
-    plugins: [
-        ignore(external),
-        resolve({}),
-        commonjs({}),
-        babel(babelConfig)
-    ],
+    plugins: [ignore(external), resolve({}), commonjs({}), babel(babelConfig)],
 }
 
 const cjs = {
@@ -39,7 +34,7 @@ const cjs = {
         name: 'ejs',
         file: pkg.main,
         format: 'cjs',
-        exports: 'default',
+        exports: 'auto',
     },
     plugins: [resolve({}), commonjs({}), babel(babelConfig)],
 }

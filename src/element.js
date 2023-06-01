@@ -24,7 +24,7 @@ const slash = '/'
 const lt = '<'
 const gt = '>'
 
-export default function element(tag, attrs, content) {
+export const element = (tag, attrs, content) => {
     const result = []
     const hasClosedTag = selfClosed.indexOf(tag) === -1
     const attributes = map(attrs, (value, key) => {

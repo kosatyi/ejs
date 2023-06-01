@@ -1,4 +1,4 @@
-const defaults = {}
+export const defaults = {}
 
 defaults.export = 'ejs.precompiled'
 
@@ -27,5 +27,3 @@ defaults.token = {
     end: '%>',
     regex: '([\\s\\S]+?)',
 }
-
-export default defaults

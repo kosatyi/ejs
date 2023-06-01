@@ -1,121 +1,148 @@
 import path from 'path'
-import defaults from './defaults'
+import { defaults } from './defaults'
+import { element } from './element'
 import { extend, safeValue, ext } from './utils'
 import { isFunction, isString, typeProp, isBoolean } from './type'
-import element from './element'
+import { Compiler } from './compiler'
+import { Bundler } from './bundler'
+import { Template } from './template'
+import { Context } from './context'
+import { Cache } from './cache'
 
-import configureCompiler from './compiler'
-import configureWrapper from './wrapper'
-import configureTemplate from './template'
-import configureScope from './scope'
-import configureCache from './cache'
-
-function create(options) {
-    const config = {}
-    const ejs = {
-        safeValue: safeValue,
-        element: element,
-        output(path, scope) {
-            return ejs.template(path).then(function (template) {
-                return template.call(scope, scope, scope.getBuffer(), safeValue)
-            })
-        },
-        render(name, data) {
-            const filepath = ext(name, config.extension)
-            const scope = new ejs.scope(data)
-            return ejs.output(filepath, scope).then((content) => {
-                if (scope.getExtend()) {
-                    scope.setExtend(false)
-                    const layout = scope.getLayout()
-                    const data = scope.clone()
-                    return ejs.render(layout, data)
-                }
-                return content
-            })
-        },
-        require(name) {
-            const filepath = ext(name, config.extension)
-            const scope = new ejs.scope({})
-            return ejs.output(filepath, scope).then(() => {
-                return scope.getMacro()
-            })
-        },
-        helpers(methods) {
-            ejs.scope.helpers(methods)
-        },
-        configure(options) {
-            config.export = typeProp(isString, defaults.export, options.export)
-            config.path = typeProp(isString, defaults.path, options.path)
-            config.resolver = typeProp(
-                isFunction,
-                defaults.resolver,
-                options.resolver
-            )
-            config.extension = typeProp(
-                isString,
-                defaults.extension,
-                options.extension
-            )
-            config.withObject = typeProp(
-                isBoolean,
-                defaults.withObject,
-                options.withObject
-            )
-            config.token = extend({}, defaults.token, options.token)
-            config.vars = extend({}, defaults.vars, options.vars)
-            ejs.scope = configureScope(ejs, config)
-            ejs.compile = configureCompiler(ejs, config)
-            ejs.wrapper = configureWrapper(ejs, config)
-            ejs.cache = configureCache(ejs, config)
-            ejs.template = configureTemplate(ejs, config)
-            return ejs
-        },
-        __express(name, options, callback) {
-            if (isFunction(options)) {
-                callback = options
-                options = {}
-            }
-            options = options || {}
-            const settings = extend({}, options.settings)
-            const viewPath = typeProp(
-                isString,
-                settings['views'],
-                defaults.path
-            )
-            const viewCache = typeProp(
-                isBoolean,
-                settings['view cache'],
-                defaults.cache
-            )
-            const viewOptions = extend({}, settings['view options'])
-            const filename = path.relative(viewPath, name)
-            viewOptions.path = viewPath
-            viewOptions.cache = viewCache
-            ejs.configure(viewOptions)
-            return ejs
-                .render(filename, options)
-                .then((content) => {
-                    callback(null, content)
-                })
-                .catch((error) => {
-                    callback(error)
-                })
-        },
-    }
-    ejs.configure(options || {})
-    ejs.helpers({
-        require(name) {
-            return ejs.require(name, this)
-        },
-        render(name, data) {
-            return ejs.render(name, data)
-        },
+const configSchema = (config, options) => {
+    extend(config, {
+        export: typeProp(isString, defaults.export, options.export),
+        path: typeProp(isString, defaults.path, options.path),
+        resolver: typeProp(isFunction, defaults.resolver, options.resolver),
+        extension: typeProp(isString, defaults.extension, options.extension),
+        withObject: typeProp(
+            isBoolean,
+            defaults.withObject,
+            options.withObject
+        ),
+        token: extend({}, defaults.token, options.token),
+        vars: extend({}, defaults.vars, options.vars),
     })
-    return ejs
 }
 
-const instance = create()
+const init = (options) => {
+    /**
+     * EJS template
+     * @module ejs
+     */
+    const config = {}
+    const functions = {}
 
-instance.create = create
+    configSchema(config, options || {})
 
-export default instance
+    const context = new Context(config)
+    const compiler = new Compiler(config)
+    const bundler = new Bundler(config)
+    const cache = new Cache(config)
+    const template = new Template(config, cache, compiler)
+
+    const configure = (options) => {
+        configSchema(config, options)
+        context.configure(config)
+        compiler.configure(config)
+        bundler.configure(config)
+        cache.configure(config)
+        template.configure(config)
+    }
+
+    const output = (path, scope) => {
+        return template.get(path).then(function (callback) {
+            return callback.call(scope, scope, scope.getBuffer(), safeValue)
+        })
+    }
+
+    const require = (name) => {
+        const filepath = ext(name, config.extension)
+        const scope = context.create({})
+        return output(filepath, scope).then(() => {
+            return scope.getMacro()
+        })
+    }
+
+    const render = (name, data) => {
+        const filepath = ext(name, config.extension)
+        const scope = context.create(data)
+        return output(filepath, scope).then((content) => {
+            if (scope.getExtend()) {
+                scope.setExtend(false)
+                const layout = scope.getLayout()
+                const data = scope.clone()
+                return render(layout, data)
+            }
+            return content
+        })
+    }
+
+    const helpers = (methods) => {
+        context.helpers(extend(callbacks, methods || {}))
+    }
+
+    const __express = (name, options, callback) => {
+        if (isFunction(options)) {
+            callback = options
+            options = {}
+        }
+        options = options || {}
+        const settings = extend({}, options.settings)
+        const viewPath = typeProp(isString, settings['views'], defaults.path)
+        const viewCache = typeProp(
+            isBoolean,
+            settings['view cache'],
+            defaults.cache
+        )
+        const viewOptions = extend({}, settings['view options'])
+        const filename = path.relative(viewPath, name)
+        viewOptions.path = viewPath
+        viewOptions.cache = viewCache
+        configure(viewOptions)
+        return render(filename, options)
+            .then((content) => {
+                callback(null, content)
+            })
+            .catch((error) => {
+                callback(error)
+            })
+    }
+    const preload = (list) => cache.load(list)
+    const wrapper = (list) => bundler.wrapper(list)
+    const compile = (content, path) => compiler.compile(content, path)
+    const create = (options) => {
+        return init(options)
+    }
+    helpers({
+        require(name) {
+            return require(name, this)
+        },
+        render(name, data) {
+            return render(name, data)
+        },
+    })
+    return {
+        render,
+        helpers,
+        configure,
+        wrapper,
+        compile,
+        create,
+        preload,
+        __express,
+    }
+}
+
+export { element, safeValue }
+
+export const {
+    render,
+    helpers,
+    configure,
+    wrapper,
+    compile,
+    create,
+    preload,
+    __express,
+} = init({})

@@ -30,39 +30,40 @@ const enableWatcher = (path, cache) =>
             console.log('watcher error: ' + error)
         })
 
-const configureTemplate = (ejs, config) => {
-    const path = config.path
-    const { cache, compile } = ejs
-    const resolver = isFunction(config.resolver)
-        ? config.resolver
-        : isNode()
-        ? fileSystem
-        : httpRequest
-    const normalize = (template) => {
-        template = [path, template].join('/')
-        template = template.replace(/\/\//g, '/')
-        return template
-    }
-    const resolve = (template) => {
-        return resolver(normalize(template))
-    }
-    const result = (content, template) => {
-        cache.set(template, content)
-        return content
-    }
-    const template = (template) => {
-        if (cache.exist(template)) {
-            return cache.resolve(template)
-        }
-        const content = resolve(template).then((content) =>
-            result(compile(content, template), template)
-        )
-        return result(content, template)
-    }
-    if (config.watch && isNode()) {
-        enableWatcher(path, cache)
-    }
+const normalizePath = (path, template) => {
+    template = [path, template].join('/')
+    template = template.replace(/\/\//g, '/')
     return template
 }
 
-export default configureTemplate
+export class Template {
+    constructor(config, cache, compiler) {
+        this.cache = cache
+        this.compiler = compiler
+        this.configure(config)
+    }
+    configure(config) {
+        this.path = config.path
+        this.resolver = isFunction(config.resolver)
+            ? config.resolver
+            : isNode()
+            ? fileSystem
+            : httpRequest
+    }
+    resolve(template) {
+        return this.resolver(normalizePath(this.path, template))
+    }
+    result(content, template) {
+        this.cache.set(template, content)
+        return content
+    }
+    get(template) {
+        if (this.cache.exist(template)) {
+            return this.cache.resolve(template)
+        }
+        const content = this.resolve(template).then((content) =>
+            this.result(this.compiler.compile(content, template), template)
+        )
+        return this.result(content, template)
+    }
+}

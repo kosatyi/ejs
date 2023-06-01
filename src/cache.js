@@ -2,38 +2,36 @@ import { extend, hasProp, isNode } from './utils'
 
 const global = typeof globalThis !== 'undefined' ? globalThis : window || self
 
-function configureCache(config) {
-    const namespace = config.export
-    const list = {}
-    const cache = {
-        preload() {
-            if (isNode() === false) {
-                this.load(global[namespace])
-            }
-            return this
-        },
-        exist(key) {
-            return hasProp(list, key)
-        },
-        get(key) {
-            return list[key]
-        },
-        remove(key) {
-            delete list[key]
-        },
-        resolve(key) {
-            return Promise.resolve(this.get(key))
-        },
-        set(key, value) {
-            list[key] = value
-            return this
-        },
-        load(data) {
-            extend(list, data)
-            return this
-        },
+export class Cache {
+    list = {}
+    constructor(config) {
+        this.configure(config)
+        if (isNode() === false) {
+            this.load(global[this.namespace])
+        }
     }
-    return cache.preload()
+    configure(config) {
+        this.list = {}
+        this.namespace = config.export
+    }
+    load(data) {
+        extend(this.list, data)
+        return this
+    }
+    exist(key) {
+        return hasProp(this.list, key)
+    }
+    get(key) {
+        return this.list[key]
+    }
+    remove(key) {
+        delete this.list[key]
+    }
+    resolve(key) {
+        return Promise.resolve(this.get(key))
+    }
+    set(key, value) {
+        this.list[key] = value
+        return this
+    }
 }
-
-export default configureCache

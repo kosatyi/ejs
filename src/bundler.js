@@ -1,16 +1,21 @@
-const configureWrapper = (config) => {
-    const name = config.export
-    const useStrict = config.withObject === false
-    return function Wrapper(list) {
+export class Bundler {
+    constructor(config) {
+        this.configure(config)
+    }
+    configure(config) {
+        this.namespace = config.export
+        this.useStrict = config.withObject === false
+    }
+    wrapper(list) {
         let out = ''
         out += '(function(global,factory){'
         out += 'typeof exports === "object" && typeof module !== "undefined" ?'
         out += 'module.exports = factory():'
         out += 'typeof define === "function" && define.amd ? define(factory):'
         out += '(global = typeof globalThis !== "undefined" ? globalThis:'
-        out += 'global || self,global["' + name + '"] = factory())'
+        out += 'global || self,global["' + this.namespace + '"] = factory())'
         out += '})(this,(function(){'
-        if (useStrict) out += "'use strict';\n"
+        if (this.useStrict) out += "'use strict';\n"
         out += 'var list = {};\n'
         list.forEach((item) => {
             out +=
@@ -24,5 +29,3 @@ const configureWrapper = (config) => {
         return out
     }
 }
-
-export default configureWrapper
