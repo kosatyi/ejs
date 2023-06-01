@@ -31,7 +31,7 @@ const init = (options) => {
      * @module ejs
      */
     const config = {}
-    const functions = {}
+    const methodsRegistry = {}
 
     configSchema(config, options || {})
 
@@ -79,7 +79,7 @@ const init = (options) => {
     }
 
     const helpers = (methods) => {
-        context.helpers(extend(callbacks, methods || {}))
+        context.helpers(extend(methodsRegistry, methods || {}))
     }
 
     const __express = (name, options, callback) => {
