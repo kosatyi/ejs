@@ -26,9 +26,7 @@
   "devDependencies": {
     "@kosatyi/rollup": "^0.0.1",
     "@babel/core": "^7.20.12",
-    "@babel/preset-env": "^7.20.2",
-    "glob": "^8.1.0",
-    "terser": "^5.16.1"
+    "@babel/preset-env": "^7.20.2"
   },
   "directories": {
     "test": "test"
