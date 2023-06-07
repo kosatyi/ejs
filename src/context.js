@@ -8,26 +8,20 @@ export class Context {
     constructor(config) {
         this.configure(config)
     }
-    configure(config) {
+    configure(config, methods) {
         const { EXTEND, LAYOUT, BLOCKS, BUFFER, MACRO } = config.vars
-
         this.create = (data) => {
             return new Scope(data)
         }
-
         this.helpers = (methods) => {
             extend(Scope.prototype, methods)
         }
-
         function Scope(data = {}) {
             this.initBlocks()
             this.initMacro()
             extend(this, data)
         }
-
-        Scope.helpers = (methods) => {
-            extend(Scope.prototype, methods)
-        }
+        Scope.prototype = extend({}, methods || {})
         Scope.defineProp = Scope.method = (
             name,
             value,
@@ -42,53 +36,38 @@ export class Context {
                 enumerable,
             })
         }
-
         Scope.defineProp(BUFFER, createBuffer())
-
         Scope.defineProp(BLOCKS, {}, true)
-
         Scope.defineProp(MACRO, {}, true)
-
         Scope.defineProp(LAYOUT, false, true)
-
         Scope.defineProp(EXTEND, false, true)
-
         Scope.method('initBlocks', function () {
             this[BLOCKS] = {}
         })
-
         Scope.method('initMacro', function () {
             this[MACRO] = {}
         })
-
         Scope.method('getMacro', function () {
             return this[MACRO]
         })
-
         Scope.method('getBuffer', function () {
             return this[BUFFER]
         })
-
         Scope.method('getBlocks', function () {
             return this[BLOCKS]
         })
-
         Scope.method('setExtend', function (value) {
             this[EXTEND] = value
         })
-
         Scope.method('getExtend', function () {
             return this[EXTEND]
         })
-
         Scope.method('setLayout', function (layout) {
             this[LAYOUT] = layout
         })
-
         Scope.method('getLayout', function () {
             return this[LAYOUT]
         })
-
         Scope.method('clone', function (exclude_blocks) {
             const filter = [LAYOUT, EXTEND, BUFFER]
             if (exclude_blocks === true) {
@@ -96,18 +75,15 @@ export class Context {
             }
             return omit(this, filter)
         })
-
         Scope.method('extend', function (layout) {
             this.setExtend(true)
             this.setLayout(layout)
         })
-
         Scope.method('echo', function () {
             const buffer = this.getBuffer()
             const params = [].slice.call(arguments)
             params.forEach(buffer)
         })
-
         Scope.method('fn', function (callback) {
             const buffer = this.getBuffer()
             const context = this
@@ -125,7 +101,6 @@ export class Context {
             const prop = path.pop()
             return hasProp(result, prop) ? result[prop] : defaults
         })
-
         Scope.method('set', function (name, value) {
             const path = getPath(this, name)
             const result = path.shift()
@@ -135,7 +110,6 @@ export class Context {
             }
             return (result[prop] = value)
         })
-
         Scope.method('macro', function (name, callback) {
             const list = this.getMacro()
             const macro = this.fn(callback)
@@ -144,7 +118,6 @@ export class Context {
                 return context.echo(macro.apply(undefined, arguments))
             }
         })
-
         Scope.method('call', function (name) {
             const list = this.getMacro()
             const macro = list[name]
@@ -153,7 +126,6 @@ export class Context {
                 return macro.apply(macro, params)
             }
         })
-
         Scope.method('block', function (name, callback) {
             const blocks = this.getBlocks()
             blocks[name] = blocks[name] || []
@@ -175,14 +147,12 @@ export class Context {
             }
             this.echo(current()(next()))
         })
-
         Scope.method('include', function (path, data, cx) {
             const context = cx === false ? {} : this.clone(true)
             const params = extend(context, data || {})
             const promise = this.render(path, params)
             this.echo(promise)
         })
-
         Scope.method('use', function (path, namespace) {
             const promise = this.require(path)
             this.echo(
@@ -198,7 +168,6 @@ export class Context {
                 )
             )
         })
-
         Scope.method('async', function (promise, callback) {
             this.echo(
                 resolve(
@@ -210,7 +179,9 @@ export class Context {
                 )
             )
         })
-
+        Scope.method('node', function (tag, attr, content) {
+            return element(tag, attr, content)
+        })
         Scope.method('el', function (tag, attr, content) {
             if (isFunction(content)) {
                 content = this.fn(content)()
@@ -225,7 +196,6 @@ export class Context {
                 )
             )
         })
-
         Scope.method('each', function (object, callback) {
             if (isString(object)) {
                 object = this.get(object, [])

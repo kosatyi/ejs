@@ -11,17 +11,33 @@ import { Cache } from './cache'
 
 const configSchema = (config, options) => {
     extend(config, {
-        export: typeProp(isString, defaults.export, options.export),
-        path: typeProp(isString, defaults.path, options.path),
-        resolver: typeProp(isFunction, defaults.resolver, options.resolver),
-        extension: typeProp(isString, defaults.extension, options.extension),
+        export: typeProp(
+            isString,
+            defaults.export,
+            config.export,
+            options.export
+        ),
+        path: typeProp(isString, defaults.path, config.path, options.path),
+        resolver: typeProp(
+            isFunction,
+            defaults.resolver,
+            config.resolver,
+            options.resolver
+        ),
+        extension: typeProp(
+            isString,
+            defaults.extension,
+            config.extension,
+            options.extension
+        ),
         withObject: typeProp(
             isBoolean,
             defaults.withObject,
+            config.withObject,
             options.withObject
         ),
-        token: extend({}, defaults.token, options.token),
-        vars: extend({}, defaults.vars, options.vars),
+        token: extend({}, defaults.token, config.token, options.token),
+        vars: extend({}, defaults.vars, config.vars, options.vars),
     })
 }
 
@@ -43,7 +59,7 @@ const init = (options) => {
 
     const configure = (options) => {
         configSchema(config, options)
-        context.configure(config)
+        context.configure(config, methodsRegistry)
         compiler.configure(config)
         bundler.configure(config)
         cache.configure(config)
@@ -89,11 +105,11 @@ const init = (options) => {
         }
         options = options || {}
         const settings = extend({}, options.settings)
-        const viewPath = typeProp(isString, settings['views'], defaults.path)
+        const viewPath = typeProp(isString, defaults.path, settings['views'])
         const viewCache = typeProp(
             isBoolean,
-            settings['view cache'],
-            defaults.cache
+            defaults.cache,
+            settings['view cache']
         )
         const viewOptions = extend({}, settings['view options'])
         const filename = path.relative(viewPath, name)
