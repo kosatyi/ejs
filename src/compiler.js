@@ -65,11 +65,11 @@ export class Compiler {
         })
         this.regex = new RegExp(this.matches.join('|').concat('|$'), 'g')
         this.slurpStart = new RegExp(
-            [this.slurp.match, this.slurp.start].join(''),
+            [this.slurp.match, this.slurp.start.join('')].join(''),
             'gm'
         )
         this.slurpEnd = new RegExp(
-            [this.slurp.end, this.slurp.match].join(''),
+            [this.slurp.end.join(''), this.slurp.match].join(''),
             'gm'
         )
     }
@@ -77,8 +77,8 @@ export class Compiler {
         const { SCOPE, SAFE, BUFFER } = this.vars
         content = content.replace(/[\r\n]+/g, '\n').replace(/^\s+|\s+$/gm, '')
         content = content
-            .replace(this.slurpStart, this.slurp.start)
-            .replace(this.slurpEnd, this.slurp.end)
+            .replace(this.slurpStart, this.token.start)
+            .replace(this.slurpEnd, this.token.end)
         let source = `${BUFFER}('`
         matchTokens(this.regex, content, (params, index, offset) => {
             source += symbols(content.slice(index, offset))
