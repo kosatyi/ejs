@@ -95,7 +95,6 @@ export class Compiler {
         matchTokens(this.regex, content, (params, index, offset) => {
             source += symbols(content.slice(index, offset))
             params.forEach((value, index) => {
-                //value = this.truncate(value)
                 if (value) {
                     source += this.formats[index](value)
                 }
