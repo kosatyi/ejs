@@ -36,6 +36,12 @@ const configSchema = (config, options) => {
             config.withObject,
             options.withObject
         ),
+        rmWhitespace: typeProp(
+            isBoolean,
+            defaults.rmWhitespace,
+            config.rmWhitespace,
+            options.rmWhitespace
+        ),
         token: extend({}, defaults.token, config.token, options.token),
         vars: extend({}, defaults.vars, config.vars, options.vars),
     })

@@ -1,5 +1,9 @@
 import { symbols } from './utils'
 
+const trunc = (value) => {
+    return value.replace(/^(?:\r\n|\r|\n)/, '')
+}
+
 const tagList = [
     {
         symbol: '-',
@@ -45,6 +49,7 @@ export class Compiler {
     }
     configure(config) {
         this.withObject = config.withObject
+        this.rmWhitespace = config.rmWhitespace
         this.token = config.token
         this.vars = config.vars
         this.matches = []
@@ -73,9 +78,16 @@ export class Compiler {
             'gm'
         )
     }
+    truncate(value) {
+        return value && value.replace(/^(?:\r\n|\r|\n)/, '')
+    }
     compile(content, path) {
         const { SCOPE, SAFE, BUFFER } = this.vars
-        content = content.replace(/[\r\n]+/g, '\n').replace(/^\s+|\s+$/gm, '')
+        if (this.rmWhitespace) {
+            content = content
+                .replace(/[\r\n]+/g, '\n')
+                .replace(/^\s+|\s+$/gm, '')
+        }
         content = content
             .replace(this.slurpStart, this.token.start)
             .replace(this.slurpEnd, this.token.end)
@@ -83,7 +95,10 @@ export class Compiler {
         matchTokens(this.regex, content, (params, index, offset) => {
             source += symbols(content.slice(index, offset))
             params.forEach((value, index) => {
-                if (value) source += this.formats[index](value)
+                //value = this.truncate(value)
+                if (value) {
+                    source += this.formats[index](value)
+                }
             })
         })
         source += `');`

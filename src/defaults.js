@@ -10,6 +10,8 @@ defaults.resolver = null
 
 defaults.extension = 'ejs'
 
+defaults.rmWhitespace = true
+
 defaults.withObject = false
 
 defaults.vars = {

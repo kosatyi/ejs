@@ -68,7 +68,6 @@ $ npm install ejs@npm:@kosatyi/ejs --save
 ```
 
 ```js
-// const ejs = require('ejs')
 const express = require('express')
 const app = express()
 app.set('views', 'views')
@@ -85,22 +84,22 @@ app.set('view options', {
 ```ejs
 <html>
     <head>
-        <title><%-get('title')%></title>
-        <% block('resources',()=>{ %>
+        <title><%-ejs.get('title')%></title>
+        <% ejs.block('resources',()=>{ %>
             <link rel="stylesheet" type="text/css" href="/dist/styles.css">
         <% }) %>
     </head>
     <body>
         <header>
-            <% block('header',()=>{ %>
-                <h1><%-get('title')%></h1>
+            <% ejs.block('header',()=>{ %>
+                <h1><%-ejs.get('title')%></h1>
             <% }) %>            
         </header>
         <main>
-            <% block('content') %>
+            <% ejs.block('content') %>
         </main>
         <footer>
-            <% block('footer',()=>{ %>
+            <% ejs.block('footer',()=>{ %>
             Copyright
             <% }) %>
         </footer>
@@ -111,18 +110,18 @@ app.set('view options', {
 **page/index.ejs**
 
 ```ejs
-<% extend('layout/default') %>
+<% ejs.extend('layout/default') %>
 
-<% set('title','Page Title') %>
+<% ejs.set('title','Page Title') %>
 
-<% block('resources',(parent)=>{ %>
+<% ejs.block('resources',(parent)=>{ %>
     <% parent() %>
     <script defer src="/dist/framework.js"></script>
 <% }) %>
 
-<% block('content',()=>{ %>
+<% ejs.block('content',()=>{ %>
 
-<% each('posts',(post)=>{ %>
+<% ejs.each('posts',(post)=>{ %>
 <article>
     <h3><%-post.title%></h3>
     <div><%=post.content%></div>

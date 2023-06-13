@@ -3,13 +3,21 @@ import chokidar from 'chokidar'
 import { isNode } from './utils'
 import { isFunction } from './type'
 
-const httpRequest = (template) => {
-    return fetch(template).then((response) => response.text())
+const resolvePath = (path, template) => {
+    template = [path, template].join('/')
+    template = template.replace(/\/\//g, '/')
+    return template
 }
 
-const fileSystem = (template) =>
-    new Promise((resolve, reject) => {
-        fs.readFile(template, (error, data) => {
+const httpRequest = (path, template) => {
+    return fetch(resolvePath(path, template)).then((response) =>
+        response.text()
+    )
+}
+
+const fileSystem = (path, template) => {
+    return new Promise((resolve, reject) => {
+        fs.readFile(resolvePath(path, template), (error, data) => {
             if (error) {
                 reject(error)
             } else {
@@ -17,9 +25,16 @@ const fileSystem = (template) =>
             }
         })
     })
+}
 
-const enableWatcher = (path, cache) =>
-    chokidar
+const disableWatcher = (watcher) => {
+    if (watcher) {
+        watcher.unwatch('.')
+    }
+}
+
+const enableWatcher = (path, cache) => {
+    return chokidar
         .watch('.', {
             cwd: path,
         })
@@ -29,16 +44,12 @@ const enableWatcher = (path, cache) =>
         .on('error', (error) => {
             console.log('watcher error: ' + error)
         })
-
-const normalizePath = (path, template) => {
-    template = [path, template].join('/')
-    template = template.replace(/\/\//g, '/')
-    return template
 }
 
 export class Template {
     constructor(config, cache, compiler) {
         this.cache = cache
+        this.watcher = null
         this.compiler = compiler
         this.configure(config)
     }
@@ -49,11 +60,15 @@ export class Template {
             : isNode()
             ? fileSystem
             : httpRequest
+        disableWatcher(this.watcher)
+        if (config.watch && isNode()) {
+            this.watcher = enableWatcher(this.cache, this.path)
+        }
     }
     resolve(template) {
-        return this.resolver(normalizePath(this.path, template))
+        return this.resolver(this.path, template)
     }
-    result(content, template) {
+    result(template, content) {
         this.cache.set(template, content)
         return content
     }
@@ -69,8 +84,8 @@ export class Template {
             return this.cache.resolve(template)
         }
         const content = this.resolve(template).then((content) =>
-            this.result(this.compile(content, template), template)
+            this.result(template, this.compile(content, template))
         )
-        return this.result(content, template)
+        return this.result(template, content)
     }
 }

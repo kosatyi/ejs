@@ -24,12 +24,10 @@
     "postversion": "git push && git push --tags"
   },
   "devDependencies": {
-    "@kosatyi/rollup": "^0.0.1",
     "@babel/core": "^7.20.12",
-    "@babel/preset-env": "^7.20.2"
-  },
-  "directories": {
-    "test": "test"
+    "@babel/preset-env": "^7.20.2",
+    "@kosatyi/ejs-bundle": "^1.0.6",
+    "@kosatyi/rollup": "^0.0.1"
   },
   "license": "MIT",
   "bugs": {
