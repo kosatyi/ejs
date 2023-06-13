@@ -57,12 +57,19 @@ export class Template {
         this.cache.set(template, content)
         return content
     }
+    compile(content, template) {
+        if (isFunction(content)) {
+            return content
+        } else {
+            return this.compiler.compile(content, template)
+        }
+    }
     get(template) {
         if (this.cache.exist(template)) {
             return this.cache.resolve(template)
         }
         const content = this.resolve(template).then((content) =>
-            this.result(this.compiler.compile(content, template), template)
+            this.result(this.compile(content, template), template)
         )
         return this.result(content, template)
     }
