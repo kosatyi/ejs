@@ -4,7 +4,6 @@ import { element } from './element'
 import { extend, safeValue, ext } from './utils'
 import { isFunction, isString, typeProp, isBoolean } from './type'
 import { Compiler } from './compiler'
-import { Bundler } from './bundler'
 import { Template } from './template'
 import { Context } from './context'
 import { Cache } from './cache'
@@ -59,7 +58,6 @@ const init = (options) => {
 
     const context = new Context(config)
     const compiler = new Compiler(config)
-    const bundler = new Bundler(config)
     const cache = new Cache(config)
     const template = new Template(config, cache, compiler)
 
@@ -67,7 +65,6 @@ const init = (options) => {
         configSchema(config, options)
         context.configure(config, scope)
         compiler.configure(config)
-        bundler.configure(config)
         cache.configure(config)
         template.configure(config)
         return config
@@ -132,7 +129,6 @@ const init = (options) => {
             })
     }
     const preload = (list) => cache.load(list)
-    const wrapper = (list) => bundler.wrapper(list)
     const compile = (content, path) => compiler.compile(content, path)
     const create = (options) => {
         return init(options)
@@ -149,7 +145,6 @@ const init = (options) => {
         render,
         helpers,
         configure,
-        wrapper,
         compile,
         create,
         preload,
