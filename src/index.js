@@ -70,6 +70,7 @@ const init = (options) => {
         bundler.configure(config)
         cache.configure(config)
         template.configure(config)
+        return config
     }
 
     const output = (path, scope) => {
