@@ -1,5 +1,7 @@
 export const defaults = {}
 
+defaults.export = 'ejsPrecompiled'
+
 defaults.cache = true
 
 defaults.path = 'views'
