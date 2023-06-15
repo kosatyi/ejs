@@ -8,50 +8,51 @@ export class Context {
     constructor(config) {
         this.configure(config)
     }
-
     configure(config, methods) {
         const { EXTEND, LAYOUT, BLOCKS, BUFFER, MACRO, COMPONENT } = config.vars
-
         this.create = (data) => {
             return new Scope(data)
         }
-
         this.helpers = (methods) => {
             extend(Scope.prototype, methods)
         }
-
         function Scope(data = {}) {
             this.initBlocks()
             this.initMacro()
             extend(this, data)
         }
-
         Scope.prototype = extend({}, methods || {})
-
-        Scope.defineProp = Scope.method = (
+        /**
+         * @param {string} name
+         * @param {*} value
+         * @param {boolean} [writable]
+         * @param {boolean} [configurable]
+         * @param {boolean} [enumerable]
+         */
+        Scope.define = Scope.method = (
             name,
             value,
-            writable = false,
-            configurable = false,
-            enumerable = false
+            writable,
+            configurable,
+            enumerable
         ) => {
-            Object.defineProperty(Scope.prototype, name, {
-                value,
-                writable,
-                configurable,
-                enumerable,
+            return Object.defineProperty(Scope.prototype, name, {
+                value: value,
+                writable: writable || false,
+                configurable: configurable || false,
+                enumerable: enumerable || false,
             })
         }
 
-        Scope.defineProp(BUFFER, createBuffer())
+        Scope.define(BUFFER, createBuffer())
 
-        Scope.defineProp(BLOCKS, {}, true)
+        Scope.define(BLOCKS, {}, true)
 
-        Scope.defineProp(MACRO, {}, true)
+        Scope.define(MACRO, {}, true)
 
-        Scope.defineProp(LAYOUT, false, true)
+        Scope.define(LAYOUT, false, true)
 
-        Scope.defineProp(EXTEND, false, true)
+        Scope.define(EXTEND, false, true)
 
         Scope.method('initBlocks', function () {
             this[BLOCKS] = {}
@@ -70,7 +71,12 @@ export class Context {
         })
 
         Scope.method('getComponent', function () {
-            return this[COMPONENT]
+            return (
+                this[COMPONENT] ||
+                function () {
+                    console.log('%s function not defined', COMPONENT)
+                }
+            )
         })
 
         Scope.method('getBlocks', function () {
@@ -241,7 +247,5 @@ export class Context {
             }
             each(object, callback)
         })
-
-        Scope.method(COMPONENT, function () {}, true)
     }
 }
