@@ -164,7 +164,6 @@ export const {
     render,
     helpers,
     configure,
-    wrapper,
     compile,
     create,
     preload,

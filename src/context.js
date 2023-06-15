@@ -14,6 +14,7 @@ export class Context {
             return new Scope(data)
         }
         this.helpers = (methods) => {
+            console.log('extend', Scope.prototype, methods)
             extend(Scope.prototype, methods)
         }
         function Scope(data = {}) {
@@ -71,12 +72,15 @@ export class Context {
         })
 
         Scope.method('getComponent', function () {
-            return (
-                this[COMPONENT] ||
-                function () {
-                    console.log('%s function not defined', COMPONENT)
+            const context = this
+            if (COMPONENT in context) {
+                return function () {
+                    return context[COMPONENT].apply(context, arguments)
                 }
-            )
+            }
+            return function () {
+                console.log('%s function not defined', COMPONENT)
+            }
         })
 
         Scope.method('getBlocks', function () {
