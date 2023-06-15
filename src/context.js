@@ -9,7 +9,7 @@ export class Context {
         this.configure(config)
     }
     configure(config, methods) {
-        const { EXTEND, LAYOUT, BLOCKS, BUFFER, MACRO } = config.vars
+        const { EXTEND, LAYOUT, BLOCKS, BUFFER, MACRO, COMPONENT } = config.vars
         this.create = (data) => {
             return new Scope(data)
         }
@@ -52,6 +52,9 @@ export class Context {
         })
         Scope.method('getBuffer', function () {
             return this[BUFFER]
+        })
+        Scope.method('getComponent', function () {
+            return this[COMPONENT]
         })
         Scope.method('getBlocks', function () {
             return this[BLOCKS]

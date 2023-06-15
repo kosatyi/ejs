@@ -16,6 +16,7 @@ defaults.withObject = false
 
 defaults.vars = {
     SCOPE: 'ejs',
+    COMPONENT: 'ui',
     EXTEND: '$$e',
     BUFFER: '$$a',
     LAYOUT: '$$l',

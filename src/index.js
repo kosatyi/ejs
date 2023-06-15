@@ -72,7 +72,13 @@ const init = (options) => {
 
     const output = (path, scope) => {
         return template.get(path).then(function (callback) {
-            return callback.call(scope, scope, scope.getBuffer(), safeValue)
+            return callback.call(
+                scope,
+                scope,
+                scope.getBuffer(),
+                scope.getComponent(),
+                safeValue
+            )
         })
     }
 

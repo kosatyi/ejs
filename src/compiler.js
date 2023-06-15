@@ -47,6 +47,7 @@ export class Compiler {
     constructor(config) {
         this.configure(config)
     }
+
     configure(config) {
         this.withObject = config.withObject
         this.rmWhitespace = config.rmWhitespace
@@ -78,11 +79,13 @@ export class Compiler {
             'gm'
         )
     }
+
     truncate(value) {
         return value && value.replace(/^(?:\r\n|\r|\n)/, '')
     }
+
     compile(content, path) {
-        const { SCOPE, SAFE, BUFFER } = this.vars
+        const { SCOPE, SAFE, BUFFER, COMPONENT } = this.vars
         if (this.rmWhitespace) {
             content = content
                 .replace(/[\r\n]+/g, '\n')
@@ -109,8 +112,8 @@ export class Compiler {
         source += `\n//# sourceURL=${path}`
         let result = null
         try {
-            result = new Function(SCOPE, BUFFER, SAFE, source)
-            result.source = `(function(${SCOPE},${BUFFER},${SAFE}){\n${source}\n})`
+            result = new Function(SCOPE, COMPONENT, BUFFER, SAFE, source)
+            result.source = `(function(${SCOPE},${COMPONENT},${BUFFER},${SAFE}){\n${source}\n})`
         } catch (e) {
             e.filename = path
             e.source = source
