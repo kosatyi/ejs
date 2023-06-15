@@ -10,13 +10,13 @@ import { Cache } from './cache'
 
 const configSchema = (config, options) => {
     extend(config, {
+        path: typeProp(isString, defaults.path, config.path, options.path),
         export: typeProp(
             isString,
             defaults.export,
             config.export,
             options.export
         ),
-        path: typeProp(isString, defaults.path, config.path, options.path),
         resolver: typeProp(
             isFunction,
             defaults.resolver,
@@ -41,6 +41,7 @@ const configSchema = (config, options) => {
             config.rmWhitespace,
             options.rmWhitespace
         ),
+        watch: typeProp(isBoolean, defaults.watch, config.watch, options.watch),
         token: extend({}, defaults.token, config.token, options.token),
         vars: extend({}, defaults.vars, config.vars, options.vars),
     })
