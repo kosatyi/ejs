@@ -2,7 +2,7 @@
   "name": "@kosatyi/ejs",
   "description": "EJS Templates",
   "homepage": "https://github.com/kosatyi/ejs",
-  "version": "0.0.36",
+  "version": "0.0.37",
   "main": "dist/ejs.cjs",
   "module": "dist/ejs.mjs",
   "browser": "dist/ejs.js",
