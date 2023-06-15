@@ -14,7 +14,6 @@ export class Context {
             return new Scope(data)
         }
         this.helpers = (methods) => {
-            console.log('extend', Scope.prototype, methods)
             extend(Scope.prototype, methods)
         }
         function Scope(data = {}) {
