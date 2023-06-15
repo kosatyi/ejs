@@ -241,15 +241,7 @@ export class Context {
             }
             each(object, callback)
         })
-        Scope.method(
-            COMPONENT,
-            function () {
-                console.log.apply(
-                    null,
-                    [COMPONENT, ':'].concat([].slice.call(arguments))
-                )
-            },
-            true
-        )
+
+        Scope.method(COMPONENT, function () {}, true)
     }
 }
