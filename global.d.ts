@@ -3,42 +3,42 @@ declare global {
      * extend layout with blocks in current template file
      * @param layout
      */
-    function extend(layout: string);
+    function extend(layout: string)
 
     /**
      * define block with custom **name** and callback
      * @param name
      * @param [callback]
      */
-    function block(name: string, callback?);
+    function block(name: string, callback?)
 
     /**
      * set property in current scope
      * @param path
      * @param value
      */
-    function set(path: string, value: any);
+    function set(path: string, value: any)
 
     /**
      * get property in current scope
      * @param path
      * @param defaults
      */
-    function get(path: string, defaults?: any);
+    function get(path: string, defaults?: any)
 
     /**
      * import macro from file **path** and set to current scope **name** property
      * @param path
      * @param name
      */
-    function use(path: string, name: string);
+    function use(path: string, name: string)
 
     /**
      * define macro function with custom **name**
      * @param name
      * @param callback
      */
-    function macro(name: string, callback);
+    function macro(name: string, callback)
 
     /**
      * call macro function
@@ -46,20 +46,20 @@ declare global {
      * @param props
      * @param callback
      */
-    function call(name: string, props?: object, callback?);
+    function call(name: string, props?: object, callback?)
 
     /**
      * asynchronous template execution
      * @param promise
      * @param callback
      */
-    function async(promise: Promise<any>, callback?);
+    function async(promise: Promise<any>, callback?)
 
     /**
      * asynchronous template execution
      * @param callback
      */
-    function fn(callback: Function);
+    function fn(callback: Function)
 
     /**
      *
@@ -67,13 +67,13 @@ declare global {
      * @param {object} attrs
      * @param {function} content
      */
-    function el(tag: string, attrs?: object, content?: any);
+    function el(tag: string, attrs?: object, content?: any)
 
     /**
      * buffer output
      * @param any
      */
-    function echo(...any);
+    function echo(...any)
 
     /**
      * append rendered template from file
@@ -81,16 +81,21 @@ declare global {
      * @param data
      * @param cx
      */
-    function include(path: string, data?: object, cx?: boolean);
+    function include(path: string, data?: object, cx?: boolean)
 
     /**
      *
      * @param value
      * @param callback
      */
-    function each(value:any,callback:Function);
+    function each(value: any, callback: Function)
 
+    /**
+     * define block with custom **name** and callback
+     * @param {string} name
+     * @param {object} [props]
+     */
+    function ui(name: string, props?)
 }
 
 export = global
-

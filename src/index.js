@@ -75,8 +75,8 @@ const init = (options) => {
             return callback.call(
                 scope,
                 scope,
-                scope.getBuffer(),
                 scope.getComponent(),
+                scope.getBuffer(),
                 safeValue
             )
         })

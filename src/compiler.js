@@ -1,9 +1,5 @@
 import { symbols } from './utils'
 
-const trunc = (value) => {
-    return value.replace(/^(?:\r\n|\r|\n)/, '')
-}
-
 const tagList = [
     {
         symbol: '-',

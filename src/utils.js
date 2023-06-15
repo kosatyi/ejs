@@ -2,7 +2,7 @@ import { isFunction, isUndefined } from './type'
 
 const isNodeEnv =
     Object.prototype.toString.call(
-        isUndefined(process) === false ? process : 0
+        typeof process !== 'undefined' ? process : 0
     ) === '[object process]'
 
 export const isNode = () => isNodeEnv
