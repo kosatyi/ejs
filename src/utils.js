@@ -1,6 +1,9 @@
-import { isFunction } from './type'
+import { isFunction, isUndefined } from './type'
 
-const isNodeEnv = Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]';
+const isNodeEnv =
+    Object.prototype.toString.call(
+        isUndefined(process) === false ? process : 0
+    ) === '[object process]'
 
 export const isNode = () => isNodeEnv
 
@@ -103,7 +106,7 @@ export const map = (object, callback, context) => {
         object,
         (value, key, object) => {
             let item = callback(value, key, object)
-            if (item !== undefined) {
+            if (isUndefined(item) === false) {
                 result.push(item)
             }
         },
@@ -119,7 +122,7 @@ export const filter = (object, callback, context) => {
         object,
         (value, key, object) => {
             let item = callback(value, key, object)
-            if (item !== undefined) {
+            if (isUndefined(item) === false) {
                 if (isArray) {
                     result.push(item)
                 } else {
@@ -152,11 +155,11 @@ export const uuid = (str) => {
     return (hash1 >>> 0) * 4096 + (hash2 >>> 0)
 }
 
-export const resolve = (value,callback,context) =>
-    Promise.resolve(value).then(callback.bind(context));
+export const resolve = (value, callback, context) =>
+    Promise.resolve(value).then(callback.bind(context))
 
-export const defineProp = (obj,key,descriptor) =>
-    Object.defineProperty(obj, key, descriptor);
+export const defineProp = (obj, key, descriptor) =>
+    Object.defineProperty(obj, key, descriptor)
 
 export const random = (size) => {
     let string = ''

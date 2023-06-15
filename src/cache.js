@@ -1,6 +1,7 @@
 import { extend, hasProp, isNode } from './utils'
+import { isUndefined } from './type'
 
-const global = typeof globalThis !== 'undefined' ? globalThis : window || self
+const global = isUndefined(globalThis) === false ? globalThis : window || self
 
 export class Cache {
     list = {}
