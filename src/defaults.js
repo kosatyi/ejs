@@ -12,7 +12,7 @@ defaults.extension = 'ejs'
 
 defaults.rmWhitespace = true
 
-defaults.withObject = false
+defaults.withObject = true
 
 defaults.vars = {
     SCOPE: 'ejs',
