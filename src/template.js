@@ -62,7 +62,7 @@ export class Template {
             : httpRequest
         disableWatcher(this.watcher)
         if (config.watch && isNode()) {
-            this.watcher = enableWatcher(this.cache, this.path)
+            this.watcher = enableWatcher(this.path, this.cache)
         }
     }
     resolve(template) {
