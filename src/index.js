@@ -155,6 +155,7 @@ const init = (options) => {
         compile,
         create,
         preload,
+        context,
         __express,
     }
 }
@@ -162,11 +163,11 @@ const init = (options) => {
 export { element, safeValue }
 
 export const {
+    context,
     render,
     helpers,
     configure,
     compile,
-    context,
     create,
     preload,
     __express,
