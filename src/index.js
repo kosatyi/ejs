@@ -166,6 +166,7 @@ export const {
     helpers,
     configure,
     compile,
+    context,
     create,
     preload,
     __express,
