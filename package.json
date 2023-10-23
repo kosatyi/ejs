@@ -34,6 +34,7 @@
   "files": [
     "dist",
     "ejs.d.ts",
+    "element.d.ts",
     "global.d.ts"
   ],
   "scripts": {
