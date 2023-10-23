@@ -67,7 +67,7 @@ const elementMjs = {
     external: external,
     output: {
         name: 'ejs',
-        file: 'dist/mjs/element.js',
+        file: 'dist/esm/element.js',
         format: 'esm',
     },
     plugins: [resolve({}), commonjs({})],

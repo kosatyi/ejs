@@ -5,7 +5,7 @@
   "type": "module",
   "version": "0.0.46",
   "main": "dist/cjs/ejs.js",
-  "module": "dist/mjs/ejs.js",
+  "module": "dist/esm/ejs.js",
   "browser": "dist/umd/ejs.js",
   "minified": "dist/umd/ejs.min.js",
   "author": "Stepan Kosatyi (https://kosatyi.com)",
@@ -15,12 +15,12 @@
   "exports": {
     ".": {
       "types": "./ejs.d.ts",
-      "import": "./dist/mjs/ejs.js",
+      "import": "./dist/esm/ejs.js",
       "require": "./dist/cjs/ejs.js"
     },
     "./element": {
       "types": "./element.d.ts",
-      "import": "./dist/mjs/element.js",
+      "import": "./dist/esm/element.js",
       "require": "./dist/cjs/element.js"
     }
   },
