@@ -24,6 +24,13 @@
       "require": "./dist/cjs/element.js"
     }
   },
+  "typesVersions": {
+    "*": {
+      "element": [
+        "element.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist",
     "ejs.d.ts",
@@ -56,4 +63,4 @@
     "template-engine",
     "nodejs"
   ]
-}
+},
