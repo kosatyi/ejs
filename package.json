@@ -2,14 +2,27 @@
   "name": "@kosatyi/ejs",
   "description": "EJS Templates",
   "homepage": "https://github.com/kosatyi/ejs",
+  "type": "module",
   "version": "0.0.43",
-  "main": "dist/ejs.cjs",
-  "module": "dist/ejs.mjs",
-  "browser": "dist/ejs.js",
-  "minified": "dist/ejs.min.js",
+  "main": "dist/cjs/ejs.js",
+  "module": "dist/mjs/ejs.js",
+  "browser": "dist/umd/ejs.js",
+  "minified": "dist/umd/ejs.min.js",
   "author": "Stepan Kosatyi (https://kosatyi.com)",
   "dependencies": {
     "chokidar": "^3.5.3"
+  },
+  "exports": {
+    ".": {
+      "types": "./ejs.d.ts",
+      "import": "./dist/mjs/ejs.js",
+      "require": "./dist/cjs/ejs.js"
+    },
+    "./element": {
+      "types": "./element.d.ts",
+      "import": "./dist/mjs/element.js",
+      "require": "./dist/cjs/element.js"
+    }
   },
   "files": [
     "dist",

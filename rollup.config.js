@@ -50,15 +50,27 @@ const mjs = {
     plugins: [resolve({}), commonjs({})],
 }
 
-const element = {
+const elementCjs = {
     input: 'src/element.js',
     external: external,
     output: {
         name: 'ejs',
-        file: 'dist/element.mjs',
+        file: 'dist/cjs/element.js',
+        format: 'cjs',
+        exports: 'auto',
+    },
+    plugins: [resolve({}), commonjs({}), babel(babelConfig)],
+}
+
+const elementMjs = {
+    input: 'src/element.js',
+    external: external,
+    output: {
+        name: 'ejs',
+        file: 'dist/mjs/element.js',
         format: 'esm',
     },
     plugins: [resolve({}), commonjs({})],
 }
 
-export default [umd, cjs, mjs, element]
+export default [umd, cjs, mjs, elementCjs, elementMjs]
