@@ -3,7 +3,7 @@
   "description": "EJS Templates",
   "homepage": "https://github.com/kosatyi/ejs",
   "type": "module",
-  "version": "0.0.47",
+  "version": "0.0.48",
   "main": "dist/cjs/ejs.js",
   "module": "dist/esm/ejs.js",
   "browser": "dist/umd/ejs.js",
