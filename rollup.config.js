@@ -52,7 +52,6 @@ const mjs = {
 
 const elementCjs = {
     input: 'src/element.js',
-    external: external,
     output: {
         name: 'ejs',
         file: 'dist/cjs/element.js',
@@ -64,7 +63,6 @@ const elementCjs = {
 
 const elementMjs = {
     input: 'src/element.js',
-    external: external,
     output: {
         name: 'ejs',
         file: 'dist/esm/element.js',
