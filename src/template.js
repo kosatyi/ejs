@@ -1,5 +1,4 @@
 import fs from 'fs'
-import chokidar from 'chokidar'
 import { isNode } from './utils'
 import { isFunction } from './type'
 
@@ -27,25 +26,6 @@ const fileSystem = (path, template) => {
     })
 }
 
-const disableWatcher = (watcher) => {
-    if (watcher) {
-        watcher.unwatch('.')
-    }
-}
-
-const enableWatcher = (path, cache) => {
-    return chokidar
-        .watch('.', {
-            cwd: path,
-        })
-        .on('change', (name) => {
-            cache.remove(name)
-        })
-        .on('error', (error) => {
-            console.log('watcher error: ' + error)
-        })
-}
-
 export class Template {
     constructor(config, cache, compiler) {
         this.cache = cache
@@ -55,14 +35,24 @@ export class Template {
     }
     configure(config) {
         this.path = config.path
+        this.chokidar = config.chokidar
         this.resolver = isFunction(config.resolver)
             ? config.resolver
             : isNode()
             ? fileSystem
             : httpRequest
-        disableWatcher(this.watcher)
-        if (config.watch && isNode()) {
-            this.watcher = enableWatcher(this.path, this.cache)
+        if (config.watch && config.chokidar && isNode()) {
+            if (this.watcher) {
+                this.watcher.unwatch('.')
+            }
+            this.watcher = this.chokidar
+                .watch('.', { cwd: this.path })
+                .on('change', (name) => {
+                    this.cache.remove(name)
+                })
+                .on('error', (error) => {
+                    console.log('watcher error: ' + error)
+                })
         }
     }
     resolve(template) {

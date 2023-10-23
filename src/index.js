@@ -2,7 +2,7 @@ import path from 'path'
 import { defaults } from './defaults'
 import { element } from './element'
 import { extend, safeValue, ext } from './utils'
-import { isFunction, isString, typeProp, isBoolean } from './type'
+import { isFunction, isString, typeProp, isBoolean, isObject } from './type'
 import { Compiler } from './compiler'
 import { Template } from './template'
 import { Context } from './context'
@@ -42,6 +42,12 @@ const configSchema = (config, options) => {
             options.rmWhitespace
         ),
         watch: typeProp(isBoolean, defaults.watch, config.watch, options.watch),
+        chokidar: typeProp(
+            isObject,
+            defaults.export,
+            config.export,
+            options.export
+        ),
         token: extend({}, defaults.token, config.token, options.token),
         vars: extend({}, defaults.vars, config.vars, options.vars),
     })
