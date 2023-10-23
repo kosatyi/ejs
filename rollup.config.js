@@ -2,7 +2,7 @@ import { ignore, resolve, commonjs, babel, terser } from '@kosatyi/rollup'
 
 import pkg from './package.json'
 
-const external = ['path', 'fs', 'chokidar']
+const external = ['path', 'fs']
 
 const babelConfig = {
     babelHelpers: 'bundled',

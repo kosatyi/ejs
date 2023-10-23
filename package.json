@@ -9,9 +9,6 @@
   "browser": "dist/umd/index.js",
   "minified": "dist/umd/index.min.js",
   "author": "Stepan Kosatyi (https://kosatyi.com)",
-  "dependencies": {
-    "chokidar": "^3.5.3"
-  },
   "exports": {
     ".": {
       "types": "./index.d.ts",
