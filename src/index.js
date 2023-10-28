@@ -53,11 +53,7 @@ const configSchema = (config, options) => {
     })
 }
 
-const init = (options) => {
-    /**
-     * EJS template
-     * @module ejs
-     */
+const create = (options) => {
     const config = {}
     const scope = {}
 
@@ -141,32 +137,26 @@ const init = (options) => {
                 callback(error)
             })
     }
+
     const preload = (list) => cache.load(list)
+
     const compile = (content, path) => compiler.compile(content, path)
-    const create = (options) => {
-        return init(options)
-    }
-    helpers({
-        require(name) {
-            return require(name, this)
-        },
-        render(name, data) {
-            return render(name, data)
-        },
-    })
+
+    helpers({ require, render })
+
     return {
+        context,
         render,
         helpers,
         configure,
         compile,
         create,
         preload,
-        context,
         __express,
     }
 }
 
-export { element, safeValue }
+export { element, safeValue, create }
 
 export const {
     context,
@@ -174,7 +164,6 @@ export const {
     helpers,
     configure,
     compile,
-    create,
     preload,
     __express,
-} = init({})
+} = create({})
