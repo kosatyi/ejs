@@ -2,7 +2,20 @@ import { ignore, resolve, commonjs, babel, terser } from '@kosatyi/rollup'
 
 import pkg from './package.json'
 
+import { promises as fs } from 'fs'
+
 const external = ['path', 'fs']
+
+const packageJSON = (target, content) => {
+    return {
+        name: 'packageJSON',
+        async buildEnd(err) {
+            if (!err) {
+                await fs.writeFile(target, JSON.stringify(content, null, 4))
+            }
+        },
+    }
+}
 
 const babelConfig = {
     babelHelpers: 'bundled',
@@ -36,7 +49,14 @@ const cjs = {
         format: 'cjs',
         exports: 'auto',
     },
-    plugins: [resolve({}), commonjs({}), babel(babelConfig)],
+    plugins: [
+        resolve({}),
+        commonjs({}),
+        babel(babelConfig),
+        packageJSON('dist/cjs/package.json', {
+            type: 'commonjs',
+        }),
+    ],
 }
 
 const mjs = {
