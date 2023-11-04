@@ -1,21 +1,17 @@
-import { ignore, resolve, commonjs, babel, terser } from '@kosatyi/rollup'
+import {
+    ignore,
+    resolve,
+    commonjs,
+    babel,
+    terser,
+    packageJSON,
+} from '@kosatyi/rollup'
 
 import pkg from './package.json'
 
 import { promises as fs } from 'fs'
 
 const external = ['path', 'fs']
-
-const packageJSON = (target, content) => {
-    return {
-        name: 'packageJSON',
-        async buildEnd(err) {
-            if (!err) {
-                await fs.writeFile(target, JSON.stringify(content, null, 4))
-            }
-        },
-    }
-}
 
 const babelConfig = {
     babelHelpers: 'bundled',
