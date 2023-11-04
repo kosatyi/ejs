@@ -3,23 +3,32 @@ import { Template } from './template'
 import { Compiler } from './compiler'
 import { Cache } from './cache'
 import { Context } from './context'
-import { ext, extend, safeValue } from './utils'
+import { ext, extend, safeValue, bindContext } from './utils'
 import { isBoolean, isFunction, isString, typeProp } from './type'
 import { defaults } from './defaults'
 import path from 'path'
 
 export class EJS {
+    export = [
+        'cache',
+        'render',
+        'require',
+        'helpers',
+        'configure',
+        'preload',
+        'compiler',
+        '__express',
+    ]
     constructor(options = {}) {
         this.config = {}
         this.scope = {}
         configSchema(this.config, options)
+        bindContext(this, this, this.export)
         this.context = new Context(this.config)
         this.compiler = new Compiler(this.config)
         this.cache = new Cache(this.config)
         this.template = new Template(this.config, this.cache, this.compiler)
-        const render = this.render.bind(this)
-        const require = this.require.bind(this)
-        this.helpers({ require, render })
+        this.helpers({ require: this.require, render: this.render })
     }
     configure(options = {}) {
         configSchema(this.config, options)
