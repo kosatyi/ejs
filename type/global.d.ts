@@ -1,51 +1,4 @@
-declare function expressCallback(
-    error: null | object,
-    content: string
-): undefined
-
 declare global {
-    /**
-     *
-     */
-    export const context: any
-
-    /**
-     *
-     * @param name
-     * @param options
-     * @param callback
-     */
-    export function __express(
-        name: string,
-        options: object,
-        callback: typeof expressCallback
-    ): Promise<any>
-
-    /**
-     *
-     * @param name
-     * @param data
-     */
-    export function render(name: string, data: object): Promise<any>
-
-    /**
-     *
-     * @param options
-     */
-    export function configure(options: object): object
-
-    /**
-     *
-     * @param methods
-     */
-    export function helpers(methods: object): any
-
-    /**
-     *
-     * @param list
-     */
-    export function preload(list: object): any
-
     /**
      * extend layout with blocks in current template file
      * @param layout
@@ -57,7 +10,7 @@ declare global {
      * @param name
      * @param [callback]
      */
-    function block(name: string, callback?): any
+    function block(name: string, callback?: Function): any
 
     /**
      * set property in current scope

@@ -4,6 +4,8 @@ defaults.export = 'ejsPrecompiled'
 
 defaults.watch = false
 
+defaults.chokidar = null
+
 defaults.path = 'views'
 
 defaults.resolver = null

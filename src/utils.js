@@ -1,4 +1,4 @@
-import { isFunction, isUndefined } from './type'
+import {isFunction, isUndefined} from './type'
 
 const isNodeEnv =
     Object.prototype.toString.call(
@@ -81,7 +81,8 @@ export const extend = (...args) => {
         }, target)
 }
 
-export const noop = () => {}
+export const noop = () => {
+}
 
 export const format = (pattern, params) => {
     pattern = pattern || ''

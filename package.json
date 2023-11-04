@@ -11,22 +11,17 @@
   "author": "Stepan Kosatyi (https://kosatyi.com)",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
     },
     "./element": {
-      "types": "./element.d.ts",
       "import": "./dist/esm/element.js",
       "require": "./dist/cjs/element.js"
     }
   },
   "files": [
     "dist",
-    "dist/cjs/package.json",
-    "index.d.ts",
-    "element.d.ts",
-    "global.d.ts"
+    "type"
   ],
   "scripts": {
     "build": "rollup -c",
@@ -53,5 +48,9 @@
     "ejs",
     "template-engine",
     "nodejs"
-  ]
+  ],
+  "dependencies": {
+    "@kosatyi/is-type": "^0.0.5",
+    "chokidar": "^3.5.3"
+  }
 }

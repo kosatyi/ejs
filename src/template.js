@@ -29,7 +29,10 @@ const fileSystem = (path, template) => {
 export class Template {
     constructor(config, cache, compiler) {
         this.cache = cache
-        this.watcher = null
+        this.watcher = {
+            unwatch() {},
+            on() {},
+        }
         this.compiler = compiler
         this.configure(config)
     }
@@ -41,18 +44,17 @@ export class Template {
             : isNode()
             ? fileSystem
             : httpRequest
-        if (config.watch && config.chokidar && isNode()) {
+        if (config.watch && isNode()) {
             if (this.watcher) {
                 this.watcher.unwatch('.')
             }
-            this.watcher = this.chokidar
-                .watch('.', { cwd: this.path })
-                .on('change', (name) => {
-                    this.cache.remove(name)
-                })
-                .on('error', (error) => {
-                    console.log('watcher error: ' + error)
-                })
+            if (this.chokidar) {
+                this.watcher = this.chokidar
+                    .watch('.', { cwd: this.path })
+                    .on('change', (name) => {
+                        this.cache.remove(name)
+                    })
+            }
         }
     }
     resolve(template) {

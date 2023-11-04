@@ -1,6 +1,6 @@
 # EJS 
 
-Embedded JavaScript templates
+Embedded JavaScript templates with extend/block
 
 [![npm](https://img.shields.io/npm/v/@kosatyi/ejs.svg)](https://www.npmjs.com/package/@kosatyi/ejs)
 [![github-issues](https://img.shields.io/github/issues/kosatyi/ejs.svg)](https://github.com/kosatyi/ejs/issues)
