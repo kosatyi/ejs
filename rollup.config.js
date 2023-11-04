@@ -1,5 +1,11 @@
-import { ignore, resolve, commonjs, babel, terser } from '@kosatyi/rollup'
-import { promises } from 'fs'
+import {
+    ignore,
+    resolve,
+    commonjs,
+    babel,
+    terser,
+    jsonFile,
+} from '@kosatyi/rollup'
 
 import pkg from './package.json' assert { type: 'json' }
 
@@ -41,17 +47,7 @@ const cjs = {
         resolve({}),
         commonjs({}),
         babel(babelConfig),
-        {
-            name: 'jsonFile',
-            async buildEnd(err) {
-                if (!err) {
-                    await promises.writeFile(
-                        'dist/cjs/package.json',
-                        JSON.stringify({ type: 'commonjs' }, null, 4)
-                    )
-                }
-            },
-        },
+        jsonFile('dist/cjs/package.json', { type: 'commonjs' }),
     ],
 }
 

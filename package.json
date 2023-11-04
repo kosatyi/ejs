@@ -39,7 +39,7 @@
     "@babel/core": "^7.20.12",
     "@babel/preset-env": "^7.20.2",
     "@kosatyi/ejs-bundle": "^1.0.8",
-    "@kosatyi/rollup": "^0.0.14"
+    "@kosatyi/rollup": "^0.0.15"
   },
   "license": "MIT",
   "bugs": {
