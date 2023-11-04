@@ -16,7 +16,8 @@ export class EJS {
         'helpers',
         'configure',
         'preload',
-        'compiler',
+        'compile',
+        'create',
         '__express',
     ]
     constructor(options = {}) {
