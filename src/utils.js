@@ -50,23 +50,17 @@ export const safeValue = (value, escape, check) => {
     return (check = value) == null ? '' : escape ? entities(check) : check
 }
 
-export const getPath = (context, name, create) => {
-    let data = create ? context : Object.assign({}, context)
-    let chunk = name.split('.')
-    let prop = chunk.pop()
-    chunk.forEach((part) => {
-        data = data[part] = data[part] || {}
-    })
-    return [data, prop]
-}
-
-export const setPath = (context, name) => {
+export const getPath = (context, name, strict) => {
     let data = context
-    let chunk = name.split('.')
-    let prop = chunk.pop()
-    chunk.forEach((part) => {
+    let chunks = name.split('.')
+    let prop = chunks.pop()
+    for (const part of chunks) {
+        if (strict && data.hasOwnProperty(part) === false) {
+            data = {}
+            break
+        }
         data = data[part] = data[part] || {}
-    })
+    }
     return [data, prop]
 }
 

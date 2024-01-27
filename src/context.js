@@ -134,14 +134,14 @@ export class Context {
         })
 
         Scope.method('get', function (name, defaults) {
-            const path = getPath(this, name, false)
+            const path = getPath(this, name, true)
             const result = path.shift()
             const prop = path.pop()
             return hasProp(result, prop) ? result[prop] : defaults
         })
 
         Scope.method('set', function (name, value) {
-            const path = getPath(this, name, true)
+            const path = getPath(this, name, false)
             const result = path.shift()
             const prop = path.pop()
             if (this.getExtend() && hasProp(result, prop)) {
