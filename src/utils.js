@@ -1,4 +1,4 @@
-import { isFunction, isUndefined } from './type'
+import { isFunction, isObject, isUndefined } from './type'
 
 const isNodeEnv =
     Object.prototype.toString.call(
@@ -50,13 +50,25 @@ export const safeValue = (value, escape, check) => {
     return (check = value) == null ? '' : escape ? entities(check) : check
 }
 
-export const getPath = (context, name) => {
+const BreakException = {}
+
+export const getPath = (context, name, create) => {
     let data = context
     let chunk = name.split('.')
     let prop = chunk.pop()
-    chunk.forEach((part) => {
-        data = data[part] = data[part] || {}
-    })
+    try {
+        chunk.forEach((part) => {
+            if (isObject(data[part])) {
+                data = data[part]
+            } else if (create === true) {
+                data = data[part] = {}
+            } else {
+                throw BreakException
+            }
+        })
+    } catch (e) {
+        if (e !== BreakException) throw e
+    }
     return [data, prop]
 }
 
