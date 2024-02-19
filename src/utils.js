@@ -52,7 +52,7 @@ export const safeValue = (value, escape, check) => {
 
 export const getPath = (context, name, strict) => {
     let data = context
-    let chunks = name.split('.')
+    let chunks = String(name).split('.')
     let prop = chunks.pop()
     for (const part of chunks) {
         if (strict && data.hasOwnProperty(part) === false) {
