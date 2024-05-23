@@ -6,13 +6,12 @@ export class Cache {
     list = {}
     constructor(config) {
         this.configure(config)
-        if (isNode() === false) {
-            this.load(global[this.namespace])
-        }
     }
     configure(config) {
         this.list = {}
-        this.namespace = config.export
+        if (isNode() === false) {
+            this.load(global[config.export])
+        }
     }
     load(data) {
         extend(this.list, data)
