@@ -1,10 +1,13 @@
+import path from 'path'
+
 import { isBoolean, isFunction, isString, typeProp } from './type.js'
 import { extend } from './utils.js'
 import { defaults } from './defaults.js'
-import path from 'path'
 
 export { element, safeValue } from './element.js'
-export { EJS } from './ejs'
+export { EJS } from './ejs.js'
+
+import { configure } from './instance.js'
 
 export {
     context,
@@ -14,7 +17,7 @@ export {
     helpers,
     preload,
     create,
-} from './instance'
+} from './instance.js'
 
 export function __express(name, options, callback) {
     if (isFunction(options)) {

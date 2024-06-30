@@ -1,21 +1,12 @@
 export const defaults = {}
-
 defaults.export = 'ejsPrecompiled'
-
-defaults.watch = false
-
+defaults.cache = true
 defaults.chokidar = null
-
 defaults.path = 'views'
-
 defaults.resolver = null
-
 defaults.extension = 'ejs'
-
 defaults.rmWhitespace = true
-
 defaults.withObject = true
-
 defaults.vars = {
     SCOPE: 'ejs',
     COMPONENT: 'ui',
@@ -26,7 +17,6 @@ defaults.vars = {
     MACRO: '$$m',
     SAFE: '$$v',
 }
-
 defaults.token = {
     start: '<%',
     end: '%>',

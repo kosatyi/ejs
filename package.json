@@ -51,6 +51,7 @@
   ],
   "dependencies": {
     "@kosatyi/is-type": "^0.0.5",
-    "chokidar": "^3.5.3"
+    "chokidar": "^3.5.3",
+    "ejs": "npm:@kosatyi/ejs@^0.0.62"
   }
 }

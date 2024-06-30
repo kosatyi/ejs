@@ -52,24 +52,10 @@ export function Template(config, cache, compiler) {
             return compiler.compile(content, template)
         }
     }
-
-    const watcher = function (config) {
-        if (template.watcher) {
-            template.watcher.unwatch('.')
-        }
-        if (config.watch && config.chokidar && isNode()) {
-            return config.chokidar
-                .watch('.', { cwd: template.path })
-                .on('change', (name) => {
-                    cache.remove(name)
-                })
-        }
-    }
     this.configure = function (config) {
         template.path = config.path
-        template.chokidar = config.chokidar
+        template.cache = config.cache
         template.resolver = fileResolver(config.resolver)
-        template.watcher = watcher(config)
     }
     this.get = function (template) {
         if (cache.exist(template)) {

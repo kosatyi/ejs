@@ -35,13 +35,7 @@ export const configSchema = (config, options) => {
             config.rmWhitespace,
             options.rmWhitespace
         ),
-        watch: typeProp(isBoolean, defaults.watch, config.watch, options.watch),
-        chokidar: typeProp(
-            isObject,
-            defaults.export,
-            config.export,
-            options.export
-        ),
+        cache: typeProp(isBoolean, defaults.watch, config.watch, options.watch),
         token: extend({}, defaults.token, config.token, options.token),
         vars: extend({}, defaults.vars, config.vars, options.vars),
     })
