@@ -9,11 +9,13 @@ export function Cache(config) {
         list: {},
     }
     this.configure = function (config) {
-        cache.list = {}
         cache.enabled = config.cache
         if (isNode() === false) {
             this.load(global[config.export])
         }
+    }
+    this.clear = function () {
+        cache.list = {}
     }
     this.load = function (data) {
         if (cache.enabled) {

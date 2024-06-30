@@ -7,17 +7,13 @@ import { ext, safeValue, instanceOf } from './utils'
 
 export function EJS(options) {
     if (instanceOf(this, EJS) === false) return new EJS(options)
-
     const scope = {}
     const config = {}
-
     configSchema(config, options || {})
-
     const context = new Context(config)
     const compiler = new Compiler(config)
     const cache = new Cache(config)
     const template = new Template(config, cache, compiler)
-
     const output = function (path, scope) {
         return template.get(path).then(function (callback) {
             return callback.call(
@@ -29,7 +25,6 @@ export function EJS(options) {
             )
         })
     }
-
     const require = function (name) {
         const filepath = ext(name, config.extension)
         const scope = context.create({})

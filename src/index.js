@@ -7,7 +7,7 @@ import { defaults } from './defaults.js'
 export { element, safeValue } from './element.js'
 export { EJS } from './ejs.js'
 
-import { configure } from './instance.js'
+import { configure, render } from './instance.js'
 
 export {
     context,
@@ -37,7 +37,7 @@ export function __express(name, options, callback) {
     viewOptions.path = viewPath
     viewOptions.cache = viewCache
     configure(viewOptions)
-    return this.render(filename, options)
+    return render(filename, options)
         .then((content) => {
             callback(null, content)
         })

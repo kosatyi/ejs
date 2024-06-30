@@ -52,7 +52,7 @@ export const safeValue = (value, escape) => {
 }
 
 export const instanceOf = (object, instance) => {
-    return object instanceof instance
+    return Boolean(object instanceof instance)
 }
 
 export const getPath = (context, name, strict) => {
