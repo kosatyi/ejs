@@ -46,20 +46,32 @@ export const symbols = (string) => {
     )
 }
 
-export const safeValue = (value, escape, check) => {
-    return (check = value) == null ? '' : escape ? entities(check) : check
+export const safeValue = (value, escape) => {
+    const check = value
+    return check == null ? '' : escape === true ? entities(check) : check
+}
+
+export const instanceOf = (object, instance) => {
+    return object instanceof instance
 }
 
 export const getPath = (context, name, strict) => {
     let data = context
     let chunks = String(name).split('.')
     let prop = chunks.pop()
-    for (const part of chunks) {
+    for (let i = 0; i < chunks.length; i++) {
+        const part = chunks[i]
+        if (isFunction(data['toJSON'])) {
+            data = data.toJSON()
+        }
         if (strict && data.hasOwnProperty(part) === false) {
             data = {}
             break
         }
         data = data[part] = data[part] || {}
+    }
+    if (isFunction(data['toJSON'])) {
+        data = data.toJSON()
     }
     return [data, prop]
 }
@@ -88,9 +100,7 @@ export const extend = (...args) => {
     const target = args.shift()
     return args
         .filter((source) => source)
-        .reduce((target, source) => {
-            return Object.assign(target, source)
-        }, target)
+        .reduce((target, source) => Object.assign(target, source), target)
 }
 
 export const noop = () => {}

@@ -3,44 +3,23 @@ import { Template } from './template'
 import { Compiler } from './compiler'
 import { Cache } from './cache'
 import { Context } from './context'
-import { ext, extend, safeValue, bindContext } from './utils'
-import { isBoolean, isFunction, isString, typeProp } from './type'
-import { defaults } from './defaults'
-import path from 'path'
+import { ext, safeValue, instanceOf } from './utils'
 
-export class EJS {
-    export = [
-        'cache',
-        'render',
-        'require',
-        'helpers',
-        'configure',
-        'preload',
-        'compile',
-        'create',
-        '__express',
-    ]
-    constructor(options = {}) {
-        this.config = {}
-        this.scope = {}
-        configSchema(this.config, options)
-        bindContext(this, this, this.export)
-        this.context = new Context(this.config)
-        this.compiler = new Compiler(this.config)
-        this.cache = new Cache(this.config)
-        this.template = new Template(this.config, this.cache, this.compiler)
-        this.helpers({ require: this.require, render: this.render })
-    }
-    configure(options = {}) {
-        configSchema(this.config, options)
-        this.context.configure(this.config, this.scope)
-        this.compiler.configure(this.config)
-        this.cache.configure(this.config)
-        this.template.configure(this.config)
-        return this.config
-    }
-    output(path, scope) {
-        return this.template.get(path).then(function (callback) {
+export function EJS(options) {
+    if (instanceOf(this, EJS) === false) return new EJS(options)
+
+    const scope = {}
+    const config = {}
+
+    configSchema(config, options || {})
+
+    const context = new Context(config)
+    const compiler = new Compiler(config)
+    const cache = new Cache(config)
+    const template = new Template(config, cache, compiler)
+
+    const output = function (path, scope) {
+        return template.get(path).then(function (callback) {
             return callback.call(
                 scope,
                 scope,
@@ -50,62 +29,62 @@ export class EJS {
             )
         })
     }
-    render(name, data) {
-        const filepath = ext(name, this.config.extension)
-        const scope = this.context.create(data)
-        return this.output(filepath, scope).then((content) => {
+
+    const require = function (name) {
+        const filepath = ext(name, config.extension)
+        const scope = context.create({})
+        return output(filepath, scope).then(() => {
+            return scope.getMacro()
+        })
+    }
+
+    const render = function (name, data) {
+        const filepath = ext(name, config.extension)
+        const scope = context.create(data)
+        return output(filepath, scope).then((content) => {
             if (scope.getExtend()) {
                 scope.setExtend(false)
                 const layout = scope.getLayout()
                 const data = scope.clone()
-                return this.render(layout, data)
+                return render(layout, data)
             }
             return content
         })
     }
-    require(name) {
-        const filepath = ext(name, this.config.extension)
-        const scope = this.context.create({})
-        return this.output(filepath, scope).then(() => {
-            return scope.getMacro()
-        })
+
+    this.configure = function (options) {
+        options = options || {}
+        configSchema(config, options)
+        context.configure(config, scope)
+        compiler.configure(config)
+        cache.configure(config)
+        template.configure(config)
+        return config
     }
-    create(options = {}) {
+
+    this.render = function (name, data) {
+        return render(name, data)
+    }
+
+    this.helpers = function (methods) {
+        context.helpers(Object.assign(scope, methods || {}))
+    }
+
+    this.preload = function (list) {
+        return cache.load(list || {})
+    }
+
+    this.create = function (options) {
         return new EJS(options)
     }
-    helpers(methods = {}) {
-        this.context.helpers(extend(this.scope, methods))
+
+    this.compile = function (content, path) {
+        return compiler.compile(content, path)
     }
-    preload(list = {}) {
-        return this.cache.load(list)
+
+    this.context = function (data) {
+        return context.create(data)
     }
-    compile(content, path) {
-        return this.compiler.compile(content, path)
-    }
-    __express(name, options, callback) {
-        if (isFunction(options)) {
-            callback = options
-            options = {}
-        }
-        options = options || {}
-        const settings = extend({}, options.settings)
-        const viewPath = typeProp(isString, defaults.path, settings['views'])
-        const viewCache = typeProp(
-            isBoolean,
-            defaults.cache,
-            settings['view cache']
-        )
-        const viewOptions = extend({}, settings['view options'])
-        const filename = path.relative(viewPath, name)
-        viewOptions.path = viewPath
-        viewOptions.cache = viewCache
-        this.configure(viewOptions)
-        return this.render(filename, options)
-            .then((content) => {
-                callback(null, content)
-            })
-            .catch((error) => {
-                callback(error)
-            })
-    }
+
+    this.helpers({ require, render })
 }

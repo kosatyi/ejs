@@ -1,42 +1,47 @@
-import { extend, omit, each, getPath, hasProp, noop, resolve } from './utils'
+import {
+    extend,
+    omit,
+    each,
+    getPath,
+    hasProp,
+    noop,
+    resolve,
+    instanceOf,
+} from './utils'
 import { isFunction, isString } from './type'
 
 import { element } from './element'
+
 import createBuffer from './buffer'
 
-export class Context {
-    constructor(config) {
-        this.configure(config)
-    }
-    configure(config, methods) {
-        const { EXTEND, LAYOUT, BLOCKS, BUFFER, MACRO, COMPONENT } = config.vars
-        this.create = (data) => {
+export function Context(config) {
+    if (instanceOf(this, Context) === false) return new Context(config)
+
+    this.configure = function (config, methods) {
+        const { BLOCKS, MACRO, EXTEND, LAYOUT, BUFFER, COMPONENT } = config.vars
+
+        this.create = function (data) {
             return new Scope(data)
         }
-        this.helpers = (methods) => {
-            extend(Scope.prototype, methods)
+
+        this.helpers = function (methods) {
+            extend(Scope.prototype, methods || {})
         }
-        function Scope(data = {}) {
-            this.initBlocks()
-            this.initMacro()
-            extend(this, data)
+
+        function Scope(data) {
+            this[BLOCKS] = {}
+            this[MACRO] = {}
+            extend(this, data || {})
         }
         Scope.prototype = extend({}, methods || {})
-        /**
-         * @param {string} name
-         * @param {*} value
-         * @param {boolean} [writable]
-         * @param {boolean} [configurable]
-         * @param {boolean} [enumerable]
-         */
-        Scope.define = Scope.method = (
+        Scope.method = Scope.define = function (
             name,
             value,
             writable,
             configurable,
             enumerable
-        ) => {
-            return Object.defineProperty(Scope.prototype, name, {
+        ) {
+            Object.defineProperty(Scope.prototype, name, {
                 value: value,
                 writable: writable || false,
                 configurable: configurable || false,
@@ -45,22 +50,10 @@ export class Context {
         }
 
         Scope.define(BUFFER, createBuffer())
-
         Scope.define(BLOCKS, {}, true)
-
         Scope.define(MACRO, {}, true)
-
         Scope.define(LAYOUT, false, true)
-
         Scope.define(EXTEND, false, true)
-
-        Scope.method('initBlocks', function () {
-            this[BLOCKS] = {}
-        })
-
-        Scope.method('initMacro', function () {
-            this[MACRO] = {}
-        })
 
         Scope.method('getMacro', function () {
             return this[MACRO]
@@ -251,4 +244,6 @@ export class Context {
             each(object, callback)
         })
     }
+
+    this.configure(config)
 }

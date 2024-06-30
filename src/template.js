@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { isNode } from './utils'
+import { instanceOf, isNode } from './utils'
 import { isFunction } from './type'
 
 const resolvePath = (path, template) => {
@@ -26,58 +26,61 @@ const fileSystem = (path, template) => {
     })
 }
 
-export class Template {
-    constructor(config, cache, compiler) {
-        this.cache = cache
-        this.watcher = {
-            unwatch() {},
-            on() {},
-        }
-        this.compiler = compiler
-        this.configure(config)
-    }
-    configure(config) {
-        this.path = config.path
-        this.chokidar = config.chokidar
-        this.resolver = isFunction(config.resolver)
-            ? config.resolver
-            : isNode()
-            ? fileSystem
-            : httpRequest
-        if (config.watch && isNode()) {
-            if (this.watcher) {
-                this.watcher.unwatch('.')
-            }
-            if (this.chokidar) {
-                this.watcher = this.chokidar
-                    .watch('.', { cwd: this.path })
-                    .on('change', (name) => {
-                        this.cache.remove(name)
-                    })
-            }
-        }
-    }
-    resolve(template) {
-        return this.resolver(this.path, template)
-    }
-    result(template, content) {
-        this.cache.set(template, content)
+const fileResolver = (resolver) => {
+    return isFunction(resolver) ? resolver : isNode() ? fileSystem : httpRequest
+}
+
+export function Template(config, cache, compiler) {
+    if (instanceOf(this, Template) === false)
+        return new Template(config, cache, compiler)
+
+    const template = {}
+
+    const result = function (template, content) {
+        cache.set(template, content)
         return content
     }
-    compile(content, template) {
+
+    const resolve = function (path) {
+        return template.resolver(template.path, path)
+    }
+
+    const compile = function (content, template) {
         if (isFunction(content)) {
             return content
         } else {
-            return this.compiler.compile(content, template)
+            return compiler.compile(content, template)
         }
     }
-    get(template) {
-        if (this.cache.exist(template)) {
-            return this.cache.resolve(template)
+
+    const watcher = function (config) {
+        if (template.watcher) {
+            template.watcher.unwatch('.')
         }
-        const content = this.resolve(template).then((content) =>
-            this.result(template, this.compile(content, template))
+        if (config.watch && config.chokidar && isNode()) {
+            return config.chokidar
+                .watch('.', { cwd: template.path })
+                .on('change', (name) => {
+                    cache.remove(name)
+                })
+        }
+    }
+    this.configure = function (config) {
+        template.path = config.path
+        template.chokidar = config.chokidar
+        template.resolver = fileResolver(config.resolver)
+        template.watcher = watcher(config)
+    }
+    this.get = function (template) {
+        if (cache.exist(template)) {
+            return cache.resolve(template)
+        }
+        return result(
+            template,
+            resolve(template).then((content) =>
+                result(template, compile(content, template))
+            )
         )
-        return this.result(template, content)
     }
+    this.configure(config)
 }

@@ -1,16 +1,6 @@
 import { EJS } from './ejs'
 
-const ejs = new EJS({
-    /** defaults options **/
-})
+const ejs = new EJS()
 
-export const {
-    __express,
-    render,
-    context,
-    compile,
-    helpers,
-    preload,
-    configure,
-    create,
-} = ejs
+export const { render, context, compile, helpers, preload, configure, create } =
+    ejs

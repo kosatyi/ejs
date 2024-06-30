@@ -1,4 +1,4 @@
-import { symbols } from './utils'
+import { instanceOf, symbols } from './utils'
 
 const tagList = [
     {
@@ -27,7 +27,7 @@ const tagList = [
     },
 ]
 
-const matchTokens = (regex, text, callback) => {
+function matchTokens(regex, text, callback) {
     let index = 0
     text.replace(regex, function () {
         const params = [].slice.call(arguments, 0, -1)
@@ -39,69 +39,72 @@ const matchTokens = (regex, text, callback) => {
     })
 }
 
-export class Compiler {
-    constructor(config) {
-        this.configure(config)
-    }
+export function Compiler(config) {
+    if (instanceOf(this, Compiler) === false) return new Compiler(config)
 
-    configure(config) {
-        this.withObject = config.withObject
-        this.rmWhitespace = config.rmWhitespace
-        this.token = config.token
-        this.vars = config.vars
-        this.matches = []
-        this.formats = []
-        this.slurp = {
+    const compiler = {}
+
+    this.configure = function (config) {
+        compiler.withObject = config.withObject
+        compiler.rmWhitespace = config.rmWhitespace
+        compiler.token = config.token
+        compiler.vars = config.vars
+        compiler.matches = []
+        compiler.formats = []
+        compiler.slurp = {
             match: '[ \\t]*',
-            start: [this.token.start, '_'],
-            end: ['_', this.token.end],
+            start: [compiler.token.start, '_'],
+            end: ['_', compiler.token.end],
         }
         tagList.forEach((item) => {
-            this.matches.push(
-                this.token.start
+            compiler.matches.push(
+                compiler.token.start
                     .concat(item.symbol)
-                    .concat(this.token.regex)
-                    .concat(this.token.end)
+                    .concat(compiler.token.regex)
+                    .concat(compiler.token.end)
             )
-            this.formats.push(item.format.bind(this.vars))
+            compiler.formats.push(item.format.bind(compiler.vars))
         })
-        this.regex = new RegExp(this.matches.join('|').concat('|$'), 'g')
-        this.slurpStart = new RegExp(
-            [this.slurp.match, this.slurp.start.join('')].join(''),
+        compiler.regex = new RegExp(
+            compiler.matches.join('|').concat('|$'),
+            'g'
+        )
+        compiler.slurpStart = new RegExp(
+            [compiler.slurp.match, compiler.slurp.start.join('')].join(''),
             'gm'
         )
-        this.slurpEnd = new RegExp(
-            [this.slurp.end.join(''), this.slurp.match].join(''),
+        compiler.slurpEnd = new RegExp(
+            [compiler.slurp.end.join(''), compiler.slurp.match].join(''),
             'gm'
         )
     }
 
-    truncate(value) {
+    function truncate(value) {
         return value && value.replace(/^(?:\r\n|\r|\n)/, '')
     }
 
-    compile(content, path) {
-        const { SCOPE, SAFE, BUFFER, COMPONENT } = this.vars
-        if (this.rmWhitespace) {
+    this.compile = function (content, path) {
+        const { SCOPE, SAFE, BUFFER, COMPONENT } = compiler.vars
+        if (compiler.rmWhitespace) {
             content = content
                 .replace(/[\r\n]+/g, '\n')
                 .replace(/^\s+|\s+$/gm, '')
         }
         content = content
-            .replace(this.slurpStart, this.token.start)
-            .replace(this.slurpEnd, this.token.end)
+            .replace(compiler.slurpStart, compiler.token.start)
+            .replace(compiler.slurpEnd, compiler.token.end)
         let source = `${BUFFER}('`
-        matchTokens(this.regex, content, (params, index, offset) => {
+        matchTokens(compiler.regex, content, (params, index, offset) => {
             source += symbols(content.slice(index, offset))
             params.forEach((value, index) => {
                 if (value) {
-                    source += this.formats[index](value)
+                    source += compiler.formats[index](value)
                 }
             })
         })
         source += `');`
         source = `try{${source}}catch(e){console.info(e)}`
-        if (this.withObject) {
+        if (compiler.withObject) {
             source = `with(${SCOPE}){${source}}`
         }
         source = `${BUFFER}.start();${source}return ${BUFFER}.end();`
@@ -117,4 +120,6 @@ export class Compiler {
         }
         return result
     }
+
+    this.configure(config)
 }

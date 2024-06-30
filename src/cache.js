@@ -1,36 +1,36 @@
-import { extend, hasProp, isNode } from './utils'
+import { extend, hasProp, instanceOf, isNode } from './utils'
 
 const global = typeof globalThis !== 'undefined' ? globalThis : window || self
 
-export class Cache {
-    list = {}
-    constructor(config) {
-        this.configure(config)
+export function Cache(config) {
+    if (instanceOf(this, Cache) === false) return new Cache(config)
+    const cache = {
+        list: {},
     }
-    configure(config) {
-        this.list = {}
+    this.configure = function (config) {
+        cache.list = {}
         if (isNode() === false) {
             this.load(global[config.export])
         }
     }
-    load(data) {
-        extend(this.list, data)
+    this.load = function (data) {
+        extend(cache.list, data || {})
         return this
     }
-    exist(key) {
-        return hasProp(this.list, key)
+    this.get = function (key) {
+        return cache.list[key]
     }
-    get(key) {
-        return this.list[key]
+    this.set = function (key, value) {
+        cache.list[key] = value
+        return this
     }
-    remove(key) {
-        delete this.list[key]
-    }
-    resolve(key) {
+    this.resolve = function (key) {
         return Promise.resolve(this.get(key))
     }
-    set(key, value) {
-        this.list[key] = value
-        return this
+    this.remove = function (key) {
+        delete cache.list[key]
+    }
+    this.exist = function (key) {
+        return hasProp(cache.list, key)
     }
 }

@@ -1,6 +1,8 @@
-const resolve = (list) => Promise.all(list).then((list) => list.join(''))
+function resolve(list) {
+    return Promise.all(list || []).then((list) => list.join(''))
+}
 
-const createBuffer = () => {
+const createBuffer = function () {
     let store = [],
         array = []
     function buffer(value) {
