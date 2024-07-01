@@ -1,4 +1,4 @@
-import { isFunction, isObject, isUndefined } from './type'
+import { isFunction, isUndefined } from './type'
 
 const isNodeEnv =
     Object.prototype.toString.call(
@@ -96,8 +96,10 @@ export const ext = (path, defaults) => {
     return path
 }
 
-export const extend = (...args) => {
-    const target = args.shift()
+/**
+ * @type {<T extends {}, U, V, W,Y>(T,U,V,W,Y)=> T & U & V & W & Y}
+ */
+export const extend = (target, ...args) => {
     return args
         .filter((source) => source)
         .reduce((target, source) => Object.assign(target, source), target)
@@ -180,8 +182,39 @@ export const uuid = (str) => {
 export const resolve = (value, callback, context) =>
     Promise.resolve(value).then(callback.bind(context))
 
-export const defineProp = (obj, key, descriptor) =>
-    Object.defineProperty(obj, key, descriptor)
+/**
+ * @typedef {Object|boolean|function} PropValue
+ **/
+
+/**
+ * @typedef {Object} PropAttributes
+ * @property {PropValue} value
+ * @property {boolean} [writable]
+ * @property {boolean} [enumerable]
+ * @property {boolean} [configurable]
+ */
+
+/**
+ * @typedef {string} PropName
+ **/
+
+/**
+ * @template {Object} T
+ * @param {T} o
+ * @param {PropName} p
+ * @param {PropAttributes} attributes
+ * @return {T & ThisType<any>}
+ */
+export const defineProp = (o, p, attributes) => {
+    return Object.defineProperty(
+        o,
+        p,
+        Object.assign(
+            { writable: false, enumerable: false, configurable: false },
+            attributes
+        )
+    )
+}
 
 export const random = (size) => {
     let string = ''

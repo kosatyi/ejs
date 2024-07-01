@@ -55,10 +55,8 @@ const ejs = require('@kosatyi/ejs')
 const app = express()
 app.engine('ejs', ejs.__express)
 app.set('views', 'views')
+app.set('view cache', false)
 app.set('view engine', 'ejs')
-app.set('view options', {
-    watch: true,
-})
 ```
 
 or use `ejs` alias
@@ -72,9 +70,7 @@ const express = require('express')
 const app = express()
 app.set('views', 'views')
 app.set('view engine', 'ejs')
-app.set('view options', {
-    watch: true,
-})
+app.set('view cache', false)
 ```
 
 ## Template Example

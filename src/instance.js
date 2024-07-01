@@ -1,4 +1,4 @@
-import { EJS } from './ejs'
+import { EJS } from './ejs.js'
 
 const ejs = new EJS()
 

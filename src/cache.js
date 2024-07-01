@@ -1,4 +1,4 @@
-import { extend, hasProp, instanceOf, isNode } from './utils'
+import { extend, hasProp, instanceOf, isNode } from './utils.js'
 
 const global = typeof globalThis !== 'undefined' ? globalThis : window || self
 

@@ -1,4 +1,4 @@
-import { instanceOf, symbols } from './utils'
+import { instanceOf, symbols } from './utils.js'
 
 const tagList = [
     {

@@ -2,7 +2,7 @@ function resolve(list) {
     return Promise.all(list || []).then((list) => list.join(''))
 }
 
-const createBuffer = function () {
+export function createBuffer() {
     let store = [],
         array = []
     function buffer(value) {
@@ -28,5 +28,3 @@ const createBuffer = function () {
     }
     return buffer
 }
-
-export default createBuffer

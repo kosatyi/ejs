@@ -1,4 +1,4 @@
-import { entities, map, safeValue } from './utils'
+import { entities, map, safeValue } from './utils.js'
 
 const selfClosed = [
     'area',

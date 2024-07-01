@@ -1,9 +1,9 @@
-import { configSchema } from './schema'
-import { Template } from './template'
-import { Compiler } from './compiler'
-import { Cache } from './cache'
-import { Context } from './context'
-import { ext, safeValue, instanceOf } from './utils'
+import { configSchema } from './schema.js'
+import { Template } from './template.js'
+import { Compiler } from './compiler.js'
+import { Cache } from './cache.js'
+import { Context } from './context.js'
+import { ext, safeValue, instanceOf } from './utils.js'
 
 export function EJS(options) {
     if (instanceOf(this, EJS) === false) return new EJS(options)
@@ -32,7 +32,6 @@ export function EJS(options) {
             return scope.getMacro()
         })
     }
-
     const render = function (name, data) {
         const filepath = ext(name, config.extension)
         const scope = context.create(data)
@@ -46,7 +45,6 @@ export function EJS(options) {
             return content
         })
     }
-
     this.configure = function (options) {
         options = options || {}
         configSchema(config, options)
@@ -56,30 +54,24 @@ export function EJS(options) {
         template.configure(config)
         return config
     }
-
     this.render = function (name, data) {
         return render(name, data)
     }
-
     this.helpers = function (methods) {
         context.helpers(Object.assign(scope, methods || {}))
     }
-
     this.preload = function (list) {
         return cache.load(list || {})
     }
-
     this.create = function (options) {
         return new EJS(options)
     }
-
     this.compile = function (content, path) {
         return compiler.compile(content, path)
     }
-
     this.context = function (data) {
         return context.create(data)
     }
-
     this.helpers({ require, render })
+    return this
 }

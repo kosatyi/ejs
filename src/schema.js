@@ -1,6 +1,6 @@
-import { isFunction, isString, typeProp, isBoolean, isObject } from './type'
-import { extend } from './utils'
-import { defaults } from './defaults'
+import { isFunction, isString, typeProp, isBoolean } from './type.js'
+import { extend } from './utils.js'
+import { defaults } from './defaults.js'
 
 export const configSchema = (config, options) => {
     extend(config, {

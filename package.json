@@ -33,7 +33,6 @@
   "devDependencies": {
     "@babel/core": "^7.20.12",
     "@babel/preset-env": "^7.20.2",
-    "@kosatyi/ejs-bundle": "^1.0.8",
     "@kosatyi/rollup": "^0.0.15"
   },
   "license": "MIT",
@@ -50,8 +49,6 @@
     "nodejs"
   ],
   "dependencies": {
-    "@kosatyi/is-type": "^0.0.5",
-    "chokidar": "^3.5.3",
-    "ejs": "npm:@kosatyi/ejs@^0.0.62"
+    "@kosatyi/is-type": "^0.0.5"
   }
 }
