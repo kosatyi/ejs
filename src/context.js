@@ -25,7 +25,6 @@ export function Context(config) {
 
         this.helpers = function (methods) {
             extend(Scope.prototype, methods || {})
-            console.log('helpers', Scope.prototype)
         }
 
         function Scope(data) {
