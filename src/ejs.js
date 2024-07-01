@@ -3,7 +3,7 @@ import { Template } from './template.js'
 import { Compiler } from './compiler.js'
 import { Cache } from './cache.js'
 import { Context } from './context.js'
-import { ext, safeValue, instanceOf } from './utils.js'
+import { ext, safeValue, instanceOf, extend } from './utils.js'
 
 export function EJS(options) {
     if (instanceOf(this, EJS) === false) return new EJS(options)
@@ -58,7 +58,7 @@ export function EJS(options) {
         return render(name, data)
     }
     this.helpers = function (methods) {
-        context.helpers(Object.assign(scope, methods || {}))
+        context.helpers(extend(scope, methods))
     }
     this.preload = function (list) {
         return cache.load(list || {})

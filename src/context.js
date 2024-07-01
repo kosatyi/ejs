@@ -25,6 +25,7 @@ export function Context(config) {
 
         this.helpers = function (methods) {
             extend(Scope.prototype, methods || {})
+            console.log('helpers', Scope.prototype)
         }
 
         function Scope(data) {
@@ -84,7 +85,7 @@ export function Context(config) {
             getComponent: {
                 value() {
                     const context = this
-                    if (hasProp(context, COMPONENT)) {
+                    if (COMPONENT in context) {
                         return function () {
                             return context[COMPONENT].apply(context, arguments)
                         }
