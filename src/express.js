@@ -6,7 +6,7 @@ import path from 'path'
 /**
  *
  * @param {EJS} ejs
- * @return {function(*, *, *): Promise<String>}
+ * @return {function(name, options, callback): Promise<String>}
  */
 export function expressRenderer(ejs) {
     return function (name, options, callback) {

@@ -1,10 +1,20 @@
 import { EJS } from './ejs.js'
-import { expressRenderer } from './express.js'
 import { readFile } from './readfile.js'
+import { expressRenderer } from './express.js'
 
 const ejs = new EJS({ resolver: readFile })
 
-export const { render, context, compile, helpers, preload, configure, create } =
-    ejs
+const { render, context, compile, helpers, preload, configure, create } = ejs
 
-export const __express = expressRenderer(ejs)
+const __express = expressRenderer(ejs)
+
+export {
+    render,
+    context,
+    compile,
+    helpers,
+    preload,
+    configure,
+    create,
+    __express,
+}

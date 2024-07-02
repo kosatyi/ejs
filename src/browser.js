@@ -3,5 +3,6 @@ import { httpRequest } from './fetch.js'
 
 const ejs = new EJS({ resolver: httpRequest })
 
-export const { render, context, compile, helpers, preload, configure, create } =
-    ejs
+const { render, context, compile, helpers, preload, configure, create } = ejs
+
+export { render, context, compile, helpers, preload, configure, create }
