@@ -7,14 +7,18 @@ import { ext, safeValue, instanceOf, extend } from './utils.js'
 
 export function EJS(options) {
     if (instanceOf(this, EJS) === false) return new EJS(options)
+
     const scope = {}
     const config = {}
+
     configSchema(config, options || {})
+
     const context = new Context(config)
     const compiler = new Compiler(config)
     const cache = new Cache(config)
     const template = new Template(config, cache, compiler)
-    const output = function (path, scope) {
+
+    const output = (path, scope) => {
         return template.get(path).then(function (callback) {
             return callback.call(
                 scope,
@@ -25,14 +29,14 @@ export function EJS(options) {
             )
         })
     }
-    const require = function (name) {
+    const require = (name) => {
         const filepath = ext(name, config.extension)
         const scope = context.create({})
         return output(filepath, scope).then(() => {
             return scope.getMacro()
         })
     }
-    const render = function (name, data) {
+    const render = (name, data) => {
         const filepath = ext(name, config.extension)
         const scope = context.create(data)
         return output(filepath, scope).then((content) => {

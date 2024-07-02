@@ -1,9 +1,14 @@
 export const defaults = {}
+
 defaults.export = 'ejsPrecompiled'
 defaults.cache = true
 defaults.chokidar = null
 defaults.path = 'views'
-defaults.resolver = null
+defaults.resolver = function (path, template) {
+    return Promise.resolve(
+        ['resolver is not defined', path, template].join(' ')
+    )
+}
 defaults.extension = 'ejs'
 defaults.rmWhitespace = true
 defaults.withObject = true

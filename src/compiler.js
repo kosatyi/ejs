@@ -79,10 +79,6 @@ export function Compiler(config) {
         )
     }
 
-    function truncate(value) {
-        return value && value.replace(/^(?:\r\n|\r|\n)/, '')
-    }
-
     this.compile = function (content, path) {
         const { SCOPE, SAFE, BUFFER, COMPONENT } = compiler.vars
         if (compiler.rmWhitespace) {

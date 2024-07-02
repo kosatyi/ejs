@@ -182,38 +182,8 @@ export const uuid = (str) => {
 export const resolve = (value, callback, context) =>
     Promise.resolve(value).then(callback.bind(context))
 
-/**
- * @typedef {Object|boolean|function} PropValue
- **/
-
-/**
- * @typedef {Object} PropAttributes
- * @property {PropValue} value
- * @property {boolean} [writable]
- * @property {boolean} [enumerable]
- * @property {boolean} [configurable]
- */
-
-/**
- * @typedef {string} PropName
- **/
-
-/**
- * @template {Object} T
- * @param {T} o
- * @param {PropName} p
- * @param {PropAttributes} attributes
- * @return {T & ThisType<any>}
- */
-export const defineProp = (o, p, attributes) => {
-    return Object.defineProperty(
-        o,
-        p,
-        Object.assign(
-            { writable: false, enumerable: false, configurable: false },
-            attributes
-        )
-    )
+export const truncate = (value) => {
+    return value && value.replace(/^(?:\r\n|\r|\n)/, '')
 }
 
 export const random = (size) => {
@@ -230,4 +200,10 @@ export const random = (size) => {
 
 export const hasProp = (object, prop) => {
     return object && object.hasOwnProperty(prop)
+}
+
+export const joinPath = (path, template) => {
+    template = [path, template].join('/')
+    template = template.replace(/\/\//g, '/')
+    return template
 }
