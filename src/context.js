@@ -347,14 +347,6 @@ export function Context(config) {
                 configurable: false,
                 enumerable: false,
             },
-            toJSON: {
-                value() {
-                    return omit(this, [LAYOUT, EXTEND, BUFFER, BLOCKS, MACRO])
-                },
-                writable: true,
-                configurable: false,
-                enumerable: false,
-            },
         })
     }
     this.configure(config)
