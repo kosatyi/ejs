@@ -149,6 +149,7 @@ export function Context(config) {
                 configurable: false,
                 enumerable: false,
             },
+
             extend: {
                 value(layout) {
                     this.setExtend(true)
@@ -323,6 +324,9 @@ export function Context(config) {
                 value(tag, attr, content) {
                     return element(tag, attr, content)
                 },
+                writable: false,
+                configurable: false,
+                enumerable: false,
             },
             el: {
                 value(tag, attr, content) {
@@ -340,6 +344,14 @@ export function Context(config) {
                     )
                 },
                 writable: false,
+                configurable: false,
+                enumerable: false,
+            },
+            toJSON: {
+                value() {
+                    return omit(this, [LAYOUT, EXTEND, BUFFER, BLOCKS, MACRO])
+                },
+                writable: true,
                 configurable: false,
                 enumerable: false,
             },
