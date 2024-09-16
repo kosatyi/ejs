@@ -4,6 +4,7 @@ import { Compiler } from './compiler.js'
 import { Cache } from './cache.js'
 import { Context } from './context.js'
 import { ext, safeValue, instanceOf, extend } from './utils.js'
+import { isFunction } from './type.js'
 
 export function EJS(options) {
     if (instanceOf(this, EJS) === false) return new EJS(options)
@@ -18,15 +19,19 @@ export function EJS(options) {
     const cache = new Cache(config)
     const template = new Template(config, cache, compiler)
 
-    const output = (path, scope) => {
+    const output = (path, context) => {
+        const params = [
+            context,
+            context.getComponent(),
+            context.getBuffer(),
+            safeValue,
+        ]
+        config.globalHelpers.forEach((name) => {
+            if (isFunction(context[name]))
+                params.push(context[name].bind(context))
+        })
         return template.get(path).then(function (callback) {
-            return callback.call(
-                scope,
-                scope,
-                scope.getComponent(),
-                scope.getBuffer(),
-                safeValue
-            )
+            return callback.apply(context, params)
         })
     }
     const require = (name) => {

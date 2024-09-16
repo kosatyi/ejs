@@ -49,6 +49,7 @@ export function Compiler(config) {
         compiler.rmWhitespace = config.rmWhitespace
         compiler.token = config.token
         compiler.vars = config.vars
+        compiler.globalHelpers = config.globalHelpers
         compiler.matches = []
         compiler.formats = []
         compiler.slurp = {
@@ -81,6 +82,7 @@ export function Compiler(config) {
 
     this.compile = function (content, path) {
         const { SCOPE, SAFE, BUFFER, COMPONENT } = compiler.vars
+        const GLOBALS = compiler.globalHelpers
         if (compiler.rmWhitespace) {
             content = content
                 .replace(/[\r\n]+/g, '\n')
@@ -106,9 +108,10 @@ export function Compiler(config) {
         source = `${BUFFER}.start();${source}return ${BUFFER}.end();`
         source += `\n//# sourceURL=${path}`
         let result = null
+        let params = [SCOPE, COMPONENT, BUFFER, SAFE].concat(GLOBALS)
         try {
-            result = new Function(SCOPE, COMPONENT, BUFFER, SAFE, source)
-            result.source = `(function(${SCOPE},${COMPONENT},${BUFFER},${SAFE}){\n${source}\n})`
+            result = Function.apply(null, params.concat(source))
+            result.source = `(function(${params.join(',')}){\n${source}\n})`
         } catch (e) {
             e.filename = path
             e.source = source

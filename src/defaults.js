@@ -12,6 +12,7 @@ defaults.resolver = function (path, template) {
 defaults.extension = 'ejs'
 defaults.rmWhitespace = true
 defaults.withObject = true
+defaults.globalHelpers = []
 defaults.vars = {
     SCOPE: 'ejs',
     COMPONENT: 'ui',

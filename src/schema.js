@@ -1,4 +1,4 @@
-import { isFunction, isString, typeProp, isBoolean } from './type.js'
+import { isFunction, isString, typeProp, isBoolean, isArray } from './type.js'
 import { extend } from './utils.js'
 import { defaults } from './defaults.js'
 
@@ -38,5 +38,11 @@ export const configSchema = (config, options) => {
         cache: typeProp(isBoolean, defaults.cache, config.cache, options.cache),
         token: extend({}, defaults.token, config.token, options.token),
         vars: extend({}, defaults.vars, config.vars, options.vars),
+        globalHelpers: typeProp(
+            isArray,
+            defaults.globalHelpers,
+            config.globalHelpers,
+            options.globalHelpers
+        ),
     })
 }
