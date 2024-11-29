@@ -97,6 +97,7 @@ const build = new RollupBuild({ target: 'dist' })
 
 build.add('ejs', 'src/index.js')
 build.add('ejs', 'src/browser.js')
+build.add('ejs', 'src/worker.js')
 build.add('element', 'src/element.js')
 
 export default build.export

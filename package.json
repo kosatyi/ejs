@@ -18,6 +18,10 @@
       "import": "./dist/esm/browser.js",
       "require": "./dist/cjs/browser.js"
     },
+    "./worker": {
+      "import": "./dist/esm/worker.js",
+      "require": "./dist/cjs/worker.js"
+    },
     "./element": {
       "import": "./dist/esm/element.js",
       "require": "./dist/cjs/element.js"

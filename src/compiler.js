@@ -83,6 +83,7 @@ export function Compiler(config) {
     this.compile = function (content, path) {
         const { SCOPE, SAFE, BUFFER, COMPONENT } = compiler.vars
         const GLOBALS = compiler.globalHelpers
+        content = String(content)
         if (compiler.rmWhitespace) {
             content = content
                 .replace(/[\r\n]+/g, '\n')

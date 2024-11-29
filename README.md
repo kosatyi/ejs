@@ -11,7 +11,7 @@ Embedded JavaScript templates with extend/block
 You can get EJS via [npm](http://npmjs.com).
 
 ```bash
-$ npm install @kosatyi/ejs --save
+$ npm install @kosatyi/ejs
 ```
 
 ## Usage
