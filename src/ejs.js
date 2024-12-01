@@ -19,27 +19,27 @@ export function EJS(options) {
     const cache = new Cache(config)
     const template = new Template(config, cache, compiler)
 
-    const output = (path, context) => {
+    const output = (path, scope) => {
+        const { globalHelpers } = config
         const params = [
-            context,
-            context.getComponent(),
-            context.getBuffer(),
+            scope,
+            scope.getComponent(),
+            scope.getBuffer(),
             safeValue,
-        ]
-        config.globalHelpers.forEach((name) => {
-            if (isFunction(context[name]))
-                params.push(context[name].bind(context))
-        })
-        return template.get(path).then(function (callback) {
-            return callback.apply(context, params)
-        })
+        ].concat(
+            globalHelpers
+                .filter((name) => isFunction(scope[name]))
+                .map((name) => scope[name].bind(scope))
+        )
+        return template
+            .get(path)
+            .then((callback) => callback.apply(scope, params))
     }
+
     const require = (name) => {
         const filepath = ext(name, config.extension)
         const scope = context.create({})
-        return output(filepath, scope).then(() => {
-            return scope.getMacro()
-        })
+        return output(filepath, scope).then(() => scope.getMacro())
     }
     const render = (name, data) => {
         const filepath = ext(name, config.extension)

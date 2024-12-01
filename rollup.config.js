@@ -1,5 +1,6 @@
 import { ignore, resolve, commonjs, babel, terser, copy } from '@kosatyi/rollup'
 import path from 'path'
+import { promises as fs } from 'fs'
 
 const external = ['path', 'fs', 'chokidar']
 
@@ -37,59 +38,60 @@ class RollupBuild {
         return path.resolve(target, type, fileName)
     }
     add(name, source) {
-        this.export.push(
-            {
-                input: source,
-                output: [
-                    {
-                        name: name,
-                        file: this.target('umd', source),
-                        format: 'umd',
-                    },
-                    {
-                        name: name,
-                        file: this.target('umd', source, {
-                            base: null,
-                            ext: '.min.js',
-                        }),
-                        format: 'umd',
-                        plugins: [terser()],
-                    },
-                ],
-                plugins: [
-                    ignore(external),
-                    commonjs({}),
-                    resolve({}),
-                    babel(babelConfig),
-                ],
-            },
-            {
-                input: source,
-                external: external,
-                output: {
+        this.push({
+            input: source,
+            output: [
+                {
                     name: name,
-                    file: this.target('cjs', source),
-                    format: 'cjs',
-                    exports: 'auto',
+                    file: this.target('umd', source),
+                    format: 'umd',
                 },
-                plugins: [
-                    commonjs({}),
-                    resolve({}),
-                    babel(babelConfig),
-                    copy(copyConfig),
-                ],
-            },
-            {
-                input: source,
-                external: external,
-                output: {
+                {
                     name: name,
-                    file: this.target('esm', source),
-                    format: 'esm',
+                    file: this.target('umd', source, {
+                        base: null,
+                        ext: '.min.js',
+                    }),
+                    format: 'umd',
+                    plugins: [terser()],
                 },
-                plugins: [commonjs({}), resolve({})],
-            }
-        )
+            ],
+            plugins: [
+                ignore(external),
+                commonjs({}),
+                resolve({}),
+                babel(babelConfig),
+            ],
+        })
+        this.push({
+            input: source,
+            external: external,
+            output: {
+                name: name,
+                file: this.target('cjs', source),
+                format: 'cjs',
+                exports: 'auto',
+            },
+            plugins: [
+                commonjs({}),
+                resolve({}),
+                babel(babelConfig),
+                copy(copyConfig),
+            ],
+        })
+        this.push({
+            input: source,
+            external: external,
+            output: {
+                name: name,
+                file: this.target('esm', source),
+                format: 'esm',
+            },
+            plugins: [commonjs({}), resolve({})],
+        })
+    }
+    push(config) {
+        this.export.push(config)
     }
 }
 
@@ -99,5 +101,20 @@ build.add('ejs', 'src/index.js')
 build.add('ejs', 'src/browser.js')
 build.add('ejs', 'src/worker.js')
 build.add('element', 'src/element.js')
+build.push({
+    input: 'src/bundler.js',
+    output: [
+        {
+            file: 'dist/esm/bundler.js',
+            format: 'esm',
+        },
+        {
+            file: 'dist/cjs/bundler.js',
+            format: 'cjs',
+        },
+    ],
+    external: ['fs', 'path', 'glob', 'terser', '@babel/core', './index.js'],
+    plugins: [],
+})
 
 export default build.export

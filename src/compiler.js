@@ -102,7 +102,7 @@ export function Compiler(config) {
             })
         })
         source += `');`
-        source = `try{${source}}catch(e){console.info(e)}`
+        source = `try{${source}}catch(e){return ${BUFFER}.error(e)}`
         if (compiler.withObject) {
             source = `with(${SCOPE}){${source}}`
         }

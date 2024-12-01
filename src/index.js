@@ -6,15 +6,6 @@ const ejs = new EJS({ resolver: readFile })
 
 const { render, context, compile, helpers, preload, configure, create } = ejs
 
-const __express = expressRenderer(ejs)
+export const __express = expressRenderer(ejs)
 
-export {
-    render,
-    context,
-    compile,
-    helpers,
-    preload,
-    configure,
-    create,
-    __express,
-}
+export { render, context, compile, helpers, preload, configure, create }

@@ -26,7 +26,11 @@ export function Context(config) {
         this.helpers = function (methods) {
             extend(Scope.prototype, methods || {})
         }
-
+        /**
+         * @name ContextScope
+         * @param data
+         * @constructor
+         */
         function Scope(data) {
             this[BLOCKS] = {}
             this[MACRO] = {}
@@ -192,8 +196,8 @@ export function Context(config) {
                     const prop = path.pop()
                     return hasProp(result, prop) ? result[prop] : defaults
                 },
-                writable: false,
-                configurable: false,
+                writable: true,
+                configurable: true,
                 enumerable: false,
             },
             set: {

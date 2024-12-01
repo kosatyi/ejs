@@ -1,14 +1,22 @@
+import { TemplateSyntaxError } from './error.js'
+
 function resolve(list) {
     return Promise.all(list || []).then((list) => list.join(''))
 }
 
+function reject(error) {
+    return Promise.reject(new TemplateSyntaxError(error.message))
+}
+
 export function createBuffer() {
     let store = [],
-        array = []
+        array = [],
+        error = []
     function buffer(value) {
         array.push(value)
     }
     buffer.start = function () {
+        error = []
         array = []
     }
     buffer.backup = function () {
@@ -21,7 +29,7 @@ export function createBuffer() {
         return resolve(result)
     }
     buffer.error = function (e) {
-        throw e
+        return reject(e)
     }
     buffer.end = function () {
         return resolve(array)
