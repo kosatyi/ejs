@@ -11,6 +11,11 @@ export interface EJS {
      */
     block(name: string, callback?: Function): any
     /**
+     * check if block with `name` exists
+     * @param name
+     */
+    hasBlock(name: string): boolean
+    /**
      * set property in current scope
      * @param path
      * @param value

@@ -266,6 +266,14 @@ export function Context(config) {
                 configurable: false,
                 enumerable: false,
             },
+            hasBlock: {
+                value(name) {
+                    return this.getBlocks().hasOwnProperty(name)
+                },
+                writable: false,
+                configurable: false,
+                enumerable: false,
+            },
             include: {
                 value(path, data, cx) {
                     const context = cx === false ? {} : this.clone(true)
