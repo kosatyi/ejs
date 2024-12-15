@@ -11,6 +11,7 @@ export interface EjsConfig {
 export interface BundlerOptions {
     target: string[] | string
     minify?: boolean
+    umd?: boolean,
 }
 
 export function ejsBundle(

@@ -74,5 +74,8 @@
     "rollup": "^4.28.1",
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-ignore": "^1.0.10"
+  },
+  "dependencies": {
+    "glob-watcher": "^6.0.0"
   }
 }

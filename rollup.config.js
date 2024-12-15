@@ -118,7 +118,7 @@ build.push({
             format: 'cjs',
         },
     ],
-    external: ['fs', 'path', 'glob', 'terser', '@babel/core', './index.js'],
+    external: ['fs', 'path', 'glob', 'glob-watcher', 'terser', '@babel/core', './index.js'],
     plugins: [],
 })
 
