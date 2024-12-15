@@ -3,7 +3,6 @@ import { glob } from 'glob'
 import { dirname, extname, join } from 'path'
 import { minify } from 'terser'
 import { compile, configure } from './index.js'
-import babel from '@babel/core'
 
 const isPlainObject = function (obj) {
     return Object.prototype.toString.call(obj) === '[object Object]'
@@ -19,8 +18,8 @@ export class Bundler {
      */
     options = {
         target: [],
-        transform: true,
-        minify: true,
+        transform: false,
+        minify: false,
         timestamp: true,
     }
     /**
@@ -51,20 +50,10 @@ export class Bundler {
         const response = await minify(content, config)
         return response.code
     }
-    async stageTransform(content) {
-        if (this.options.transform === false) return content
-        const config = {
-            presets: [['@babel/preset-env']],
-            sourceType: 'script',
-        }
-        const response = await babel.transformAsync(content, config)
-        return response.code
-    }
     getBundle() {
         const transform = this.options.transform
         const moduleId = this.config.export
         const useStrict = this.config.withObject === false
-        const timestamp = this.options.timestamp
         const out = []
         if (transform) {
             out.push('(function(global,factory){')
@@ -82,7 +71,6 @@ export class Bundler {
             out.push('})(this,(function(){')
         }
         if (useStrict) out.push("'use strict'")
-        if (timestamp) out.push('const timestamp = '.concat(String(Date.now())))
         out.push('const templates = {}')
         Object.entries(this.templates).forEach(([name, content]) => {
             name = JSON.stringify(name)
@@ -98,12 +86,12 @@ export class Bundler {
         return out.join('\n')
     }
     async watch() {
-        console.log(`ejs-bundle: watching directory - ${this.config.path}`)
+        console.log(`ejs-bundler: watching directory - ${this.config.path}`)
         try {
             const watcher = fs.watch(this.config.path, { recursive: true })
             for await (const { filename } of watcher) {
                 if (extname(filename).slice(1) === this.config.extension) {
-                    console.log(`ejs-bundle: file is changed - ${filename}`)
+                    console.log(`ejs-bundler: file is changed - ${filename}`)
                     await this.build()
                 }
             }
@@ -116,7 +104,7 @@ export class Bundler {
         this.buildInProgress = true
         await this.concat().catch(console.error)
         await this.output().catch(console.error)
-        console.log(`ejs-bundle: bundle complete - ${this.options.target}`)
+        console.log(`ejs-bundler: bundle complete - ${this.options.target}`)
         this.buildInProgress = false
     }
     async concat() {
@@ -132,9 +120,6 @@ export class Bundler {
     async output() {
         const target = [].concat(this.options.target)
         let content = this.getBundle()
-        if (this.options.transform) {
-            content = await this.stageTransform(content)
-        }
         if (this.options.minify) {
             content = await this.stageMinify(content)
         }
@@ -152,10 +137,10 @@ export class Bundler {
     }
 }
 
-export const ejsBundle = (options, config) => {
+export const ejsBundler = (options, config) => {
     const bundler = new Bundler(options, config)
     return {
-        name: 'ejs-bundle',
+        name: 'ejs-bundler',
         async buildStart() {
             await bundler.concat()
         },
