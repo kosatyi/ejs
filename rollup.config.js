@@ -1,6 +1,11 @@
-import { ignore, resolve, commonjs, babel, terser, copy } from '@kosatyi/rollup'
+import ignore from 'rollup-plugin-ignore'
+import resolve from '@rollup/plugin-node-resolve'
+import commonjs from '@rollup/plugin-commonjs'
+import babel from '@rollup/plugin-babel'
+import terser from '@rollup/plugin-terser'
+import copy from 'rollup-plugin-copy'
+
 import path from 'path'
-import { promises as fs } from 'fs'
 
 const external = ['path', 'fs', 'chokidar']
 
