@@ -65,7 +65,7 @@
     "@babel/core": "7.x",
     "@babel/preset-env": "7.x",
     "glob": "11.x",
-    "process.argv": "0.x",
+    "process.argv": "1.x",
     "terser": "5.x"
   }
 }
