@@ -45,6 +45,7 @@ export class Bundler {
 
     stageWrapper(content){
         const umd = this.options.umd
+        const minify = this.options.minify
         const module = this.config.export
         const out = []
         if (umd) {
@@ -62,7 +63,7 @@ export class Bundler {
         } else {
             out.push('export default templates')
         }
-        return out.join('')
+        return out.join(minify ? '' : '\n')
     }
     async stageMinify(content) {
         if (this.options.minify === false) return content

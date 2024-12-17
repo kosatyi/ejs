@@ -112,7 +112,7 @@ export function Compiler(config) {
         let params = [SCOPE, COMPONENT, BUFFER, SAFE].concat(GLOBALS)
         try {
             result = Function.apply(null, params.concat(source))
-            result.source = `(function(${params.join(',')}){\n${source}\n})`
+            result.source = `(function(${params.join(',')}){\n${source}\n});`
         } catch (e) {
             e.filename = path
             e.source = source
