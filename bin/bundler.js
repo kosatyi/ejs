@@ -9,7 +9,7 @@ const schema = argv(process.argv.slice(2))
 const params = schema({
     target: null,
     minify: true,
-    umd: true,
+    umd: false,
     withObject: false,
     export: 'ejsPrecompiled',
     path: 'views',
@@ -23,6 +23,7 @@ if (typeof params.target !== 'string') {
 const options = {
     target: params.target,
     minify: params.minify,
+    umd: params.umd,
 }
 
 const config = {
