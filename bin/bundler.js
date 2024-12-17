@@ -8,7 +8,7 @@ const schema = argv(process.argv.slice(2))
 
 const params = schema({
     target: null,
-    minify: true,
+    minify: false,
     umd: false,
     withObject: false,
     export: 'ejsPrecompiled',
