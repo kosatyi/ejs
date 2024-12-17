@@ -57,13 +57,14 @@
   },
   "keywords": [
     "ejs",
-    "template-engine",
-    "nodejs"
+    "ejs-express",
+    "ejs-cloudflare",
+    "ejs-template-engine"
   ],
   "peerDependencies": {
     "glob": "11.x",
     "process.argv": "1.x",
-    "terser": "5.x"
+    "glob-watcher": "6.x"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.26.0",
@@ -74,8 +75,5 @@
     "rollup": "^4.28.1",
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-ignore": "^1.0.10"
-  },
-  "dependencies": {
-    "glob-watcher": "^6.0.0"
   }
 }

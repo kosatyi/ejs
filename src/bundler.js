@@ -2,7 +2,6 @@ import { promises as fs } from 'fs'
 import { glob } from 'glob'
 import watch from 'glob-watcher'
 import { dirname, join } from 'path'
-import { minify } from 'terser'
 import { compile, configure } from './index.js'
 
 const isPlainObject = function(obj) {
@@ -43,9 +42,9 @@ export class Bundler {
         return compile(content, name).source
     }
 
-    stageWrapper(content){
+    getBundle() {
         const umd = this.options.umd
-        const minify = this.options.minify
+        const strict = this.config.withObject === false
         const module = this.config.export
         const out = []
         if (umd) {
@@ -57,35 +56,18 @@ export class Bundler {
             out.push(`global || self,global["${module}"] = factory())`)
             out.push('})(this,(function(){')
         }
-        out.push(content)
-        if (umd) {
-            out.push('return templates}))')
-        } else {
-            out.push('export default templates')
-        }
-        return out.join(minify ? '' : '\n')
-    }
-    async stageMinify(content) {
-        if (this.options.minify === false) return content
-        const config = {
-            compress: {
-                dead_code: false,
-                side_effects: false
-            }
-        }
-        const response = await minify(content, config)
-        return response.code
-    }
-
-    getBundle() {
-        const out = []
-        if (this.config.withObject === false) out.push(`'use strict'`)
+        if (strict) out.push(`'use strict'`)
         out.push('const templates = {}')
         Object.entries(this.templates).forEach(([name, content]) => {
             name = JSON.stringify(name)
             content = String(content)
             out.push(`templates[${name}] = ${content}`)
         })
+        if (umd) {
+            out.push('return templates}))')
+        } else {
+            out.push('export default templates')
+        }
         return out.join('\n')
     }
     async watch() {
@@ -131,11 +113,7 @@ export class Bundler {
 
     async output() {
         const target = [].concat(this.options.target)
-        let content = this.getBundle()
-        if (this.options.minify) {
-            content = await this.stageMinify(content)
-        }
-        content = this.stageWrapper(content)
+        const content = this.getBundle()
         for (let file of target) {
             const folderPath = dirname(file)
             const folderExists = await fs
