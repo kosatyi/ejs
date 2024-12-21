@@ -1,7 +1,7 @@
 import { TemplateSyntaxError } from './error.js'
 
 function resolve(list) {
-    return Promise.all(list || []).then((list) => list.join(''))
+    return Promise.all(list || []).then((list) => list.join('')).catch((e) => e)
 }
 
 function reject(error) {
@@ -12,26 +12,28 @@ export function createBuffer() {
     let store = [],
         array = [],
         error = []
+
     function buffer(value) {
         array.push(value)
     }
-    buffer.start = function () {
+
+    buffer.start = function() {
         error = []
         array = []
     }
-    buffer.backup = function () {
+    buffer.backup = function() {
         store.push(array.concat())
         array = []
     }
-    buffer.restore = function () {
+    buffer.restore = function() {
         const result = array.concat()
         array = store.pop()
         return resolve(result)
     }
-    buffer.error = function (e) {
+    buffer.error = function(e) {
         return reject(e)
     }
-    buffer.end = function () {
+    buffer.end = function() {
         return resolve(array)
     }
     return buffer
