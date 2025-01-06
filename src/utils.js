@@ -48,7 +48,7 @@ export const symbols = (string) => {
 
 export const safeValue = (value, escape) => {
     const check = value
-    return check == null ? '' : escape === true ? entities(check) : check
+    return check == null ? '' : Boolean(escape) === true ? entities(check) : check
 }
 
 export const instanceOf = (object, instance) => {
