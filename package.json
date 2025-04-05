@@ -31,7 +31,6 @@
       "require": "./dist/cjs/element.js"
     },
     "./bundler": {
-      "types": "./types/bundler.d.ts",
       "import": "./dist/esm/bundler.js",
       "require": "./dist/cjs/bundler.js"
     }
