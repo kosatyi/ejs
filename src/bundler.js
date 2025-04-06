@@ -2,7 +2,7 @@ import { promises as fs } from 'fs'
 import { glob } from 'glob'
 import watch from 'glob-watcher'
 import { dirname, join } from 'path'
-import { compile, configure } from './index.js'
+import { create } from './index.js'
 
 const isPlainObject = function(obj) {
     return Object.prototype.toString.call(obj) === '[object Object]'
@@ -26,9 +26,15 @@ export class Bundler {
      */
     config = {}
 
+    /**
+     *
+     * @param options
+     * @param config
+     */
     constructor(options, config) {
         extend(this.options, options || {})
-        this.config = configure(config || {})
+        this.ejs = create()
+        this.config = this.ejs.configure(config)
         this.templates = {}
     }
 
@@ -39,7 +45,7 @@ export class Bundler {
     }
 
     stageCompile(content, name) {
-        return compile(content, name).source
+        return this.ejs.compile(content, name).source
     }
 
     getBundle() {
@@ -71,20 +77,20 @@ export class Bundler {
         return out.join('\n')
     }
     async watch() {
-        console.log(`ejs-bundler: watching directory - ${this.config.path}`)
+        console.log('🔍', 'watch directory:', this.config.path)
         const pattern = '**/*.'.concat(this.config.extension)
         const watcher = watch(pattern, { cwd: this.config.path })
         const state = { build: null }
         watcher.on('change', (path) => {
             if(state.build) return;
-            console.log(`ejs-bundler: file is changed - ${path}`)
+            console.log('⟳','file change:',path)
             state.build = this.build().then(()=>{
                 state.build = null
             })
         })
         watcher.on('add', (path) => {
             if(state.build) return;
-            console.log(`ejs-bundler: file is added - ${path}`)
+            console.log('+','file added:',path)
             state.build = this.build().then(()=>{
                 state.build = null
             })
@@ -96,7 +102,7 @@ export class Bundler {
         this.buildInProgress = true
         await this.concat().catch(console.error)
         await this.output().catch(console.error)
-        console.log(`ejs-bundler: bundle complete - ${this.options.target}`)
+        console.log('✅','bundle complete:',this.options.target)
         this.buildInProgress = false
     }
 
@@ -110,7 +116,6 @@ export class Bundler {
             this.templates[template] = content
         }
     }
-
     async output() {
         const target = [].concat(this.options.target)
         const content = this.getBundle()
