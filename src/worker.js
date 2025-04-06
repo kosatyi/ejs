@@ -2,7 +2,7 @@ import { EJS } from './ejs.js'
 
 import { TemplateError, TemplateSyntaxError, TemplateNotFound } from './error.js'
 
-const hash = (+new Date()).toString(36)
+const hash = Math.floor(Math.random() * 1e12).toString(36)
 
 const templates = {}
 

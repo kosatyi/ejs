@@ -10,8 +10,7 @@
   "minified": "dist/umd/browser.min.js",
   "author": "Stepan Kosatyi (https://kosatyi.com)",
   "bin": {
-    "ejs-bundler": "bin/bundler.js",
-    "jekyll-json": "bin/jekyll-json.js"
+    "ejs-bundler": "bin/bundler.js"
   },
   "exports": {
     ".": {
