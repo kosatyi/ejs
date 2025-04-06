@@ -3,9 +3,7 @@ import { EJS } from './ejs.js'
 import { TemplateError, TemplateSyntaxError, TemplateNotFound } from './error.js'
 
 const hash = Math.floor(Math.random() * 1e12).toString(36)
-
 const templates = {}
-
 const ejs = new EJS({
     cache: false,
     withObject: false,
@@ -52,7 +50,10 @@ export function setRenderer({ version = hash, secure = true } = {}) {
         c.data = context({})
         c.data.set('version', version)
         c.data.set('origin', getOrigin(c.req.url, secure))
-        c.ejs = (name, data) => render(name, Object.assign({}, c.data, data))
+        c.ejs = (name, data) => render(name, Object.assign({
+            query: c.req.query(),
+            param: c.req.param(),
+        }, c.data, data))
         c.helpers = (methods) => helpers(methods)
         c.render = (name, data) => c.html(c.ejs(name, data))
         await next()
