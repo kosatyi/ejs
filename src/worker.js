@@ -50,8 +50,9 @@ export function setRenderer({ version = hash, secure = true } = {}) {
         c.data = context({})
         c.data.set('version', version)
         c.data.set('origin', getOrigin(c.req.url, secure))
+        c.data.set('path', c.req.path)
+        c.data.set('query', c.req.query())
         c.ejs = (name, data) => render(name, Object.assign({
-            query: c.req.query(),
             param: c.req.param(),
         }, c.data, data))
         c.helpers = (methods) => helpers(methods)
