@@ -53,7 +53,7 @@ export function Compiler(config) {
         compiler.matches = []
         compiler.formats = []
         compiler.slurp = {
-            match: '[ \\t]*',
+            match: '[\s\t\n]*',
             start: [compiler.token.start, '_'],
             end: ['_', compiler.token.end],
         }

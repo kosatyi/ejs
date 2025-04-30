@@ -5,13 +5,10 @@ import {
     getPath,
     hasProp,
     noop,
-    resolve,
     instanceOf,
 } from './utils.js'
 import { isFunction, isString } from './type.js'
-
 import { element } from './element.js'
-
 import { createBuffer } from './buffer.js'
 
 export function Context(config) {
@@ -153,7 +150,6 @@ export function Context(config) {
                 configurable: false,
                 enumerable: false,
             },
-
             extend: {
                 value(layout) {
                     this.setExtend(true)
@@ -285,19 +281,27 @@ export function Context(config) {
                 configurable: false,
                 enumerable: false,
             },
+            promiseResolve: {
+                value(value, callback) {
+                    return Promise.resolve(
+                        isFunction(value) ? this.fn(value)() : value
+                    ).then(callback.bind(this))
+                },
+                writable: false,
+                configurable: false,
+                enumerable: false,
+            },
             use: {
                 value(path, namespace) {
-                    const promise = this.require(path)
                     this.echo(
-                        resolve(
-                            promise,
+                        this.promiseResolve(
+                            this.require(path),
                             function (exports) {
                                 const list = this.getMacro()
                                 each(exports, function (macro, name) {
                                     list[[namespace, name].join('.')] = macro
                                 })
-                            },
-                            this
+                            }
                         )
                     )
                 },
@@ -308,13 +312,9 @@ export function Context(config) {
             async: {
                 value(promise, callback) {
                     this.echo(
-                        resolve(
-                            promise,
-                            function (data) {
-                                return this.fn(callback)(data)
-                            },
-                            this
-                        )
+                        this.promiseResolve(promise, function (data) {
+                            return this.fn(callback)(data)
+                        })
                     )
                 },
                 writable: false,
@@ -342,17 +342,10 @@ export function Context(config) {
             },
             el: {
                 value(tag, attr, content) {
-                    if (isFunction(content)) {
-                        content = this.fn(content)()
-                    }
                     this.echo(
-                        resolve(
-                            content,
-                            function (content) {
-                                return this.element(tag, attr, content)
-                            },
-                            this
-                        )
+                        this.promiseResolve(content, function (content) {
+                            return this.element(tag, attr, content)
+                        })
                     )
                 },
                 writable: false,
