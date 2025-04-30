@@ -36,7 +36,7 @@ export const element = (tag, attrs, content) => {
         }
     }).join(space)
     result.push([lt, tag, space, attributes, gt].join(''))
-    if (content) {
+    if (content && hasClosedTag) {
         result.push(content instanceof Array ? content.join('') : content)
     }
     if (hasClosedTag) {
