@@ -1,16 +1,11 @@
-import { bindContext, extend, hasProp, isNode } from './utils.js'
+import { extend, hasProp, isNode } from './utils.js'
 
 const global = typeof globalThis !== 'undefined' ? globalThis : window || self
-
-export function useCache(config) {
-    return new Cache(config)
-}
 
 export class Cache {
     #enabled = true
     #list = {}
     constructor(config) {
-        bindContext(this, ['configure'])
         this.configure(config)
     }
     load(data) {

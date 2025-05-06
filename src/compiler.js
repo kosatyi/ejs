@@ -1,8 +1,4 @@
-import { symbols, matchTokens, bindContext } from './utils.js'
-
-export const useCompiler = (config) => {
-    return new Compiler(config)
-}
+import { symbols, matchTokens } from './utils.js'
 
 export class Compiler {
     #config = {}
@@ -33,7 +29,6 @@ export class Compiler {
         },
     ]
     constructor(config) {
-        bindContext(this, ['configure', 'compile'])
         this.configure(config)
     }
     configure(config) {
@@ -76,7 +71,7 @@ export class Compiler {
         )
     }
     compile(content, path) {
-        const { SCOPE, SAFE, BUFFER, COMPONENT } = this.#config.vars
+        const { SCOPE, SAFE, BUFFER, COMPONENT, ELEMENT } = this.#config.vars
         const GLOBALS = this.#config.globalHelpers
         if (this.#config.rmWhitespace) {
             content = String(content)
@@ -103,7 +98,7 @@ export class Compiler {
         source = `${BUFFER}.start();${source}return ${BUFFER}.end();`
         source += `\n//# sourceURL=${path}`
         let result = null
-        let params = [SCOPE, COMPONENT, BUFFER, SAFE].concat(GLOBALS)
+        let params = [SCOPE, BUFFER, SAFE, COMPONENT, ELEMENT].concat(GLOBALS)
         try {
             result = Function.apply(null, params.concat(source))
             result.source = `(function(${params.join(',')}){\n${source}\n});`

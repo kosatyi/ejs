@@ -1,5 +1,5 @@
 import { isFunction } from './type.js'
-import { bindContext, assertInstanceOf } from './utils.js'
+import { assertInstanceOf } from './utils.js'
 
 import { Cache } from './cache.js'
 import { Compiler } from './compiler.js'
@@ -14,7 +14,6 @@ export class Template {
         assertInstanceOf(compiler, Compiler)
         this.#cache = cache
         this.#compiler = compiler
-        bindContext(this, ['configure', 'get'])
         this.configure(config)
     }
     #resolve(path) {

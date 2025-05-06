@@ -11,10 +11,12 @@ export interface EJS {
      */
     block(name: string, callback?: Function): any
     /**
-     * check if block with `name` exists
-     * @param name
+     * append rendered template from file
+     * @param path
+     * @param data
+     * @param cx
      */
-    hasBlock(name: string): boolean
+    include(path: string, data?: object, cx?: boolean): any
     /**
      * set property in current scope
      * @param path
@@ -27,6 +29,24 @@ export interface EJS {
      * @param defaults
      */
     get(path: string, defaults?: any): any
+    /**
+     * render ejs component
+     * @param {string} name
+     * @param {object} [props]
+     */
+    ui(name: string, props?: object): any
+    /**
+     * render html element
+     * @param {string} tag
+     * @param {object} [attrs]
+     * @param {any} [content]
+     */
+    el(tag: string, attrs?: object, content?: any): any
+    /**
+     * buffered function execution
+     * @param callback
+     */
+    fn(callback: Function): any
     /**
      * import macro from file **path** and set to current scope **name** property
      * @param path
@@ -53,29 +73,10 @@ export interface EJS {
      */
     async(promise: Promise<any>, callback?: any): any
     /**
-     * asynchronous template execution
-     * @param callback
-     */
-    fn(callback: Function): any
-    /**
-     *
-     * @param {string} tag
-     * @param {object} attrs
-     * @param {function} content
-     */
-    el(tag: string, attrs?: object, content?: any): any
-    /**
      * buffer output
      * @param args
      */
     echo(...args: any[]): any
-    /**
-     * append rendered template from file
-     * @param path
-     * @param data
-     * @param cx
-     */
-    include(path: string, data?: object, cx?: boolean): any
     /**
      *
      * @param value
@@ -83,9 +84,8 @@ export interface EJS {
      */
     each(value: any, callback: Function): any
     /**
-     * define block with custom **name** and callback
-     * @param {string} name
-     * @param {object} [props]
+     * check if block with `name` exists
+     * @param name
      */
-    ui(name: string, props?: object): any
+    hasBlock(name: string): boolean
 }

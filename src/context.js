@@ -5,15 +5,24 @@ import {
     getPath,
     hasProp,
     noop,
-    bindContext,
+    safeValue,
 } from './utils.js'
 import { isFunction, isString } from './type.js'
 import { element } from './element.js'
 import { createBuffer } from './buffer.js'
 
-const createScope = (config, methods) => {
-    const { BLOCKS, MACRO, EXTEND, LAYOUT, BUFFER, COMPONENT, SAFE, SCOPE } =
-        config.vars
+const createContextScope = (config, methods) => {
+    const {
+        BLOCKS,
+        MACRO,
+        EXTEND,
+        LAYOUT,
+        BUFFER,
+        SAFE,
+        SCOPE,
+        COMPONENT,
+        ELEMENT,
+    } = config.vars
     /**
      * @name ContextScope
      * @param data
@@ -22,9 +31,11 @@ const createScope = (config, methods) => {
     function ContextScope(data) {
         this[BLOCKS] = {}
         this[MACRO] = {}
-        Object.assign(this, omit(data, [SCOPE, BUFFER, SAFE, COMPONENT]))
+        Object.assign(
+            this,
+            omit(data, [SCOPE, BUFFER, SAFE, COMPONENT, ELEMENT])
+        )
     }
-
     Object.assign(ContextScope.prototype, methods)
     Object.defineProperties(ContextScope.prototype, {
         [BUFFER]: {
@@ -46,6 +57,34 @@ const createScope = (config, methods) => {
             value: false,
             writable: true,
         },
+        /** @type {function} */
+        useSafeValue: {
+            get: () => safeValue,
+        },
+        /** @type {function} */
+        useComponent: {
+            get() {
+                if (isFunction(this[COMPONENT])) {
+                    return this[COMPONENT].bind(this)
+                } else {
+                    return () => {
+                        throw new Error(`${COMPONENT} must be a function`)
+                    }
+                }
+            },
+        },
+        /** @type {function} */
+        useElement: {
+            get() {
+                if (isFunction(this[ELEMENT])) {
+                    return this[ELEMENT].bind(this)
+                } else {
+                    return () => {
+                        throw new Error(`${ELEMENT} must be a function`)
+                    }
+                }
+            },
+        },
         /** @type {()=>this[MACRO]} */
         getMacro: {
             value() {
@@ -56,20 +95,6 @@ const createScope = (config, methods) => {
         getBuffer: {
             value() {
                 return this[BUFFER]
-            },
-        },
-        /** @type {function} */
-        getComponent: {
-            value() {
-                const context = this
-                if (COMPONENT in context) {
-                    return function () {
-                        return context[COMPONENT].apply(context, arguments)
-                    }
-                }
-                return function () {
-                    console.log('%s function not defined', COMPONENT)
-                }
             },
         },
         /** @type {function} */
@@ -133,33 +158,12 @@ const createScope = (config, methods) => {
                 const buffer = this.getBuffer()
                 const context = this
                 return function () {
-                    buffer.backup()
                     if (isFunction(callback)) {
-                        callback.apply(context, arguments)
+                        buffer.backup()
+                        buffer(callback.apply(context, arguments))
+                        return buffer.restore()
                     }
-                    return buffer.restore()
                 }
-            },
-        },
-        /** @type {function} */
-        get: {
-            value(name, defaults) {
-                const path = getPath(this, name, true)
-                const result = path.shift()
-                const prop = path.pop()
-                return hasProp(result, prop) ? result[prop] : defaults
-            },
-        },
-        /** @type {function} */
-        set: {
-            value(name, value) {
-                const path = getPath(this, name, false)
-                const result = path.shift()
-                const prop = path.pop()
-                if (this.getExtend() && hasProp(result, prop)) {
-                    return result[prop]
-                }
-                return (result[prop] = value)
             },
         },
         /** @type {function} */
@@ -192,7 +196,7 @@ const createScope = (config, methods) => {
                 blocks[name].push(this.fn(callback))
                 if (this.getExtend()) return
                 const list = Object.assign([], blocks[name])
-                const current = function () {
+                const current = () => {
                     return list.shift()
                 }
                 const next = () => {
@@ -224,18 +228,10 @@ const createScope = (config, methods) => {
             },
         },
         /** @type {function} */
-        promiseResolve: {
-            value(value, callback) {
-                return Promise.resolve(
-                    isFunction(value) ? this.fn(value)() : value
-                ).then(callback.bind(this))
-            },
-        },
-        /** @type {function} */
         use: {
             value(path, namespace) {
                 this.echo(
-                    this.promiseResolve(this.require(path), function (exports) {
+                    Promise.resolve(this.require(path)).then((exports) => {
                         const list = this.getMacro()
                         each(exports, function (macro, name) {
                             list[[namespace, name].join('.')] = macro
@@ -247,11 +243,28 @@ const createScope = (config, methods) => {
         /** @type {function} */
         async: {
             value(promise, callback) {
-                this.echo(
-                    this.promiseResolve(promise, function (data) {
-                        return this.fn(callback)(data)
-                    })
-                )
+                this.echo(Promise.resolve(promise).then(callback))
+            },
+        },
+        /** @type {function} */
+        get: {
+            value(name, defaults) {
+                const path = getPath(this, name, true)
+                const result = path.shift()
+                const prop = path.pop()
+                return hasProp(result, prop) ? result[prop] : defaults
+            },
+        },
+        /** @type {function} */
+        set: {
+            value(name, value) {
+                const path = getPath(this, name, false)
+                const result = path.shift()
+                const prop = path.pop()
+                if (this.getExtend() && hasProp(result, prop)) {
+                    return result[prop]
+                }
+                return (result[prop] = value)
             },
         },
         /** @type {function} */
@@ -262,22 +275,24 @@ const createScope = (config, methods) => {
                 }
                 each(object, callback)
             },
-        },
-        /** @type {function} */
-        element: {
-            value(tag, attr, content) {
-                return element(tag, attr, content)
-            },
+            writable: true,
         },
         /** @type {function} */
         el: {
             value(tag, attr, content) {
+                content = isFunction(content) ? this.fn(content)() : content
                 this.echo(
-                    this.promiseResolve(content, function (content) {
-                        return this.element(tag, attr, content)
-                    })
+                    Promise.resolve(content).then((content) =>
+                        element(tag, attr, content)
+                    )
                 )
             },
+            writable: true,
+        },
+        /** @type {function} */
+        ui: {
+            value(layout) {},
+            writable: true,
         },
     })
     return ContextScope
@@ -285,20 +300,15 @@ const createScope = (config, methods) => {
 
 export class Context {
     #scope
-
     constructor(config, methods) {
-        bindContext(this, ['create', 'helpers', 'configure'])
         this.configure(config, methods)
     }
-
     create(data) {
         return new this.#scope(data)
     }
-
     configure(config, methods) {
-        this.#scope = createScope(config, methods)
+        this.#scope = createContextScope(config, methods)
     }
-
     helpers(methods) {
         extend(this.#scope.prototype, methods || {})
     }

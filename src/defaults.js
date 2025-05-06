@@ -16,6 +16,7 @@ defaults.globalHelpers = []
 defaults.vars = {
     SCOPE: 'ejs',
     COMPONENT: 'ui',
+    ELEMENT: 'el',
     EXTEND: '$$e',
     BUFFER: '$$a',
     LAYOUT: '$$l',
