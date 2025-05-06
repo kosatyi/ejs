@@ -37,26 +37,26 @@ const createContextScope = (config, methods) => {
         )
     }
     Object.assign(ContextScope.prototype, methods)
+    Object.defineProperty(ContextScope.prototype, BUFFER, {
+        value: createBuffer(),
+    })
+    Object.defineProperty(ContextScope.prototype, BLOCKS, {
+        value: {},
+        writable: true,
+    })
+    Object.defineProperty(ContextScope.prototype, MACRO, {
+        value: {},
+        writable: true,
+    })
+    Object.defineProperty(ContextScope.prototype, LAYOUT, {
+        value: false,
+        writable: true,
+    })
+    Object.defineProperty(ContextScope.prototype, EXTEND, {
+        value: false,
+        writable: true,
+    })
     Object.defineProperties(ContextScope.prototype, {
-        [BUFFER]: {
-            value: createBuffer(),
-        },
-        [BLOCKS]: {
-            value: {},
-            writable: true,
-        },
-        [MACRO]: {
-            value: {},
-            writable: true,
-        },
-        [LAYOUT]: {
-            value: false,
-            writable: true,
-        },
-        [EXTEND]: {
-            value: false,
-            writable: true,
-        },
         /** @type {function} */
         useSafeValue: {
             get: () => safeValue,
