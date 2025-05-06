@@ -1,10 +1,10 @@
-import { promises as fs } from 'fs'
+import { promises as fs } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { glob } from 'glob'
 import watch from 'glob-watcher'
-import { dirname, join } from 'path'
 import { create } from './index.js'
 
-const isPlainObject = function(obj) {
+const isPlainObject = function (obj) {
     return Object.prototype.toString.call(obj) === '[object Object]'
 }
 
@@ -19,7 +19,7 @@ export class Bundler {
     options = {
         target: [],
         umd: true,
-        minify: true
+        minify: true,
     }
     /**
      * @type {EjsConfig}
@@ -55,10 +55,16 @@ export class Bundler {
         const out = []
         if (umd) {
             out.push('(function(global,factory){')
-            out.push('typeof exports === "object" && typeof module !== "undefined" ?')
+            out.push(
+                'typeof exports === "object" && typeof module !== "undefined" ?'
+            )
             out.push('module.exports = factory():')
-            out.push('typeof define === "function" && define.amd ? define(factory):')
-            out.push('(global = typeof globalThis !== "undefined" ? globalThis:')
+            out.push(
+                'typeof define === "function" && define.amd ? define(factory):'
+            )
+            out.push(
+                '(global = typeof globalThis !== "undefined" ? globalThis:'
+            )
             out.push(`global || self,global["${module}"] = factory())`)
             out.push('})(this,(function(){')
         }
@@ -82,16 +88,16 @@ export class Bundler {
         const watcher = watch(pattern, { cwd: this.config.path })
         const state = { build: null }
         watcher.on('change', (path) => {
-            if(state.build) return;
-            console.log('⟳','file change:',path)
-            state.build = this.build().then(()=>{
+            if (state.build) return
+            console.log('⟳', 'file change:', path)
+            state.build = this.build().then(() => {
                 state.build = null
             })
         })
         watcher.on('add', (path) => {
-            if(state.build) return;
-            console.log('+','file added:',path)
-            state.build = this.build().then(()=>{
+            if (state.build) return
+            console.log('+', 'file added:', path)
+            state.build = this.build().then(() => {
                 state.build = null
             })
         })
@@ -102,7 +108,7 @@ export class Bundler {
         this.buildInProgress = true
         await this.concat().catch(console.error)
         await this.output().catch(console.error)
-        console.log('✅','bundle complete:',this.options.target)
+        console.log('✅', 'bundle complete:', this.options.target)
         this.buildInProgress = false
     }
 
@@ -142,6 +148,6 @@ export const ejsBundler = (options, config) => {
         },
         async buildEnd() {
             await bundler.output()
-        }
+        },
     }
 }

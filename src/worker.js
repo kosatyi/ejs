@@ -1,10 +1,20 @@
 import { EJS } from './ejs.js'
 
-import { TemplateError, TemplateSyntaxError, TemplateNotFound } from './error.js'
+import {
+    TemplateError,
+    TemplateSyntaxError,
+    TemplateNotFound,
+} from './error.js'
 
-const hash = Math.floor(Math.random() * 1e12).toString(36)
 const templates = {}
-const ejs = new EJS({
+
+const getOrigin = (url, secure) => {
+    url = new URL(url)
+    url.protocol = secure ? 'https:' : 'http:'
+    return url.origin
+}
+
+export const { render, context, helpers, configure, create } = new EJS({
     cache: false,
     withObject: false,
     resolver(path, name) {
@@ -15,24 +25,19 @@ const ejs = new EJS({
                 reject(new TemplateNotFound(`template ${name} not found`))
             }
         })
-    }
+    },
 })
 
-const { render, context, helpers, configure, create } = ejs
-
-const getOrigin = (url, secure) => {
-    url = new URL(url)
-    if (secure) url.protocol = 'https:'
-    return url.origin
-}
-
-
+/**
+ *
+ * @param list
+ */
 export function setTemplates(list) {
     Object.assign(templates, list || {})
 }
 
 /**
- * @typedef {Object<string,any>} HonoContext
+ * @typedef {{}} HonoContext
  * @property {function(*):Promise<Response>} html
  * @property {function():Promise<Response>} notFound
  * @property {function(methods:{}):void} helpers
@@ -43,26 +48,23 @@ export function setTemplates(list) {
 
 /**
  * @param {Object<string,any>} options
- * @return {(function(c:Context, next): Promise<any>)|*}
+ * @return {(function(c:HonoContext, next): Promise<any>)|*}
  */
-export function setRenderer({ version = hash, secure = true } = {}) {
+export function setRenderer({ version, secure = true } = {}) {
     return async (c, next) => {
         c.data = context({})
         c.data.set('version', version)
         c.data.set('origin', getOrigin(c.req.url, secure))
         c.data.set('path', c.req.path)
         c.data.set('query', c.req.query())
-        c.ejs = (name, data) => render(name, Object.assign({
-            param: c.req.param(),
-        }, c.data, data))
+        c.ejs = (name, data) =>
+            render(name, Object.assign({ param: c.req.param() }, c.data, data))
         c.helpers = (methods) => helpers(methods)
         c.render = (name, data) => c.html(c.ejs(name, data))
         await next()
     }
 }
 
-export const version = hash
-
 export { TemplateError, TemplateSyntaxError, TemplateNotFound }
 
-export { render, context, helpers, configure, create }
+//export { render, context, helpers, configure, create }

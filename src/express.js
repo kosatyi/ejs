@@ -1,14 +1,14 @@
 import { isBoolean, isFunction, isString, typeProp } from './type.js'
 import { extend } from './utils.js'
 import { defaults } from './defaults.js'
-import path from 'path'
-
+import path from 'node:path'
 /**
  *
- * @param {EJS} ejs
- * @return {function(name, options, callback): Promise<String>}
+ * @param {function(config: object):object} configure
+ * @param {function(name: string, data?: object):Promise<string>} render
+ * @return {function(name:any, options:any, callback: any): Promise<void>}
  */
-export function expressRenderer(ejs) {
+export function expressRenderer(configure, render) {
     return function (name, options, callback) {
         if (isFunction(options)) {
             callback = options
@@ -26,9 +26,8 @@ export function expressRenderer(ejs) {
         const filename = path.relative(viewPath, name)
         viewOptions.path = viewPath
         viewOptions.cache = viewCache
-        ejs.configure(viewOptions)
-        return ejs
-            .render(filename, options)
+        configure(viewOptions)
+        return render(filename, options)
             .then((content) => {
                 callback(null, content)
             })

@@ -1,10 +1,15 @@
 import { EJS } from './ejs.js'
 import { httpRequest } from './fetch.js'
-import { TemplateError, TemplateSyntaxError, TemplateNotFound } from './error.js'
+import {
+    TemplateError,
+    TemplateSyntaxError,
+    TemplateNotFound,
+} from './error.js'
 
-const ejs = new EJS({ resolver: httpRequest })
-
-const { render, context, compile, helpers, preload, configure, create } = ejs
+const { render, context, compile, helpers, preload, configure, create } =
+    new EJS({
+        resolver: httpRequest,
+    })
 
 export { TemplateError, TemplateSyntaxError, TemplateNotFound }
 

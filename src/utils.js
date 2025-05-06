@@ -48,11 +48,20 @@ export const symbols = (string) => {
 
 export const safeValue = (value, escape) => {
     const check = value
-    return check == null ? '' : Boolean(escape) === true ? entities(check) : check
+    return check == null
+        ? ''
+        : Boolean(escape) === true
+        ? entities(check)
+        : check
 }
 
 export const instanceOf = (object, instance) => {
     return Boolean(object instanceof instance)
+}
+
+export const assertInstanceOf = (object, instance) => {
+    if (instanceOf(object, instance) === false)
+        throw new TypeError(`${object} in not instance of ${instance}`)
 }
 
 export const getPath = (context, name, strict) => {
@@ -76,10 +85,10 @@ export const getPath = (context, name, strict) => {
     return [data, prop]
 }
 
-export const bindContext = (object, context, methods = []) => {
+export const bindContext = (object, methods = []) => {
     methods.forEach((name) => {
         if (name in object) {
-            object[name] = object[name].bind(context)
+            object[name] = object[name].bind(object)
         }
     })
 }
@@ -198,6 +207,12 @@ export const random = (size) => {
     return string
 }
 
+/**
+ *
+ * @param object
+ * @param prop
+ * @return {boolean}
+ */
 export const hasProp = (object, prop) => {
     return object && object.hasOwnProperty(prop)
 }
@@ -206,4 +221,16 @@ export const joinPath = (path, template) => {
     template = [path, template].join('/')
     template = template.replace(/\/\//g, '/')
     return template
+}
+
+export const matchTokens = (regex, text, callback) => {
+    let index = 0
+    text.replace(regex, function () {
+        const params = [].slice.call(arguments, 0, -1)
+        const offset = params.pop()
+        const match = params.shift()
+        callback(params, index, offset)
+        index = offset + match.length
+        return match
+    })
 }

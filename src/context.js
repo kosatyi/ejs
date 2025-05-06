@@ -5,354 +5,301 @@ import {
     getPath,
     hasProp,
     noop,
-    instanceOf,
+    bindContext,
 } from './utils.js'
 import { isFunction, isString } from './type.js'
 import { element } from './element.js'
 import { createBuffer } from './buffer.js'
 
-export function Context(config) {
-    if (instanceOf(this, Context) === false) return new Context(config)
-    this.configure = function (config, methods) {
-        const { BLOCKS, MACRO, EXTEND, LAYOUT, BUFFER, COMPONENT } = config.vars
-
-        this.create = function (data) {
-            return new Scope(data)
-        }
-
-        this.helpers = function (methods) {
-            extend(Scope.prototype, methods || {})
-        }
-        /**
-         * @name ContextScope
-         * @param data
-         * @constructor
-         */
-        function Scope(data) {
-            this[BLOCKS] = {}
-            this[MACRO] = {}
-            extend(this, data || {})
-        }
-
-        Scope.prototype = extend({}, methods || {})
-        Object.defineProperties(Scope.prototype, {
-            [BUFFER]: {
-                value: createBuffer(),
-                writable: true,
-                configurable: false,
-                enumerable: false,
-            },
-            [BLOCKS]: {
-                value: {},
-                writable: true,
-                configurable: false,
-                enumerable: false,
-            },
-            [MACRO]: {
-                value: {},
-                writable: true,
-                configurable: false,
-                enumerable: false,
-            },
-            [LAYOUT]: {
-                value: false,
-                writable: true,
-                configurable: false,
-                enumerable: false,
-            },
-            [EXTEND]: {
-                value: false,
-                writable: true,
-                configurable: false,
-                enumerable: false,
-            },
-            getMacro: {
-                value() {
-                    return this[MACRO]
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            getBuffer: {
-                value() {
-                    return this[BUFFER]
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            getComponent: {
-                value() {
-                    const context = this
-                    if (COMPONENT in context) {
-                        return function () {
-                            return context[COMPONENT].apply(context, arguments)
-                        }
-                    }
-                    return function () {
-                        console.log('%s function not defined', COMPONENT)
-                    }
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            getBlocks: {
-                value() {
-                    return this[BLOCKS]
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            setExtend: {
-                value(value) {
-                    this[EXTEND] = value
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            getExtend: {
-                value() {
-                    return this[EXTEND]
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            setLayout: {
-                value(layout) {
-                    this[LAYOUT] = layout
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            getLayout: {
-                value() {
-                    return this[LAYOUT]
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            clone: {
-                value(exclude_blocks) {
-                    const filter = [LAYOUT, EXTEND, BUFFER]
-                    if (exclude_blocks === true) {
-                        filter.push(BLOCKS)
-                    }
-                    return omit(this, filter)
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            extend: {
-                value(layout) {
-                    this.setExtend(true)
-                    this.setLayout(layout)
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            echo: {
-                value(layout) {
-                    const buffer = this.getBuffer()
-                    const params = [].slice.call(arguments)
-                    params.forEach(buffer)
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            fn: {
-                value(callback) {
-                    const buffer = this.getBuffer()
-                    const context = this
-                    return function () {
-                        buffer.backup()
-                        if (isFunction(callback)) {
-                            callback.apply(context, arguments)
-                        }
-                        return buffer.restore()
-                    }
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            get: {
-                value(name, defaults) {
-                    const path = getPath(this, name, true)
-                    const result = path.shift()
-                    const prop = path.pop()
-                    return hasProp(result, prop) ? result[prop] : defaults
-                },
-                writable: true,
-                configurable: true,
-                enumerable: false,
-            },
-            set: {
-                value(name, value) {
-                    const path = getPath(this, name, false)
-                    const result = path.shift()
-                    const prop = path.pop()
-                    if (this.getExtend() && hasProp(result, prop)) {
-                        return result[prop]
-                    }
-                    return (result[prop] = value)
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            macro: {
-                value(name, callback) {
-                    const list = this.getMacro()
-                    const macro = this.fn(callback)
-                    const context = this
-                    list[name] = function () {
-                        return context.echo(macro.apply(undefined, arguments))
-                    }
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            call: {
-                value(name) {
-                    const list = this.getMacro()
-                    const macro = list[name]
-                    const params = [].slice.call(arguments, 1)
-                    if (isFunction(macro)) {
-                        return macro.apply(macro, params)
-                    }
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            block: {
-                value(name, callback) {
-                    const blocks = this.getBlocks()
-                    blocks[name] = blocks[name] || []
-                    blocks[name].push(this.fn(callback))
-                    if (this.getExtend()) return
-                    const list = Object.assign([], blocks[name])
-                    const current = function () {
-                        return list.shift()
-                    }
-                    const next = () => {
-                        const parent = current()
-                        if (parent) {
-                            return () => {
-                                this.echo(parent(next()))
-                            }
-                        } else {
-                            return noop
-                        }
-                    }
-                    this.echo(current()(next()))
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            hasBlock: {
-                value(name) {
-                    return this.getBlocks().hasOwnProperty(name)
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            include: {
-                value(path, data, cx) {
-                    const context = cx === false ? {} : this.clone(true)
-                    const params = extend(context, data || {})
-                    const promise = this.render(path, params)
-                    this.echo(promise)
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            promiseResolve: {
-                value(value, callback) {
-                    return Promise.resolve(
-                        isFunction(value) ? this.fn(value)() : value
-                    ).then(callback.bind(this))
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            use: {
-                value(path, namespace) {
-                    this.echo(
-                        this.promiseResolve(
-                            this.require(path),
-                            function (exports) {
-                                const list = this.getMacro()
-                                each(exports, function (macro, name) {
-                                    list[[namespace, name].join('.')] = macro
-                                })
-                            }
-                        )
-                    )
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            async: {
-                value(promise, callback) {
-                    this.echo(
-                        this.promiseResolve(promise, function (data) {
-                            return this.fn(callback)(data)
-                        })
-                    )
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            each: {
-                value: function (object, callback) {
-                    if (isString(object)) {
-                        object = this.get(object, [])
-                    }
-                    each(object, callback)
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            element: {
-                value(tag, attr, content) {
-                    return element(tag, attr, content)
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-            el: {
-                value(tag, attr, content) {
-                    this.echo(
-                        this.promiseResolve(content, function (content) {
-                            return this.element(tag, attr, content)
-                        })
-                    )
-                },
-                writable: false,
-                configurable: false,
-                enumerable: false,
-            },
-        })
+const createScope = (config, methods) => {
+    const { BLOCKS, MACRO, EXTEND, LAYOUT, BUFFER, COMPONENT, SAFE, SCOPE } =
+        config.vars
+    /**
+     * @name ContextScope
+     * @param data
+     * @constructor
+     */
+    function ContextScope(data) {
+        this[BLOCKS] = {}
+        this[MACRO] = {}
+        Object.assign(this, omit(data, [SCOPE, BUFFER, SAFE, COMPONENT]))
     }
-    this.configure(config)
+
+    Object.assign(ContextScope.prototype, methods)
+    Object.defineProperties(ContextScope.prototype, {
+        [BUFFER]: {
+            value: createBuffer(),
+        },
+        [BLOCKS]: {
+            value: {},
+            writable: true,
+        },
+        [MACRO]: {
+            value: {},
+            writable: true,
+        },
+        [LAYOUT]: {
+            value: false,
+            writable: true,
+        },
+        [EXTEND]: {
+            value: false,
+            writable: true,
+        },
+        /** @type {()=>this[MACRO]} */
+        getMacro: {
+            value() {
+                return this[MACRO]
+            },
+        },
+        /** @type {function} */
+        getBuffer: {
+            value() {
+                return this[BUFFER]
+            },
+        },
+        /** @type {function} */
+        getComponent: {
+            value() {
+                const context = this
+                if (COMPONENT in context) {
+                    return function () {
+                        return context[COMPONENT].apply(context, arguments)
+                    }
+                }
+                return function () {
+                    console.log('%s function not defined', COMPONENT)
+                }
+            },
+        },
+        /** @type {function} */
+        getBlocks: {
+            value() {
+                return this[BLOCKS]
+            },
+        },
+        /** @type {function} */
+        setExtend: {
+            value(value) {
+                this[EXTEND] = value
+            },
+        },
+        /** @type {function} */
+        getExtend: {
+            value() {
+                return this[EXTEND]
+            },
+        },
+        /** @type {function} */
+        setLayout: {
+            value(layout) {
+                this[LAYOUT] = layout
+            },
+        },
+        /** @type {function} */
+        getLayout: {
+            value() {
+                return this[LAYOUT]
+            },
+        },
+        /** @type {function} */
+        clone: {
+            value(exclude_blocks) {
+                const filter = [LAYOUT, EXTEND, BUFFER]
+                if (exclude_blocks === true) {
+                    filter.push(BLOCKS)
+                }
+                return omit(this, filter)
+            },
+        },
+        /** @type {function} */
+        extend: {
+            value(layout) {
+                this.setExtend(true)
+                this.setLayout(layout)
+            },
+        },
+        /** @type {function} */
+        echo: {
+            value(layout) {
+                const buffer = this.getBuffer()
+                const params = [].slice.call(arguments)
+                params.forEach(buffer)
+            },
+        },
+        /** @type {function} */
+        fn: {
+            value(callback) {
+                const buffer = this.getBuffer()
+                const context = this
+                return function () {
+                    buffer.backup()
+                    if (isFunction(callback)) {
+                        callback.apply(context, arguments)
+                    }
+                    return buffer.restore()
+                }
+            },
+        },
+        /** @type {function} */
+        get: {
+            value(name, defaults) {
+                const path = getPath(this, name, true)
+                const result = path.shift()
+                const prop = path.pop()
+                return hasProp(result, prop) ? result[prop] : defaults
+            },
+        },
+        /** @type {function} */
+        set: {
+            value(name, value) {
+                const path = getPath(this, name, false)
+                const result = path.shift()
+                const prop = path.pop()
+                if (this.getExtend() && hasProp(result, prop)) {
+                    return result[prop]
+                }
+                return (result[prop] = value)
+            },
+        },
+        /** @type {function} */
+        macro: {
+            value(name, callback) {
+                const list = this.getMacro()
+                const macro = this.fn(callback)
+                const context = this
+                list[name] = function () {
+                    return context.echo(macro.apply(undefined, arguments))
+                }
+            },
+        },
+        /** @type {function} */
+        call: {
+            value(name) {
+                const list = this.getMacro()
+                const macro = list[name]
+                const params = [].slice.call(arguments, 1)
+                if (isFunction(macro)) {
+                    return macro.apply(macro, params)
+                }
+            },
+        },
+        /** @type {function} */
+        block: {
+            value(name, callback) {
+                const blocks = this.getBlocks()
+                blocks[name] = blocks[name] || []
+                blocks[name].push(this.fn(callback))
+                if (this.getExtend()) return
+                const list = Object.assign([], blocks[name])
+                const current = function () {
+                    return list.shift()
+                }
+                const next = () => {
+                    const parent = current()
+                    if (parent) {
+                        return () => {
+                            this.echo(parent(next()))
+                        }
+                    } else {
+                        return noop
+                    }
+                }
+                this.echo(current()(next()))
+            },
+        },
+        /** @type {function} */
+        hasBlock: {
+            value(name) {
+                return this.getBlocks().hasOwnProperty(name)
+            },
+        },
+        /** @type {function} */
+        include: {
+            value(path, data, cx) {
+                const context = cx === false ? {} : this.clone(true)
+                const params = extend(context, data || {})
+                const promise = this.render(path, params)
+                this.echo(promise)
+            },
+        },
+        /** @type {function} */
+        promiseResolve: {
+            value(value, callback) {
+                return Promise.resolve(
+                    isFunction(value) ? this.fn(value)() : value
+                ).then(callback.bind(this))
+            },
+        },
+        /** @type {function} */
+        use: {
+            value(path, namespace) {
+                this.echo(
+                    this.promiseResolve(this.require(path), function (exports) {
+                        const list = this.getMacro()
+                        each(exports, function (macro, name) {
+                            list[[namespace, name].join('.')] = macro
+                        })
+                    })
+                )
+            },
+        },
+        /** @type {function} */
+        async: {
+            value(promise, callback) {
+                this.echo(
+                    this.promiseResolve(promise, function (data) {
+                        return this.fn(callback)(data)
+                    })
+                )
+            },
+        },
+        /** @type {function} */
+        each: {
+            value: function (object, callback) {
+                if (isString(object)) {
+                    object = this.get(object, [])
+                }
+                each(object, callback)
+            },
+        },
+        /** @type {function} */
+        element: {
+            value(tag, attr, content) {
+                return element(tag, attr, content)
+            },
+        },
+        /** @type {function} */
+        el: {
+            value(tag, attr, content) {
+                this.echo(
+                    this.promiseResolve(content, function (content) {
+                        return this.element(tag, attr, content)
+                    })
+                )
+            },
+        },
+    })
+    return ContextScope
+}
+
+export class Context {
+    #scope
+
+    constructor(config, methods) {
+        bindContext(this, ['create', 'helpers', 'configure'])
+        this.configure(config, methods)
+    }
+
+    create(data) {
+        return new this.#scope(data)
+    }
+
+    configure(config, methods) {
+        this.#scope = createScope(config, methods)
+    }
+
+    helpers(methods) {
+        extend(this.#scope.prototype, methods || {})
+    }
 }

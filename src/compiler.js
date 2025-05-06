@@ -1,109 +1,103 @@
-import { instanceOf, symbols } from './utils.js'
+import { symbols, matchTokens, bindContext } from './utils.js'
 
-const tagList = [
-    {
-        symbol: '-',
-        format(value) {
-            return `')\n${this.BUFFER}(${this.SAFE}(${value},1))\n${this.BUFFER}('`
-        },
-    },
-    {
-        symbol: '=',
-        format(value) {
-            return `')\n${this.BUFFER}(${this.SAFE}(${value}))\n${this.BUFFER}('`
-        },
-    },
-    {
-        symbol: '#',
-        format(value) {
-            return `')\n/**${value}**/\n${this.BUFFER}('`
-        },
-    },
-    {
-        symbol: '',
-        format(value) {
-            return `')\n${value.trim()}\n${this.BUFFER}('`
-        },
-    },
-]
-
-function matchTokens(regex, text, callback) {
-    let index = 0
-    text.replace(regex, function () {
-        const params = [].slice.call(arguments, 0, -1)
-        const offset = params.pop()
-        const match = params.shift()
-        callback(params, index, offset)
-        index = offset + match.length
-        return match
-    })
+export const useCompiler = (config) => {
+    return new Compiler(config)
 }
 
-export function Compiler(config) {
-    if (instanceOf(this, Compiler) === false) return new Compiler(config)
-
-    const compiler = {}
-
-    this.configure = function (config) {
-        compiler.withObject = config.withObject
-        compiler.rmWhitespace = config.rmWhitespace
-        compiler.token = config.token
-        compiler.vars = config.vars
-        compiler.globalHelpers = config.globalHelpers
-        compiler.matches = []
-        compiler.formats = []
-        compiler.slurp = {
-            match: '[\s\t\n]*',
-            start: [compiler.token.start, '_'],
-            end: ['_', compiler.token.end],
+export class Compiler {
+    #config = {}
+    #symbols = [
+        {
+            symbol: '-',
+            format(value) {
+                return `')\n${this.BUFFER}(${this.SAFE}(${value},1))\n${this.BUFFER}('`
+            },
+        },
+        {
+            symbol: '=',
+            format(value) {
+                return `')\n${this.BUFFER}(${this.SAFE}(${value}))\n${this.BUFFER}('`
+            },
+        },
+        {
+            symbol: '#',
+            format(value) {
+                return `')\n/**${value}**/\n${this.BUFFER}('`
+            },
+        },
+        {
+            symbol: '',
+            format(value) {
+                return `')\n${value.trim()}\n${this.BUFFER}('`
+            },
+        },
+    ]
+    constructor(config) {
+        bindContext(this, ['configure', 'compile'])
+        this.configure(config)
+    }
+    configure(config) {
+        this.#config.withObject = config.withObject
+        this.#config.rmWhitespace = config.rmWhitespace
+        this.#config.token = config.token
+        this.#config.vars = config.vars
+        this.#config.globalHelpers = config.globalHelpers
+        this.#config.matches = []
+        this.#config.formats = []
+        this.#config.slurp = {
+            match: '[s\t\n]*',
+            start: [this.#config.token.start, '_'],
+            end: ['_', this.#config.token.end],
         }
-        tagList.forEach((item) => {
-            compiler.matches.push(
-                compiler.token.start
+        this.#symbols.forEach((item) => {
+            this.#config.matches.push(
+                this.#config.token.start
                     .concat(item.symbol)
-                    .concat(compiler.token.regex)
-                    .concat(compiler.token.end)
+                    .concat(this.#config.token.regex)
+                    .concat(this.#config.token.end)
             )
-            compiler.formats.push(item.format.bind(compiler.vars))
+            this.#config.formats.push(item.format.bind(this.#config.vars))
         })
-        compiler.regex = new RegExp(
-            compiler.matches.join('|').concat('|$'),
+        this.#config.regex = new RegExp(
+            this.#config.matches.join('|').concat('|$'),
             'g'
         )
-        compiler.slurpStart = new RegExp(
-            [compiler.slurp.match, compiler.slurp.start.join('')].join(''),
+        this.#config.slurpStart = new RegExp(
+            [this.#config.slurp.match, this.#config.slurp.start.join('')].join(
+                ''
+            ),
             'gm'
         )
-        compiler.slurpEnd = new RegExp(
-            [compiler.slurp.end.join(''), compiler.slurp.match].join(''),
+        this.#config.slurpEnd = new RegExp(
+            [this.#config.slurp.end.join(''), this.#config.slurp.match].join(
+                ''
+            ),
             'gm'
         )
     }
-
-    this.compile = function (content, path) {
-        const { SCOPE, SAFE, BUFFER, COMPONENT } = compiler.vars
-        const GLOBALS = compiler.globalHelpers
-        content = String(content)
-        if (compiler.rmWhitespace) {
-            content = content
+    compile(content, path) {
+        const { SCOPE, SAFE, BUFFER, COMPONENT } = this.#config.vars
+        const GLOBALS = this.#config.globalHelpers
+        if (this.#config.rmWhitespace) {
+            content = String(content)
                 .replace(/[\r\n]+/g, '\n')
                 .replace(/^\s+|\s+$/gm, '')
         }
-        content = content
-            .replace(compiler.slurpStart, compiler.token.start)
-            .replace(compiler.slurpEnd, compiler.token.end)
+        content = String(content)
+            .replace(this.#config.slurpStart, this.#config.token.start)
+            .replace(this.#config.slurpEnd, this.#config.token.end)
         let source = `${BUFFER}('`
-        matchTokens(compiler.regex, content, (params, index, offset) => {
+        matchTokens(this.#config.regex, content, (params, index, offset) => {
             source += symbols(content.slice(index, offset))
             params.forEach((value, index) => {
                 if (value) {
-                    source += compiler.formats[index](value)
+                    source += this.#config.formats[index](value)
                 }
             })
         })
         source += `');`
         source = `try{${source}}catch(e){return ${BUFFER}.error(e)}`
-        if (compiler.withObject) {
+        if (this.#config.withObject) {
             source = `with(${SCOPE}){${source}}`
         }
         source = `${BUFFER}.start();${source}return ${BUFFER}.end();`
@@ -120,6 +114,4 @@ export function Compiler(config) {
         }
         return result
     }
-
-    this.configure(config)
 }
