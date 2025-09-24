@@ -5,11 +5,13 @@ import {
     getPath,
     hasProp,
     noop,
-    safeValue,
+    safeValue
 } from './utils.js'
 import { isFunction, isString } from './type.js'
 import { element } from './element.js'
 import { createBuffer } from './buffer.js'
+
+const PARENT = Symbol('ContextScope.parentTemplate')
 
 const createContextScope = (config, methods) => {
     const {
@@ -21,14 +23,20 @@ const createContextScope = (config, methods) => {
         SAFE,
         SCOPE,
         COMPONENT,
-        ELEMENT,
+        ELEMENT
     } = config.vars
+    /**
+     *
+     * @type {symbol}
+     */
+
     /**
      * @name ContextScope
      * @param data
      * @constructor
      */
     function ContextScope(data) {
+        this[PARENT] = null
         this[BLOCKS] = {}
         this[MACRO] = {}
         Object.assign(
@@ -38,28 +46,45 @@ const createContextScope = (config, methods) => {
     }
     Object.assign(ContextScope.prototype, methods)
     Object.defineProperty(ContextScope.prototype, BUFFER, {
-        value: createBuffer(),
+        value: createBuffer()
     })
     Object.defineProperty(ContextScope.prototype, BLOCKS, {
         value: {},
-        writable: true,
+        writable: true
     })
     Object.defineProperty(ContextScope.prototype, MACRO, {
         value: {},
-        writable: true,
+        writable: true
     })
     Object.defineProperty(ContextScope.prototype, LAYOUT, {
         value: false,
-        writable: true,
+        writable: true
     })
     Object.defineProperty(ContextScope.prototype, EXTEND, {
         value: false,
-        writable: true,
+        writable: true
+    })
+    Object.defineProperty(ContextScope.prototype, PARENT, {
+        value: null,
+        writable: true
     })
     Object.defineProperties(ContextScope.prototype, {
         /** @type {function} */
+        setParentTemplate:{
+            value(value){
+                this[PARENT] = value
+                return this
+            }
+        },
+        /** @type {function} */
+        getParentTemplate: {
+            value(){
+                return this[PARENT]
+            }
+        },
+        /** @type {function} */
         useSafeValue: {
-            get: () => safeValue,
+            get: () => safeValue
         },
         /** @type {function} */
         useComponent: {
@@ -71,7 +96,7 @@ const createContextScope = (config, methods) => {
                         throw new Error(`${COMPONENT} must be a function`)
                     }
                 }
-            },
+            }
         },
         /** @type {function} */
         useElement: {
@@ -83,49 +108,52 @@ const createContextScope = (config, methods) => {
                         throw new Error(`${ELEMENT} must be a function`)
                     }
                 }
-            },
+            }
         },
         /** @type {()=>this[MACRO]} */
         getMacro: {
             value() {
                 return this[MACRO]
-            },
+            }
         },
         /** @type {function} */
         getBuffer: {
             value() {
                 return this[BUFFER]
-            },
+            }
         },
         /** @type {function} */
         getBlocks: {
             value() {
                 return this[BLOCKS]
-            },
+            }
         },
+
         /** @type {function} */
         setExtend: {
             value(value) {
                 this[EXTEND] = value
-            },
+                return this
+            }
         },
         /** @type {function} */
         getExtend: {
             value() {
                 return this[EXTEND]
-            },
+            }
         },
         /** @type {function} */
         setLayout: {
             value(layout) {
                 this[LAYOUT] = layout
-            },
+                return this
+            }
         },
         /** @type {function} */
         getLayout: {
             value() {
                 return this[LAYOUT]
-            },
+            }
         },
         /** @type {function} */
         clone: {
@@ -135,14 +163,14 @@ const createContextScope = (config, methods) => {
                     filter.push(BLOCKS)
                 }
                 return omit(this, filter)
-            },
+            }
         },
         /** @type {function} */
         extend: {
             value(layout) {
                 this.setExtend(true)
                 this.setLayout(layout)
-            },
+            }
         },
         /** @type {function} */
         echo: {
@@ -150,21 +178,21 @@ const createContextScope = (config, methods) => {
                 const buffer = this.getBuffer()
                 const params = [].slice.call(arguments)
                 params.forEach(buffer)
-            },
+            }
         },
         /** @type {function} */
         fn: {
             value(callback) {
                 const buffer = this.getBuffer()
                 const context = this
-                return function () {
+                return function() {
                     if (isFunction(callback)) {
                         buffer.backup()
                         buffer(callback.apply(context, arguments))
                         return buffer.restore()
                     }
                 }
-            },
+            }
         },
         /** @type {function} */
         macro: {
@@ -172,10 +200,10 @@ const createContextScope = (config, methods) => {
                 const list = this.getMacro()
                 const macro = this.fn(callback)
                 const context = this
-                list[name] = function () {
+                list[name] = function() {
                     return context.echo(macro.apply(undefined, arguments))
                 }
-            },
+            }
         },
         /** @type {function} */
         call: {
@@ -186,7 +214,7 @@ const createContextScope = (config, methods) => {
                 if (isFunction(macro)) {
                     return macro.apply(macro, params)
                 }
-            },
+            }
         },
         /** @type {function} */
         block: {
@@ -210,13 +238,13 @@ const createContextScope = (config, methods) => {
                     }
                 }
                 this.echo(current()(next()))
-            },
+            }
         },
         /** @type {function} */
         hasBlock: {
             value(name) {
                 return this.getBlocks().hasOwnProperty(name)
-            },
+            }
         },
         /** @type {function} */
         include: {
@@ -225,7 +253,7 @@ const createContextScope = (config, methods) => {
                 const params = extend(context, data || {})
                 const promise = this.render(path, params)
                 this.echo(promise)
-            },
+            }
         },
         /** @type {function} */
         use: {
@@ -233,18 +261,18 @@ const createContextScope = (config, methods) => {
                 this.echo(
                     Promise.resolve(this.require(path)).then((exports) => {
                         const list = this.getMacro()
-                        each(exports, function (macro, name) {
+                        each(exports, function(macro, name) {
                             list[[namespace, name].join('.')] = macro
                         })
                     })
                 )
-            },
+            }
         },
         /** @type {function} */
         async: {
             value(promise, callback) {
                 this.echo(Promise.resolve(promise).then(callback))
-            },
+            }
         },
         /** @type {function} */
         get: {
@@ -253,29 +281,29 @@ const createContextScope = (config, methods) => {
                 const result = path.shift()
                 const prop = path.pop()
                 return hasProp(result, prop) ? result[prop] : defaults
-            },
+            }
         },
         /** @type {function} */
         set: {
             value(name, value) {
                 const path = getPath(this, name, false)
-                const result = path.shift()
+                const result= path.shift()
                 const prop = path.pop()
-                if (this.getExtend() && hasProp(result, prop)) {
+                if (this.getParentTemplate() && hasProp(result, prop)) {
                     return result[prop]
                 }
                 return (result[prop] = value)
-            },
+            }
         },
         /** @type {function} */
         each: {
-            value: function (object, callback) {
+            value: function(object, callback) {
                 if (isString(object)) {
                     object = this.get(object, [])
                 }
                 each(object, callback)
             },
-            writable: true,
+            writable: true
         },
         /** @type {function} */
         el: {
@@ -287,28 +315,33 @@ const createContextScope = (config, methods) => {
                     )
                 )
             },
-            writable: true,
+            writable: true
         },
         /** @type {function} */
         ui: {
-            value(layout) {},
-            writable: true,
-        },
+            value(layout) {
+            },
+            writable: true
+        }
     })
     return ContextScope
 }
 
 export class Context {
     #scope
+
     constructor(config, methods) {
         this.configure(config, methods)
     }
+
     create(data) {
         return new this.#scope(data)
     }
+
     configure(config, methods) {
         this.#scope = createContextScope(config, methods)
     }
+
     helpers(methods) {
         extend(this.#scope.prototype, methods || {})
     }

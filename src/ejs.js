@@ -13,6 +13,7 @@ export class EJS {
     #compiler
     #cache
     #template
+
     constructor(options) {
         configSchema(this.#config, options || {})
         this.#context = new Context(this.#config, this.#extend)
@@ -20,19 +21,11 @@ export class EJS {
         this.#cache = new Cache(this.#config)
         this.#template = new Template(this.#config, this.#cache, this.#compiler)
         //
-        bindContext(this, [
-            'configure',
-            'create',
-            'render',
-            'require',
-            'context',
-            'preload',
-            'compile',
-            'helpers',
-        ])
+        bindContext(this, ['configure', 'create', 'render', 'require', 'context', 'preload', 'compile', 'helpers'])
         //
         this.helpers({ require: this.require, render: this.render })
     }
+
     configure(options) {
         configSchema(this.#config, options || {})
         this.#context.configure(this.#config, this.#extend)
@@ -41,18 +34,30 @@ export class EJS {
         this.#template.configure(this.#config)
         return this.#config
     }
+    filePath(name) {
+        return ext(name, this.#config.extension)
+    }
+    require(name) {
+        const scope = this.context({})
+        return this.#output(this.filePath(name), scope).then(() => scope.getMacro())
+    }
     render(name, data) {
-        const filepath = ext(name, this.#config.extension)
         const scope = this.context(data)
-        return this.#output(filepath, scope).then((content) => {
+        return this.#output(this.filePath(name), scope).then(this.outputContent(name,scope))
+    }
+    outputContent(name,scope){
+        return (content) => {
             if (scope.getExtend()) {
                 scope.setExtend(false)
-                const layout = scope.getLayout()
-                const data = scope.clone()
-                return this.render(layout, data)
+                return this.renderLayout(scope.getLayout(),scope,name)
             }
             return content
-        })
+        }
+    }
+    renderLayout(name, data, parent) {
+        const scope = this.context(data)
+        if (parent) scope.setParentTemplate(parent)
+        return this.#output(this.filePath(name), scope).then(this.outputContent(name,scope))
     }
     helpers(methods) {
         this.#context.helpers(extend(this.#extend, methods))
@@ -63,30 +68,21 @@ export class EJS {
     compile(content, path) {
         return this.#compiler.compile(content, path)
     }
+
     preload(list) {
         return this.#cache.load(list || {})
     }
+
     create(options) {
         return new this.constructor(options)
     }
-    require(name) {
-        const filepath = ext(name, this.#config.extension)
-        const scope = this.context({})
-        return this.#output(filepath, scope).then(() => scope.getMacro())
-    }
+
+
     #output(path, scope) {
         const { globalHelpers } = this.#config
-        const params = [
-            scope,
-            scope.getBuffer(),
-            scope.useSafeValue,
-            scope.useComponent,
-            scope.useElement,
-        ].concat(
-            globalHelpers
-                .filter((name) => isFunction(scope[name]))
-                .map((name) => scope[name].bind(scope))
-        )
+        const params = [scope, scope.getBuffer(), scope.useSafeValue, scope.useComponent, scope.useElement].concat(globalHelpers
+            .filter((name) => isFunction(scope[name]))
+            .map((name) => scope[name].bind(scope)))
         return this.#template
             .get(path)
             .then((callback) => callback.apply(scope, params))
