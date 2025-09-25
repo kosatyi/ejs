@@ -33,8 +33,9 @@ export interface EJS {
      * render ejs component
      * @param {string} name
      * @param {object} [props]
+     * @param {any} [content]
      */
-    ui(name: string, props?: object): any
+    ui(name: string, props?: object, content?: any): any
     /**
      * render html element
      * @param {string} tag

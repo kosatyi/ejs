@@ -128,7 +128,6 @@ const createContextScope = (config, methods) => {
                 return this[BLOCKS]
             }
         },
-
         /** @type {function} */
         setExtend: {
             value(value) {

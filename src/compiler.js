@@ -98,7 +98,7 @@ export class Compiler {
         source = `${BUFFER}.start();${source}return ${BUFFER}.end();`
         source += `\n//# sourceURL=${path}`
         let result = null
-        let params = [SCOPE, BUFFER, SAFE, COMPONENT, ELEMENT].concat(GLOBALS)
+        let params = [SCOPE, COMPONENT, ELEMENT, BUFFER, SAFE].concat(GLOBALS)
         try {
             result = Function.apply(null, params.concat(source))
             result.source = `(function(${params.join(',')}){\n${source}\n});`
