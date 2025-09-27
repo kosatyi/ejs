@@ -24,7 +24,9 @@ export class Cache {
         }
     }
     exist(key) {
-        return hasProp(this.#list, key)
+        if (this.#enabled) {
+            return hasProp(this.#list, key)
+        }
     }
     clear() {
         this.#list = {}
