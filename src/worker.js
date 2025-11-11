@@ -1,26 +1,27 @@
+import { isFunction } from './type.js'
 import { EJS } from './ejs.js'
-
 import {
     TemplateError,
     TemplateSyntaxError,
     TemplateNotFound,
 } from './error.js'
 
-const templates = {}
+
+const templateCache = {}
 
 const getOrigin = (url, secure) => {
-    url = new URL(url)
+    url = URL.parse(url)
     url.protocol = secure ? 'https:' : 'http:'
     return url.origin
 }
 
-export const { render, context, helpers, configure, create } = new EJS({
+export const { render, context, helpers, configure } = new EJS({
     cache: false,
     withObject: false,
     resolver(path, name) {
         return new Promise((resolve, reject) => {
-            if (templates.hasOwnProperty(name)) {
-                resolve(templates[name])
+            if (isFunction(templateCache[name])) {
+                resolve(templateCache[name])
             } else {
                 reject(new TemplateNotFound(`template ${name} not found`))
             }
@@ -29,12 +30,17 @@ export const { render, context, helpers, configure, create } = new EJS({
 })
 
 /**
- *
- * @param list
+ * @param {Object<string,any>} templates
  */
-export function setTemplates(list) {
-    Object.assign(templates, list || {})
+export function useTemplates(templates = {}) {
+    Object.assign(templateCache, templates)
 }
+
+/**
+ * @deprecated Renamed to `useTemplates`
+ * @param {Object<string,any>} templates
+ */
+export const setTemplates = useTemplates
 
 /**
  * @typedef {{}} HonoContext
@@ -50,7 +56,8 @@ export function setTemplates(list) {
  * @param {Object<string,any>} options
  * @return {(function(c:HonoContext, next): Promise<any>)|*}
  */
-export function setRenderer({ version, secure = true } = {}) {
+export function useRenderer({ templates = {}, version, secure = true } = {}) {
+    useTemplates(templates)
     return async (c, next) => {
         c.data = context({})
         c.data.set('version', version)
@@ -65,6 +72,9 @@ export function setRenderer({ version, secure = true } = {}) {
     }
 }
 
-export { TemplateError, TemplateSyntaxError, TemplateNotFound }
+/**
+ * @deprecated Renamed to `useRenderer`
+ */
+export const setRenderer = useRenderer
 
-//export { render, context, helpers, configure, create }
+export { TemplateError, TemplateSyntaxError, TemplateNotFound }
