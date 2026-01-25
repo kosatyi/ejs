@@ -61,7 +61,7 @@
     "ejs-template-engine"
   ],
   "peerDependencies": {
-    "glob": "11.x",
+    "glob": "11.x || 12.x || 13.x",
     "process.argv": "1.x",
     "glob-watcher": "6.x"
   },
