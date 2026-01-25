@@ -32,7 +32,7 @@ const config = {
     extension: params.extension,
 }
 
-const bundler = new Bundler(options, config)
+const bundler = Bundler(options, config)
 
 await bundler.build()
 

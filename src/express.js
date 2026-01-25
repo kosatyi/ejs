@@ -8,7 +8,7 @@ import path from 'node:path'
  * @param {function(name: string, data?: object):Promise<string>} render
  * @return {function(name:any, options:any, callback: any): Promise<void>}
  */
-export function expressRenderer(configure, render) {
+export const expressRenderer = (configure, render) => {
     return function (name, options, callback) {
         if (isFunction(options)) {
             callback = options

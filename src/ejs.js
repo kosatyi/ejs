@@ -6,93 +6,82 @@ import { Compiler } from './compiler.js'
 import { Cache } from './cache.js'
 import { Context } from './context.js'
 
-export class EJS {
-    #config = {}
-    #extend = {}
-    #context
-    #compiler
-    #cache
-    #template
-
-    constructor(options) {
-        configSchema(this.#config, options || {})
-        this.#context = new Context(this.#config, this.#extend)
-        this.#compiler = new Compiler(this.#config)
-        this.#cache = new Cache(this.#config)
-        this.#template = new Template(this.#config, this.#cache, this.#compiler)
-        //
-        bindContext(this, ['configure', 'create', 'render', 'require', 'context', 'preload', 'compile', 'helpers'])
-        //
-        this.helpers({ require: this.require, render: this.render })
+export const EJS = (options = {}) => {
+    const config = configSchema({}, options)
+    const methods = {}
+    const context = Context(config, methods)
+    const compiler = Compiler(config)
+    const cache = Cache(config)
+    const template = Template(config, cache, compiler)
+    const configure = (options = {}) => {
+        configSchema(config, options || {})
+        context.configure(config, methods)
+        compiler.configure(config)
+        cache.configure(config)
+        template.configure(config)
+        return config
     }
-
-    configure(options) {
-        configSchema(this.#config, options || {})
-        this.#context.configure(this.#config, this.#extend)
-        this.#compiler.configure(this.#config)
-        this.#cache.configure(this.#config)
-        this.#template.configure(this.#config)
-        return this.#config
+    const filePath = (name) => {
+        return ext(name, config.extension)
     }
-
-    filePath(name) {
-        return ext(name, this.#config.extension)
+    const require = (name) => {
+        const scope = createContext({})
+        return output(filePath(name), scope).then(() => scope.getMacro())
     }
-
-    require(name) {
-        const scope = this.context({})
-        return this.#output(this.filePath(name), scope).then(() => scope.getMacro())
+    const render = (name, data) => {
+        const scope = createContext(data)
+        return output(filePath(name), scope).then(outputContent(name, scope))
     }
-
-    render(name, data) {
-        const scope = this.context(data)
-        return this.#output(this.filePath(name), scope).then(this.outputContent(name, scope))
-    }
-
-    outputContent(name, scope) {
+    const outputContent = (name, scope) => {
         return (content) => {
             if (scope.getExtend()) {
                 scope.setExtend(false)
-                return this.renderLayout(scope.getLayout(), scope, name)
+                return renderLayout(scope.getLayout(), scope, name)
             }
             return content
         }
     }
-
-    renderLayout(name, data, parent) {
-        const scope = this.context(data)
+    const renderLayout = (name, data, parent) => {
+        const scope = createContext(data)
         if (parent) scope.setParentTemplate(parent)
-        return this.#output(this.filePath(name), scope).then(this.outputContent(name, scope))
+        return output(filePath(name), scope).then(outputContent(name, scope))
     }
-
-    helpers(methods) {
-        this.#context.helpers(extend(this.#extend, methods))
+    const helpers = (extendMethods) => {
+        context.helpers(extend(methods, extendMethods))
     }
-
-    context(data) {
-        return this.#context.create(data)
+    const createContext = (data) => {
+        return context.create(data)
     }
-
-    compile(content, path) {
-        return this.#compiler.compile(content, path)
+    const compile = (content, path) => {
+        return compiler.compile(content, path)
     }
-
-    preload(list) {
-        return this.#cache.load(list || {})
+    const preload = (list) => {
+        return cache.load(list || {})
     }
-
-    create(options) {
-        return new this.constructor(options)
+    const create = (config) => {
+        return EJS(config)
     }
-
-    #output(path, scope) {
-        const { globalHelpers } = this.#config
+    const output = (path, scope) => {
         const params = [scope, scope.useComponent, scope.useElement, scope.getBuffer(), scope.useSafeValue]
-        const globals = globalHelpers
+        const globals = config.globalHelpers
             .filter((name) => isFunction(scope[name]))
             .map((name) => scope[name].bind(scope))
-        return this.#template
+        return template
             .get(path)
             .then((callback) => callback.apply(scope, params.concat(globals)))
     }
+    helpers({ render, require })
+    return {
+        configure,
+        create,
+        createContext,
+        render,
+        require,
+        preload,
+        compile,
+        helpers
+    }
 }
+
+
+

@@ -9,8 +9,8 @@ import {
 
 export { TemplateError, TemplateSyntaxError, TemplateNotFound }
 
-export const { render, context, compile, helpers, preload, configure, create } =
-    new EJS({
+export const { render, createContext, compile, helpers, preload, configure, create } =
+    EJS({
         resolver: readFile,
     })
 

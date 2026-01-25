@@ -3,7 +3,7 @@ import { extend } from './utils.js'
 import { defaults } from './defaults.js'
 
 export const configSchema = (config, options) => {
-    extend(config, {
+    return extend(config, {
         path: typeProp(isString, defaults.path, config.path, options.path),
         export: typeProp(
             isString,

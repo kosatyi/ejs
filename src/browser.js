@@ -6,11 +6,9 @@ import {
     TemplateNotFound,
 } from './error.js'
 
-const { render, context, compile, helpers, preload, configure, create } =
-    new EJS({
+export const { render, createContext, compile, helpers, preload, configure, create } =
+    EJS({
         resolver: httpRequest,
     })
 
 export { TemplateError, TemplateSyntaxError, TemplateNotFound }
-
-export { render, context, compile, helpers, preload, configure, create }

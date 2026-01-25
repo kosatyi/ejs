@@ -15,7 +15,7 @@ const getOrigin = (url, secure) => {
     return url.origin
 }
 
-export const { render, context, helpers, configure } = new EJS({
+export const { render, createContext, helpers, configure } = EJS({
     cache: false,
     withObject: false,
     resolver(path, name) {
@@ -59,7 +59,7 @@ export const setTemplates = useTemplates
 export function useRenderer({ templates = {}, version, secure = true } = {}) {
     useTemplates(templates)
     return async (c, next) => {
-        c.data = context({})
+        c.data = createContext({})
         c.data.set('version', version)
         c.data.set('origin', getOrigin(c.req.url, secure))
         c.data.set('path', c.req.path)

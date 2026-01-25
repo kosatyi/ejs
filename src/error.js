@@ -1,24 +1,44 @@
-export class TemplateError extends Error {
-    code = 0
-    constructor(message) {
-        super()
-        this.message = message
-    }
+/**
+ *
+ * @constructor
+ */
+export function TemplateError(){
+    TemplateError.call(this)
+}
+Object.setPrototypeOf(TemplateError.prototype, Error.prototype)
+Object.assign(TemplateError.prototype, {
+    code: 0,
     getCode() {
         return this.code
-    }
+    },
     getMessage() {
         return this.message
-    }
+    },
     toString() {
         return this.getMessage()
     }
-}
+})
 
-export class TemplateNotFound extends TemplateError {
-    code = 404
+/**
+ *
+ * @constructor
+ */
+export function TemplateNotFound(){
+    TemplateError.call(this)
 }
+Object.setPrototypeOf(TemplateNotFound.prototype, TemplateError.prototype)
+Object.assign(TemplateNotFound.prototype, { code: 404  })
 
-export class TemplateSyntaxError extends TemplateError {
-    code = 500
+/**
+ *
+ * @constructor
+ */
+export function TemplateSyntaxError(){
+    TemplateError.call(this)
 }
+Object.setPrototypeOf(TemplateSyntaxError.prototype, TemplateError.prototype)
+Object.assign(TemplateSyntaxError.prototype, { code: 500  })
+
+
+
+

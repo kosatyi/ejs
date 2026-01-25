@@ -25,6 +25,7 @@ const createContextScope = (config, methods) => {
         COMPONENT,
         ELEMENT
     } = config.vars
+
     /**
      *
      * @type {symbol}
@@ -44,6 +45,7 @@ const createContextScope = (config, methods) => {
             omit(data, [SCOPE, BUFFER, SAFE, COMPONENT, ELEMENT])
         )
     }
+
     Object.assign(ContextScope.prototype, methods)
     Object.defineProperty(ContextScope.prototype, BUFFER, {
         value: createBuffer()
@@ -70,15 +72,15 @@ const createContextScope = (config, methods) => {
     })
     Object.defineProperties(ContextScope.prototype, {
         /** @type {function} */
-        setParentTemplate:{
-            value(value){
+        setParentTemplate: {
+            value(value) {
                 this[PARENT] = value
                 return this
             }
         },
         /** @type {function} */
         getParentTemplate: {
-            value(){
+            value() {
                 return this[PARENT]
             }
         },
@@ -286,7 +288,7 @@ const createContextScope = (config, methods) => {
         set: {
             value(name, value) {
                 const path = getPath(this, name, false)
-                const result= path.shift()
+                const result = path.shift()
                 const prop = path.pop()
                 if (this.getParentTemplate() && hasProp(result, prop)) {
                     return result[prop]
@@ -326,22 +328,25 @@ const createContextScope = (config, methods) => {
     return ContextScope
 }
 
-export class Context {
-    #scope
-
-    constructor(config, methods) {
-        this.configure(config, methods)
+export const Context = (options, methods) => {
+    /**
+     * @type {InstanceType<ContextScope>}
+     */
+    let Scope
+    const create = (data) => {
+        return new Scope(data)
     }
-
-    create(data) {
-        return new this.#scope(data)
+    const helpers = (methods) => {
+        extend(Scope.prototype, methods || {})
     }
-
-    configure(config, methods) {
-        this.#scope = createContextScope(config, methods)
+    const configure = (options, methods) => {
+        Scope = createContextScope(options, methods)
     }
-
-    helpers(methods) {
-        extend(this.#scope.prototype, methods || {})
+    configure(options, methods)
+    return {
+        configure,
+        create,
+        helpers
     }
 }
+

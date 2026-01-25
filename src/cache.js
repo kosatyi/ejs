@@ -2,45 +2,54 @@ import { extend, hasProp, isNode } from './utils.js'
 
 const global = typeof globalThis !== 'undefined' ? globalThis : window || self
 
-export class Cache {
-    #enabled = true
-    #list = {}
-    constructor(config) {
-        this.configure(config)
-    }
-    load(data) {
-        if (this.#enabled) {
-            extend(this.#list, data || {})
+export const Cache = (options = {}) => {
+    const config = {}
+    const list = {}
+    const load = (data) => {
+        if (config.enabled) {
+            extend(list, data || {})
         }
     }
-    get(key) {
-        if (this.#enabled) {
-            return this.#list[key]
+    const get = (key) => {
+        if (config.enabled) {
+            return list[key]
         }
     }
-    set(key, value) {
-        if (this.#enabled) {
-            this.#list[key] = value
+    const set = (key, value) => {
+        if (config.enabled) {
+            list[key] = value
         }
     }
-    exist(key) {
-        if (this.#enabled) {
-            return hasProp(this.#list, key)
+    const exist = (key) => {
+        if (config.enabled) {
+            return hasProp(list, key)
         }
     }
-    clear() {
-        this.#list = {}
+    const clear = () => {
+        Object.keys(list).forEach(remove)
     }
-    remove(key) {
-        delete this.#list[key]
+    const remove = (key) => {
+        delete list[key]
     }
-    resolve(key) {
-        return Promise.resolve(this.get(key))
+    const resolve = (key) => {
+        return Promise.resolve(get(key))
     }
-    configure(config) {
-        this.#enabled = config.cache
+    const configure = (options = {}) => {
+        config.enabled = options.cache
+        config.export = options.export
         if (isNode() === false) {
-            this.load(global[config.export])
+            load(global[config.export])
         }
+    }
+    configure(options)
+    return {
+        configure,
+        load,
+        set,
+        get,
+        exist,
+        clear,
+        remove,
+        resolve,
     }
 }

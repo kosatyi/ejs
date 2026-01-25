@@ -1,10 +1,10 @@
 import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { glob } from 'glob'
-import watch from 'glob-watcher'
+import globWatch from 'glob-watcher'
 import { create } from './index.js'
 
-const isPlainObject = function (obj) {
+const isPlainObject = function(obj) {
     return Object.prototype.toString.call(obj) === '[object Object]'
 }
 
@@ -12,46 +12,28 @@ const extend = (target, ...sources) => {
     return Object.assign(target, ...sources.filter(isPlainObject))
 }
 
-export class Bundler {
-    /**
-     * @type {BundlerOptions}
-     */
-    options = {
+export const Bundler = (params = {}, ejsParams = {}) => {
+    const config = {
         target: [],
         umd: true,
-        minify: true,
+        minify: true
     }
-    /**
-     * @type {EjsConfig}
-     */
-    config = {}
-
-    /**
-     *
-     * @param options
-     * @param config
-     */
-    constructor(options, config) {
-        extend(this.options, options || {})
-        this.ejs = create()
-        this.config = this.ejs.configure(config)
-        this.templates = {}
-    }
-
-    stageRead(path) {
+    const ejs = create()
+    const ejsConfig = ejs.configure(ejsParams)
+    const templates = {}
+    extend(config, params || {})
+    const stageRead = (path) => {
         return fs
-            .readFile(join(this.config.path, path))
+            .readFile(join(ejsConfig.path, path))
             .then((response) => response.toString())
     }
-
-    stageCompile(content, name) {
-        return this.ejs.compile(content, name).source
+    const stageCompile = (content, name) => {
+        return ejs.compile(content, name).source
     }
-
-    getBundle() {
-        const umd = this.options.umd
-        const strict = this.config.withObject === false
-        const module = this.config.export
+    const getBundle = () => {
+        const umd = config.umd
+        const strict = ejsConfig.withObject === false
+        const module = ejsConfig.export
         const out = []
         if (umd) {
             out.push('(function(global,factory){')
@@ -70,7 +52,7 @@ export class Bundler {
         }
         if (strict) out.push(`'use strict'`)
         out.push('const templates = {}')
-        Object.entries(this.templates).forEach(([name, content]) => {
+        Object.entries(templates).forEach(([name, content]) => {
             name = JSON.stringify(name)
             content = String(content)
             out.push(`templates[${name}] = ${content}`)
@@ -82,49 +64,51 @@ export class Bundler {
         }
         return out.join('\n')
     }
-    async watch() {
-        console.log('🔍', 'watch directory:', this.config.path)
-        const pattern = '**/*.'.concat(this.config.extension)
-        const watcher = watch(pattern, { cwd: this.config.path })
+
+    const watch = async () => {
+        console.log('🔍', 'watch directory:', ejsConfig.path)
+        const pattern = '**/*.'.concat(ejsConfig.extension)
+        const watcher = globWatch(pattern, { cwd: ejsConfig.path })
         const state = { build: null }
         watcher.on('change', (path) => {
             if (state.build) return
             console.log('⟳', 'file change:', path)
-            state.build = this.build().then(() => {
+            state.build = build().then(() => {
                 state.build = null
             })
         })
         watcher.on('add', (path) => {
             if (state.build) return
             console.log('+', 'file added:', path)
-            state.build = this.build().then(() => {
+            state.build = build().then(() => {
                 state.build = null
             })
         })
     }
 
-    async build() {
-        if (this.buildInProgress === true) return false
-        this.buildInProgress = true
-        await this.concat().catch(console.error)
-        await this.output().catch(console.error)
-        console.log('✅', 'bundle complete:', this.options.target)
-        this.buildInProgress = false
-    }
-
-    async concat() {
-        const pattern = '**/*.'.concat(this.config.extension)
-        const list = await glob(pattern, { cwd: this.config.path })
+    const concat = async () => {
+        const pattern = '**/*.'.concat(ejsConfig.extension)
+        const list = await glob(pattern, { cwd: ejsConfig.path })
         for (let template of list) {
             let content = ''
-            content = await this.stageRead(template)
-            content = await this.stageCompile(content, template)
-            this.templates[template] = content
+            content = await stageRead(template)
+            content = await stageCompile(content, template)
+            templates[template] = content
         }
     }
-    async output() {
-        const target = [].concat(this.options.target)
-        const content = this.getBundle()
+
+    const build = async () => {
+        if (config.buildInProgress === true) return false
+        config.buildInProgress = true
+        await concat().catch(console.error)
+        await output().catch(console.error)
+        console.log('✅', 'bundle complete:', config.target)
+        config.buildInProgress = false
+    }
+
+    const output = async () => {
+        const target = [].concat(config.target)
+        const content = getBundle()
         for (let file of target) {
             const folderPath = dirname(file)
             const folderExists = await fs
@@ -137,7 +121,16 @@ export class Bundler {
             await fs.writeFile(file, content)
         }
     }
+
+    return {
+        build,
+        watch,
+        concat,
+        output
+    }
+
 }
+
 
 export const ejsBundler = (options, config) => {
     const bundler = new Bundler(options, config)
@@ -148,6 +141,6 @@ export const ejsBundler = (options, config) => {
         },
         async buildEnd() {
             await bundler.output()
-        },
+        }
     }
 }
