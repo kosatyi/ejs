@@ -2,7 +2,7 @@
  *
  * @constructor
  */
-export function TemplateError(){
+export function TemplateError() {
     TemplateError.call(this)
 }
 Object.setPrototypeOf(TemplateError.prototype, Error.prototype)
@@ -16,29 +16,25 @@ Object.assign(TemplateError.prototype, {
     },
     toString() {
         return this.getMessage()
-    }
+    },
 })
 
 /**
  *
  * @constructor
  */
-export function TemplateNotFound(){
+export function TemplateNotFound() {
     TemplateError.call(this)
 }
 Object.setPrototypeOf(TemplateNotFound.prototype, TemplateError.prototype)
-Object.assign(TemplateNotFound.prototype, { code: 404  })
+Object.assign(TemplateNotFound.prototype, { code: 404 })
 
 /**
  *
  * @constructor
  */
-export function TemplateSyntaxError(){
+export function TemplateSyntaxError() {
     TemplateError.call(this)
 }
 Object.setPrototypeOf(TemplateSyntaxError.prototype, TemplateError.prototype)
-Object.assign(TemplateSyntaxError.prototype, { code: 500  })
-
-
-
-
+Object.assign(TemplateSyntaxError.prototype, { code: 500 })

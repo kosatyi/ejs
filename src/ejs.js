@@ -1,5 +1,5 @@
 import { configSchema } from './schema.js'
-import { ext, extend, bindContext } from './utils.js'
+import { ext, extend } from './utils.js'
 import { isFunction } from './type.js'
 import { Template } from './template.js'
 import { Compiler } from './compiler.js'
@@ -62,7 +62,13 @@ export const EJS = (options = {}) => {
         return EJS(config)
     }
     const output = (path, scope) => {
-        const params = [scope, scope.useComponent, scope.useElement, scope.getBuffer(), scope.useSafeValue]
+        const params = [
+            scope,
+            scope.useComponent,
+            scope.useElement,
+            scope.getBuffer(),
+            scope.useSafeValue,
+        ]
         const globals = config.globalHelpers
             .filter((name) => isFunction(scope[name]))
             .map((name) => scope[name].bind(scope))
@@ -79,9 +85,6 @@ export const EJS = (options = {}) => {
         require,
         preload,
         compile,
-        helpers
+        helpers,
     }
 }
-
-
-

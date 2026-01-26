@@ -6,7 +6,6 @@ import {
     TemplateNotFound,
 } from './error.js'
 
-
 const templateCache = {}
 
 const getOrigin = (url, secure) => {
@@ -51,7 +50,6 @@ export const setTemplates = useTemplates
  * @property {function(name:string,data:{}):Promise<string>} ejs
  * @property {ContextScope} data
  */
-
 /**
  * @param {Object<string,any>} options
  * @return {(function(c:HonoContext, next): Promise<any>)|*}

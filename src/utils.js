@@ -1,8 +1,8 @@
-import { isFunction, isUndefined } from './type'
+import { isFunction, isUndefined } from './type.js'
 
 const isNodeEnv =
     Object.prototype.toString.call(
-        typeof process !== 'undefined' ? process : 0
+        typeof process !== 'undefined' ? process : 0,
     ) === '[object process]'
 
 export const isNode = () => isNodeEnv
@@ -35,14 +35,14 @@ export const symbolEntitiesMatch = regexKeys(symbolEntities)
 export const entities = (string = '') => {
     return ('' + string).replace(
         htmlEntitiesMatch,
-        (match) => htmlEntities[match]
+        (match) => htmlEntities[match],
     )
 }
 
 export const symbols = (string) => {
     return ('' + string).replace(
         symbolEntitiesMatch,
-        (match) => '\\' + symbolEntities[match]
+        (match) => '\\' + symbolEntities[match],
     )
 }
 
@@ -51,8 +51,8 @@ export const safeValue = (value, escape) => {
     return check == null
         ? ''
         : Boolean(escape) === true
-        ? entities(check)
-        : check
+          ? entities(check)
+          : check
 }
 
 export const instanceOf = (object, instance) => {
@@ -143,7 +143,7 @@ export const map = (object, callback, context) => {
                 result.push(item)
             }
         },
-        context
+        context,
     )
     return result
 }
@@ -163,7 +163,7 @@ export const filter = (object, callback, context) => {
                 }
             }
         },
-        context
+        context,
     )
     return result
 }

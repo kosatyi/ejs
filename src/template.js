@@ -1,10 +1,9 @@
 import { isFunction } from './type.js'
 
-
 export const Template = (options, cache, compiler) => {
     const config = {
         path: null,
-        resolver: null
+        resolver: null,
     }
     const resolve = (path) => {
         return config.resolver(config.path, path)
@@ -25,7 +24,7 @@ export const Template = (options, cache, compiler) => {
             return cache.resolve(template)
         }
         return resolve(template).then((content) =>
-            result(template, compile(content, template))
+            result(template, compile(content, template)),
         )
     }
     const configure = (options) => {
@@ -38,6 +37,6 @@ export const Template = (options, cache, compiler) => {
     return {
         get,
         configure,
-        compile
+        compile,
     }
 }

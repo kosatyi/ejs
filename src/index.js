@@ -9,9 +9,16 @@ import {
 
 export { TemplateError, TemplateSyntaxError, TemplateNotFound }
 
-export const { render, createContext, compile, helpers, preload, configure, create } =
-    EJS({
-        resolver: readFile,
-    })
+export const {
+    render,
+    createContext,
+    compile,
+    helpers,
+    preload,
+    configure,
+    create,
+} = EJS({
+    resolver: readFile,
+})
 
 export const __express = expressRenderer(configure, render)

@@ -1,10 +1,10 @@
+import globWatch from 'glob-watcher'
 import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { glob } from 'glob'
-import globWatch from 'glob-watcher'
 import { create } from './index.js'
 
-const isPlainObject = function(obj) {
+const isPlainObject = function (obj) {
     return Object.prototype.toString.call(obj) === '[object Object]'
 }
 
@@ -16,10 +16,10 @@ export const Bundler = (params = {}, ejsParams = {}) => {
     const config = {
         target: [],
         umd: true,
-        minify: true
+        minify: true,
     }
-    const ejs = create()
-    const ejsConfig = ejs.configure(ejsParams)
+    const { compile, configure } = create()
+    const ejsConfig = configure(ejsParams)
     const templates = {}
     extend(config, params || {})
     const stageRead = (path) => {
@@ -28,7 +28,7 @@ export const Bundler = (params = {}, ejsParams = {}) => {
             .then((response) => response.toString())
     }
     const stageCompile = (content, name) => {
-        return ejs.compile(content, name).source
+        return compile(content, name).source
     }
     const getBundle = () => {
         const umd = config.umd
@@ -38,14 +38,14 @@ export const Bundler = (params = {}, ejsParams = {}) => {
         if (umd) {
             out.push('(function(global,factory){')
             out.push(
-                'typeof exports === "object" && typeof module !== "undefined" ?'
+                'typeof exports === "object" && typeof module !== "undefined" ?',
             )
             out.push('module.exports = factory():')
             out.push(
-                'typeof define === "function" && define.amd ? define(factory):'
+                'typeof define === "function" && define.amd ? define(factory):',
             )
             out.push(
-                '(global = typeof globalThis !== "undefined" ? globalThis:'
+                '(global = typeof globalThis !== "undefined" ? globalThis:',
             )
             out.push(`global || self,global["${module}"] = factory())`)
             out.push('})(this,(function(){')
@@ -64,7 +64,6 @@ export const Bundler = (params = {}, ejsParams = {}) => {
         }
         return out.join('\n')
     }
-
     const watch = async () => {
         console.log('🔍', 'watch directory:', ejsConfig.path)
         const pattern = '**/*.'.concat(ejsConfig.extension)
@@ -85,7 +84,6 @@ export const Bundler = (params = {}, ejsParams = {}) => {
             })
         })
     }
-
     const concat = async () => {
         const pattern = '**/*.'.concat(ejsConfig.extension)
         const list = await glob(pattern, { cwd: ejsConfig.path })
@@ -96,7 +94,6 @@ export const Bundler = (params = {}, ejsParams = {}) => {
             templates[template] = content
         }
     }
-
     const build = async () => {
         if (config.buildInProgress === true) return false
         config.buildInProgress = true
@@ -105,7 +102,6 @@ export const Bundler = (params = {}, ejsParams = {}) => {
         console.log('✅', 'bundle complete:', config.target)
         config.buildInProgress = false
     }
-
     const output = async () => {
         const target = [].concat(config.target)
         const content = getBundle()
@@ -121,16 +117,13 @@ export const Bundler = (params = {}, ejsParams = {}) => {
             await fs.writeFile(file, content)
         }
     }
-
     return {
         build,
         watch,
         concat,
-        output
+        output,
     }
-
 }
-
 
 export const ejsBundler = (options, config) => {
     const bundler = new Bundler(options, config)
@@ -141,6 +134,6 @@ export const ejsBundler = (options, config) => {
         },
         async buildEnd() {
             await bundler.output()
-        }
+        },
     }
 }

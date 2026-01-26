@@ -47,25 +47,18 @@ export const Compiler = (options) => {
                 config.token.start
                     .concat(item.symbol)
                     .concat(config.token.regex)
-                    .concat(config.token.end)
+                    .concat(config.token.end),
             )
             config.formats.push(item.format.bind(config.vars))
         })
-        config.regex = new RegExp(
-            config.matches.join('|').concat('|$'),
-            'g'
-        )
+        config.regex = new RegExp(config.matches.join('|').concat('|$'), 'g')
         config.slurpStart = new RegExp(
-            [config.slurp.match, config.slurp.start.join('')].join(
-                ''
-            ),
-            'gm'
+            [config.slurp.match, config.slurp.start.join('')].join(''),
+            'gm',
         )
         config.slurpEnd = new RegExp(
-            [config.slurp.end.join(''), config.slurp.match].join(
-                ''
-            ),
-            'gm'
+            [config.slurp.end.join(''), config.slurp.match].join(''),
+            'gm',
         )
     }
     const compile = (content, path) => {
@@ -113,4 +106,3 @@ export const Compiler = (options) => {
         compile,
     }
 }
-

@@ -4,9 +4,9 @@ defaults.export = 'ejsPrecompiled'
 defaults.cache = true
 defaults.chokidar = null
 defaults.path = 'views'
-defaults.resolver = function(path, template) {
+defaults.resolver = function (path, template) {
     return Promise.resolve(
-        ['resolver is not defined', path, template].join(' ')
+        ['resolver is not defined', path, template].join(' '),
     )
 }
 defaults.extension = 'ejs'
@@ -22,10 +22,10 @@ defaults.vars = {
     LAYOUT: '$$l',
     BLOCKS: '$$b',
     MACRO: '$$m',
-    SAFE: '$$v'
+    SAFE: '$$v',
 }
 defaults.token = {
     start: '<%',
     end: '%>',
-    regex: '([\\s\\S]+?)'
+    regex: '([\\s\\S]+?)',
 }

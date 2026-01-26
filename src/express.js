@@ -20,7 +20,7 @@ export const expressRenderer = (configure, render) => {
         const viewCache = typeProp(
             isBoolean,
             defaults.cache,
-            settings['view cache']
+            settings['view cache'],
         )
         const viewOptions = extend({}, settings['view options'])
         const filename = path.relative(viewPath, name)
