@@ -1,25 +1,23 @@
+import { ejsDefaults } from './defaults.js'
 import { isFunction, isString, typeProp, isBoolean, isArray } from './type.js'
-import { extend } from './utils.js'
-import { defaults } from './defaults.js'
-
 export const configSchema = (config, options) => {
-    return extend(config, {
-        path: typeProp(isString, defaults.path, config.path, options.path),
+    return Object.assign(config, {
+        path: typeProp(isString, ejsDefaults.path, config.path, options.path),
         export: typeProp(
             isString,
-            defaults.export,
+            ejsDefaults.export,
             config.export,
             options.export,
         ),
         resolver: typeProp(
             isFunction,
-            defaults.resolver,
+            ejsDefaults.resolver,
             config.resolver,
             options.resolver,
         ),
         extension: typeProp(
             isString,
-            defaults.extension,
+            ejsDefaults.extension,
             config.extension,
             options.extension,
         ),
@@ -31,16 +29,16 @@ export const configSchema = (config, options) => {
         ),
         rmWhitespace: typeProp(
             isBoolean,
-            defaults.rmWhitespace,
+            ejsDefaults.rmWhitespace,
             config.rmWhitespace,
             options.rmWhitespace,
         ),
-        cache: typeProp(isBoolean, defaults.cache, config.cache, options.cache),
-        token: extend({}, defaults.token, config.token, options.token),
-        vars: extend({}, defaults.vars, config.vars, options.vars),
+        cache: typeProp(isBoolean, ejsDefaults.cache, config.cache, options.cache),
+        token: Object.assign({}, ejsDefaults.token, config.token, options.token),
+        vars: Object.assign({}, ejsDefaults.vars, config.vars, options.vars),
         globalHelpers: typeProp(
             isArray,
-            defaults.globalHelpers,
+            ejsDefaults.globalHelpers,
             config.globalHelpers,
             options.globalHelpers,
         ),

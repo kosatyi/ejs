@@ -15,23 +15,28 @@
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+      "require": "./dist/cjs/index.js",
+      "types": "./types/index.d.ts"
     },
     "./browser": {
       "import": "./dist/esm/browser.js",
-      "require": "./dist/cjs/browser.js"
+      "require": "./dist/cjs/browser.js",
+      "types": "./types/browser.d.ts"
     },
     "./worker": {
       "import": "./dist/esm/worker.js",
-      "require": "./dist/cjs/worker.js"
+      "require": "./dist/cjs/worker.js",
+      "types": "./types/worker.d.ts"
     },
     "./element": {
       "import": "./dist/esm/element.js",
-      "require": "./dist/cjs/element.js"
+      "require": "./dist/cjs/element.js",
+      "types": "./types/element.d.ts"
     },
     "./bundler": {
       "import": "./dist/esm/bundler.js",
-      "require": "./dist/cjs/bundler.js"
+      "require": "./dist/cjs/bundler.js",
+      "types": "./types/bundler.d.ts"
     }
   },
   "files": [
@@ -42,6 +47,7 @@
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
+    "pack": "npm pack --pack-destination public",
     "version": "npm run build",
     "prepublishOnly": "npm i && rollup -c",
     "postversion": "git push && git push --tags"
@@ -66,12 +72,12 @@
     "glob-watcher": "6.x"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.26.0",
-    "@rollup/plugin-babel": "^6.0.4",
-    "@rollup/plugin-commonjs": "^28.0.1",
-    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@babel/preset-env": "^7.28.6",
+    "@rollup/plugin-babel": "^6.1.0",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^0.4.4",
-    "rollup": "^4.28.1",
+    "rollup": "^4.57.0",
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-ignore": "^1.0.10"
   }

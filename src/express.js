@@ -1,7 +1,6 @@
-import { isBoolean, isFunction, isString, typeProp } from './type.js'
-import { extend } from './utils.js'
-import { defaults } from './defaults.js'
 import path from 'node:path'
+import { ejsDefaults } from './defaults.js'
+import { isBoolean, isFunction, isString, typeProp } from './type.js'
 /**
  *
  * @param {function(config: object):object} configure
@@ -15,14 +14,14 @@ export const expressRenderer = (configure, render) => {
             options = {}
         }
         options = options || {}
-        const settings = extend({}, options.settings)
-        const viewPath = typeProp(isString, defaults.path, settings['views'])
+        const settings = Object.assign({}, options.settings)
+        const viewPath = typeProp(isString, ejsDefaults.path, settings['views'])
         const viewCache = typeProp(
             isBoolean,
-            defaults.cache,
+            ejsDefaults.cache,
             settings['view cache'],
         )
-        const viewOptions = extend({}, settings['view options'])
+        const viewOptions = Object.assign({}, settings['view options'])
         const filename = path.relative(viewPath, name)
         viewOptions.path = viewPath
         viewOptions.cache = viewCache

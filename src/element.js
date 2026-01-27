@@ -1,4 +1,4 @@
-import { entities, map, safeValue } from './utils.js'
+import { entities, safeValue } from './utils.js'
 
 const selfClosed = [
     'area',
@@ -27,7 +27,7 @@ const gt = '>'
 export const element = (tag, attrs, content) => {
     const result = []
     const hasClosedTag = selfClosed.indexOf(tag) === -1
-    const attributes = map(attrs, (value, key) => {
+    const attributes = Object.entries(attrs).map(([key, value]) => {
         if (value !== null && value !== undefined) {
             return [
                 entities(key),
@@ -37,7 +37,7 @@ export const element = (tag, attrs, content) => {
     }).join(space)
     result.push([lt, tag, space, attributes, gt].join(''))
     if (content && hasClosedTag) {
-        result.push(content instanceof Array ? content.join('') : content)
+        result.push(Array.isArray(content) ? content.join('') : content)
     }
     if (hasClosedTag) {
         result.push([lt, slash, tag, gt].join(''))

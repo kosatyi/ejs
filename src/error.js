@@ -3,7 +3,7 @@
  * @constructor
  */
 export function TemplateError() {
-    TemplateError.call(this)
+    Error.call(this)
 }
 Object.setPrototypeOf(TemplateError.prototype, Error.prototype)
 Object.assign(TemplateError.prototype, {

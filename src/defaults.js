@@ -1,31 +1,31 @@
-export const defaults = {}
+export const ejsDefaults = {
+    export: 'ejsPrecompiled',
+    cache: true,
+    path: 'views',
+    extension: 'ejs',
+    rmWhitespace: true,
+    withObject: true,
+    resolver: (path, template, options = {}) => {
+        return Promise.resolve(
+            ['resolver is not defined', path, template].join(' ')
+        )
+    },
+    globalHelpers: [],
+    vars: {
+        SCOPE: 'ejs',
+        COMPONENT: 'ui',
+        ELEMENT: 'el',
+        EXTEND: '$$e',
+        BUFFER: '$$a',
+        LAYOUT: '$$l',
+        BLOCKS: '$$b',
+        MACRO: '$$m',
+        SAFE: '$$v'
+    },
+    token: {
+        start: '<%',
+        end: '%>',
+        regex: '([\\s\\S]+?)'
+    }
+}
 
-defaults.export = 'ejsPrecompiled'
-defaults.cache = true
-defaults.chokidar = null
-defaults.path = 'views'
-defaults.resolver = function (path, template) {
-    return Promise.resolve(
-        ['resolver is not defined', path, template].join(' '),
-    )
-}
-defaults.extension = 'ejs'
-defaults.rmWhitespace = true
-defaults.withObject = true
-defaults.globalHelpers = []
-defaults.vars = {
-    SCOPE: 'ejs',
-    COMPONENT: 'ui',
-    ELEMENT: 'el',
-    EXTEND: '$$e',
-    BUFFER: '$$a',
-    LAYOUT: '$$l',
-    BLOCKS: '$$b',
-    MACRO: '$$m',
-    SAFE: '$$v',
-}
-defaults.token = {
-    start: '<%',
-    end: '%>',
-    regex: '([\\s\\S]+?)',
-}
