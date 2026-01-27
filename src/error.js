@@ -1,9 +1,5 @@
-/**
- *
- * @constructor
- */
-export function TemplateError() {
-    Error.call(this)
+export function TemplateError(reason) {
+    Error.call(this,reason);
 }
 Object.setPrototypeOf(TemplateError.prototype, Error.prototype)
 Object.assign(TemplateError.prototype, {
@@ -19,22 +15,14 @@ Object.assign(TemplateError.prototype, {
     },
 })
 
-/**
- *
- * @constructor
- */
-export function TemplateNotFound() {
-    TemplateError.call(this)
+export function TemplateNotFound(reason) {
+    TemplateError.call(this,reason)
 }
 Object.setPrototypeOf(TemplateNotFound.prototype, TemplateError.prototype)
 Object.assign(TemplateNotFound.prototype, { code: 404 })
 
-/**
- *
- * @constructor
- */
-export function TemplateSyntaxError() {
-    TemplateError.call(this)
+export function TemplateSyntaxError(reason) {
+    TemplateError.call(this,reason)
 }
 Object.setPrototypeOf(TemplateSyntaxError.prototype, TemplateError.prototype)
 Object.assign(TemplateSyntaxError.prototype, { code: 500 })

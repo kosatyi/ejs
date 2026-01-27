@@ -1,3 +1,6 @@
+/**
+ * @type {ejsConfig}
+ */
 export const ejsDefaults = {
     export: 'ejsPrecompiled',
     cache: true,

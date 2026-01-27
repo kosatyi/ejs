@@ -33,8 +33,18 @@ export const configSchema = (config, options) => {
             config.rmWhitespace,
             options.rmWhitespace,
         ),
-        cache: typeProp(isBoolean, ejsDefaults.cache, config.cache, options.cache),
-        token: Object.assign({}, ejsDefaults.token, config.token, options.token),
+        cache: typeProp(
+            isBoolean,
+            ejsDefaults.cache,
+            config.cache,
+            options.cache,
+        ),
+        token: Object.assign(
+            {},
+            ejsDefaults.token,
+            config.token,
+            options.token,
+        ),
         vars: Object.assign({}, ejsDefaults.vars, config.vars, options.vars),
         globalHelpers: typeProp(
             isArray,

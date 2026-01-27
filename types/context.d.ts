@@ -1,4 +1,4 @@
-export interface EJS {
+export interface ContextScope {
     /**
      * extend layout with blocks in current template file
      * @param layout

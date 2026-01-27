@@ -1,10 +1,10 @@
-import type { EJS } from './ejs'
+import type { ContextScope } from './context'
 
 declare global {
-    const ejs: EJS
-    interface Window extends EJS {}
+    const ejs: ContextScope
+    interface Window extends ContextScope {}
     namespace NodeJS {
-        interface Global extends EJS {}
+        interface Global extends ContextScope {}
     }
 }
 

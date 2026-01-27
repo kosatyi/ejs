@@ -11,12 +11,12 @@ export interface EjsConfig {
 export interface BundlerOptions {
     target: string[] | string
     minify?: boolean
-    umd?: boolean,
+    umd?: boolean
 }
 
 export function ejsBundle(
     options: BundlerOptions | object,
-    config: EjsConfig | object
+    config: EjsConfig | object,
 ): Plugin
 
 export class Bundler {

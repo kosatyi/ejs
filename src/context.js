@@ -26,11 +26,6 @@ const createContextScope = (config, methods) => {
         ELEMENT,
     } = config.vars
     /**
-     *
-     * @type {symbol}
-     */
-
-    /**
      * @name ContextScope
      * @param data
      * @constructor
@@ -331,7 +326,7 @@ export const Context = (options, methods) => {
         Scope: null,
     }
     /**
-     * @return {ContextScope}
+     * @return {EJS}
      */
     const create = (data) => {
         return new config.Scope(data)

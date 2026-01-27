@@ -1,54 +1,63 @@
-import { EJS } from './ejs'
+import { ContextScope } from './context'
 
-export function create(config: any): {
-    configure: <T extends { [p: string]: any }>(options?: T) => T;
-    create: (config: any) => /*elided*/ any;
-    createContext: (data: {
-        [p: string]: any;
-    }) => EJS;
-    render: (name: string, data?: {
-        [x: string]: any;
-    }) => Promise<string>;
-    require: (name: string) => Promise<{
-        [x: string]: any;
-    }>;
-    preload: (list: {
-        [p: string]: any;
-    }) => void;
-    compile: (content: string, path: string) => Function;
-    helpers: (extendMethods: {
-        [p: string]: any;
-    }) => void;
-};
+declare type ejsConfig = {
+    export?: string
+    cache?: boolean
+    path?: string
+    extension?: string
+    rmWhitespace?: boolean
+    withObject?: boolean
+    resolver?: (
+        path: string,
+        template: string,
+        options: ejsConfig,
+    ) => Promise<Awaited<string>>
+    globalHelpers?: string[]
+    vars?: {
+        SCOPE?: string
+        COMPONENT?: string
+        ELEMENT?: string
+        EXTEND?: string
+        BUFFER?: string
+        LAYOUT?: string
+        BLOCKS?: string
+        MACRO?: string
+        SAFE?: string
+    }
+    token?: {
+        start?: string
+        end?: string
+        regex?: string
+    }
+}
 
-export function configure<T extends { [p: string]: any }>(options?: T): T;
+declare type configure = <T extends ejsConfig>(options?: T) => ejsConfig & T
+declare type compile = (content: string, path: string) => Function
+declare type createContext = (data: { [p: string]: any }) => ContextScope
+declare type render = (
+    name: string,
+    data?: { [x: string]: any },
+) => Promise<string>
+declare type require = (name: string) => Promise<{ [x: string]: any }>
+declare type preload = (list: { [p: string]: any }) => void
+declare type helpers = (extendMethods: { [p: string]: any }) => void
+declare type create = (config: ejsConfig) => /*elided*/ any
 
-export function compile(content: string, path: string): Function;
+export const configure: configure
+export const createContext: createContext
+export const render: render
+export const require: require
+export const preload: preload
+export const helpers: helpers
+export const compile: compile
 
-export function createContext(data: {
-    [p: string]: any;
-}): EJS;
-
-export function render(name: string, data?: {
-    [x: string]: any;
-}): Promise<string>;
-
-export function require(name: string): Promise<{
-    [x: string]: any;
-}>;
-
-export function preload(list: {
-    [p: string]: any;
-}): void
-
-export function compile(list: {
-    [p: string]: any;
-}): void
-
-export function helpers(extendMethods: {
-    [p: string]: any;
-}): void;
-
-export function preload(list: {
-    [p: string]: any;
-}): void;
+export function create(config: ejsConfig): {
+    configure: configure
+    create: create
+    createContext: createContext
+    render: render
+    require: require
+    preload: preload
+    compile: compile
+    helpers: helpers
+}

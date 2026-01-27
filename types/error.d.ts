@@ -1,14 +1,15 @@
-export function TemplateError(): void;
-
-export class TemplateError {
+export class TemplateError extends Error {
+    new(message: string): TemplateError
+    code: number | 0
+    getCode(): number
+    getMessage(): string
+    toString(): string
 }
 
-export function TemplateNotFound(): void;
-
-export class TemplateNotFound {
+export class TemplateNotFound extends TemplateError {
+    code: 404
 }
 
-export function TemplateSyntaxError(): void;
-
-export class TemplateSyntaxError {
+export class TemplateSyntaxError extends TemplateError {
+    code: 500
 }
