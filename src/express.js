@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { ejsDefaults } from './defaults.js'
+import { ejsDefaults } from './config.js'
 import { isBoolean, isFunction, isString, typeProp } from './type.js'
 /**
  *

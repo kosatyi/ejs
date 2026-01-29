@@ -1,19 +1,19 @@
 /**
- * @type {ejsConfig}
+ * @type {EjsConfig}
  */
 export const ejsDefaults = {
-    export: 'ejsPrecompiled',
+    precompiled: 'ejsPrecompiled',
     cache: true,
     path: 'views',
     extension: 'ejs',
     rmWhitespace: true,
-    withObject: true,
-    resolver: (path, template, options = {}) => {
+    withObject: false,
+    resolver: (path, template) => {
         return Promise.resolve(
-            ['resolver is not defined', path, template].join(' ')
+            ['resolver is not defined', path, template].join(' '),
         )
     },
-    globalHelpers: [],
+    globals: {},
     vars: {
         SCOPE: 'ejs',
         COMPONENT: 'ui',
@@ -23,12 +23,11 @@ export const ejsDefaults = {
         LAYOUT: '$$l',
         BLOCKS: '$$b',
         MACRO: '$$m',
-        SAFE: '$$v'
+        SAFE: '$$v',
     },
     token: {
         start: '<%',
         end: '%>',
-        regex: '([\\s\\S]+?)'
-    }
+        regex: '([\\s\\S]+?)',
+    },
 }
-

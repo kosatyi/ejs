@@ -1,12 +1,5 @@
 import type { Plugin } from 'rollup'
-
-export interface EjsConfig {
-    path?: string
-    export?: string | 'ejsPrecompiled'
-    extension?: 'ejs'
-    withObject?: false
-    [key: string]: any
-}
+import { EjsConfig } from './base'
 
 export interface BundlerOptions {
     target: string[] | string
@@ -19,6 +12,12 @@ export function ejsBundle(
     config: EjsConfig | object,
 ): Plugin
 
-export class Bundler {
-    new(options: BundlerOptions, config: EjsConfig): Bundler
+export function bundler(
+    options: BundlerOptions,
+    config: EjsConfig,
+): {
+    build(): Promise<void>
+    watch(): Promise<void>
+    concat(): Promise<void>
+    output(): Promise<void>
 }

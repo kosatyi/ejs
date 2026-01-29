@@ -1,28 +1,26 @@
-export function TemplateError(reason) {
-    Error.call(this,reason);
+export function TemplateError(message) {
+    this.message = message
+    this.stack = new Error().stack
 }
-Object.setPrototypeOf(TemplateError.prototype, Error.prototype)
+TemplateError.prototype = new Error()
 Object.assign(TemplateError.prototype, {
     code: 0,
-    getCode() {
-        return this.code
-    },
-    getMessage() {
-        return this.message
-    },
-    toString() {
-        return this.getMessage()
-    },
 })
 
 export function TemplateNotFound(reason) {
-    TemplateError.call(this,reason)
+    TemplateError.call(this, String(reason))
 }
 Object.setPrototypeOf(TemplateNotFound.prototype, TemplateError.prototype)
-Object.assign(TemplateNotFound.prototype, { code: 404 })
+Object.assign(TemplateNotFound.prototype, {
+    name: 'TemplateNotFound',
+    code: 404,
+})
 
 export function TemplateSyntaxError(reason) {
-    TemplateError.call(this,reason)
+    TemplateError.call(this, reason)
 }
 Object.setPrototypeOf(TemplateSyntaxError.prototype, TemplateError.prototype)
-Object.assign(TemplateSyntaxError.prototype, { code: 500 })
+Object.assign(TemplateSyntaxError.prototype, {
+    name: 'TemplateSyntaxError',
+    code: 500,
+})

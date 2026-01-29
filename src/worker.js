@@ -6,6 +6,11 @@ import {
     TemplateNotFound,
 } from './error.js'
 
+export { TemplateError, TemplateSyntaxError, TemplateNotFound }
+
+/**
+ * @type {{[p:string]:any}}
+ */
 const templateCache = {}
 
 const getOrigin = (url, secure) => {
@@ -17,19 +22,17 @@ const getOrigin = (url, secure) => {
 export const { render, createContext, helpers, configure } = EJS({
     cache: false,
     withObject: false,
-    resolver(path, name) {
-        return new Promise((resolve, reject) => {
-            if (isFunction(templateCache[name])) {
-                resolve(templateCache[name])
-            } else {
-                reject(new TemplateNotFound(`template ${name} not found`))
-            }
-        })
+    async resolver(path, name) {
+        if (isFunction(templateCache[name])) {
+            return templateCache[name]
+        } else {
+            throw new TemplateNotFound(`template ${name} not found`)
+        }
     },
 })
 
 /**
- * @param {Object<string,any>} templates
+ * @param {{[p:string],Function}} templates
  */
 export function useTemplates(templates = {}) {
     Object.assign(templateCache, templates)
@@ -37,7 +40,7 @@ export function useTemplates(templates = {}) {
 
 /**
  * @deprecated Renamed to `useTemplates`
- * @param {Object<string,any>} templates
+ * @param {{[p:string],Function}} templates
  */
 export const setTemplates = useTemplates
 
@@ -48,7 +51,7 @@ export const setTemplates = useTemplates
  * @property {function(methods:{}):void} helpers
  * @property {function(name:string,data:{}):Promise<string>} render
  * @property {function(name:string,data:{}):Promise<string>} ejs
- * @property {ContextScope} data
+ * @property {EjsContext} data
  */
 /**
  * @param {Object<string,any>} options
@@ -74,5 +77,3 @@ export function useRenderer({ templates = {}, version, secure = true } = {}) {
  * @deprecated Renamed to `useRenderer`
  */
 export const setRenderer = useRenderer
-
-export { TemplateError, TemplateSyntaxError, TemplateNotFound }

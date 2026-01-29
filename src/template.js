@@ -1,12 +1,19 @@
 import { isFunction } from './type.js'
-
+/**
+ *
+ * @param {EjsConfig} options
+ * @param cache
+ * @param compiler
+ */
 export const Template = (options, cache, compiler) => {
+    /**
+     * @type {Pick<EjsConfig, 'path' | 'resolver'>}
+     */
     const config = {
-        path: null,
-        resolver: null,
+        resolverOptions: {},
     }
     const resolve = (path) => {
-        return config.resolver(config.path, path)
+        return Promise.resolve(config.resolver(config.path, path))
     }
     const result = (template, content) => {
         cache.set(template, content)
@@ -27,8 +34,12 @@ export const Template = (options, cache, compiler) => {
             result(template, compile(content, template)),
         )
     }
+    /**
+     * @param {EjsConfig} options
+     */
     const configure = (options) => {
         config.path = options.path
+        config.resolverOptions = options.resolverOptions || {}
         if (isFunction(options.resolver)) {
             config.resolver = options.resolver
         }

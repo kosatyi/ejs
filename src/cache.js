@@ -1,13 +1,16 @@
-import { extend, hasProp, isNode } from './utils.js'
+import { hasProp, isNode } from './utils.js'
 
 const global = typeof globalThis !== 'undefined' ? globalThis : window || self
-
+/**
+ *
+ * @param {EjsConfig} options
+ */
 export const Cache = (options = {}) => {
     const config = {}
     const list = {}
     const load = (data) => {
         if (config.enabled) {
-            extend(list, data || {})
+            Object.assign(list, data || {})
         }
     }
     const get = (key) => {
@@ -36,9 +39,9 @@ export const Cache = (options = {}) => {
     }
     const configure = (options = {}) => {
         config.enabled = options.cache
-        config.export = options.export
+        config.precompiled = options.precompiled
         if (isNode() === false) {
-            load(global[config.export])
+            load(global[config.precompiled])
         }
     }
     configure(options)

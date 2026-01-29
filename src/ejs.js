@@ -1,36 +1,46 @@
 import { configSchema } from './schema.js'
-import { ext, extend } from './utils.js'
+import { ext } from './utils.js'
 import { isFunction } from './type.js'
 import { Template } from './template.js'
 import { Compiler } from './compiler.js'
 import { Cache } from './cache.js'
 import { Context } from './context.js'
-
-export const EJS = (options = {}) => {
+/**
+ * @param {EjsConfig} options
+ */
+export const EJS = (options) => {
     const config = configSchema({}, options)
     const methods = {}
     const context = Context(config, methods)
     const compiler = Compiler(config)
     const cache = Cache(config)
     const template = Template(config, cache, compiler)
-    const configure = (options = {}) => {
-        configSchema(config, options || {})
-        context.configure(config, methods)
-        compiler.configure(config)
-        cache.configure(config)
-        template.configure(config)
+    const configure = (options) => {
+        if (options) {
+            Object.keys(methods).forEach(removeMethod)
+            configSchema(config, options)
+            context.configure(config, methods)
+            compiler.configure(config)
+            cache.configure(config)
+            template.configure(config)
+        }
         return config
     }
-    const filePath = (name) => {
+    const templateFile = (name) => {
         return ext(name, config.extension)
+    }
+    const removeMethod = (name) => {
+        delete methods[name]
     }
     const require = (name) => {
         const scope = createContext({})
-        return output(filePath(name), scope).then(() => scope.getMacro())
+        return output(templateFile(name), scope).then(() => scope.getMacro())
     }
     const render = (name, data) => {
         const scope = createContext(data)
-        return output(filePath(name), scope).then(outputContent(name, scope))
+        return output(templateFile(name), scope).then(
+            outputContent(name, scope),
+        )
     }
     const outputContent = (name, scope) => {
         return (content) => {
@@ -44,10 +54,12 @@ export const EJS = (options = {}) => {
     const renderLayout = (name, data, parent) => {
         const scope = createContext(data)
         if (parent) scope.setParentTemplate(parent)
-        return output(filePath(name), scope).then(outputContent(name, scope))
+        return output(templateFile(name), scope).then(
+            outputContent(name, scope),
+        )
     }
     const helpers = (extendMethods) => {
-        context.helpers(extend(methods, extendMethods))
+        context.helpers(Object.assign(methods, extendMethods))
     }
     const createContext = (data) => {
         return context.create(data)
@@ -69,12 +81,11 @@ export const EJS = (options = {}) => {
             scope.getBuffer(),
             scope.useSafeValue,
         ]
-        const globals = config.globalHelpers
-            .filter((name) => isFunction(scope[name]))
-            .map((name) => scope[name].bind(scope))
         return template
             .get(path)
-            .then((callback) => callback.apply(scope, params.concat(globals)))
+            .then((callback) =>
+                callback.apply(scope, params.concat(context.globals())),
+            )
     }
     helpers({ render, require })
     return {

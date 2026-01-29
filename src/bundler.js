@@ -1,27 +1,19 @@
+import fs from 'node:fs/promises'
 import globWatch from 'glob-watcher'
-import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { glob } from 'glob'
 import { create } from './index.js'
 
-const isPlainObject = function (obj) {
-    return Object.prototype.toString.call(obj) === '[object Object]'
-}
-
-const extend = (target, ...sources) => {
-    return Object.assign(target, ...sources.filter(isPlainObject))
-}
-
-export const Bundler = (params = {}, ejsParams = {}) => {
+export const bundler = (params = {}, ejsParams = {}) => {
     const config = {
         target: [],
         umd: true,
         minify: true,
     }
-    const { compile, configure } = create()
-    const ejsConfig = configure(ejsParams)
+    const { compile, configure } = create(ejsParams)
+    const ejsConfig = configure()
     const templates = {}
-    extend(config, params || {})
+    Object.assign(config, params || {})
     const stageRead = (path) => {
         return fs
             .readFile(join(ejsConfig.path, path))
@@ -126,14 +118,14 @@ export const Bundler = (params = {}, ejsParams = {}) => {
 }
 
 export const ejsBundler = (options, config) => {
-    const bundler = new Bundler(options, config)
+    const bundle = bundler(options, config)
     return {
         name: 'ejs-bundler',
         async buildStart() {
-            await bundler.concat()
+            await bundle.concat()
         },
         async buildEnd() {
-            await bundler.output()
+            await bundle.output()
         },
     }
 }

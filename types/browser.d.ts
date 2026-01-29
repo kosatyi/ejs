@@ -6,4 +6,5 @@ export {
     helpers,
     preload,
 } from './base'
+
 export { TemplateError, TemplateSyntaxError, TemplateNotFound } from './error'

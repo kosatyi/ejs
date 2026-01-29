@@ -1,4 +1,4 @@
-export interface ContextScope {
+export interface EjsContext {
     /**
      * extend layout with blocks in current template file
      * @param layout
@@ -89,4 +89,8 @@ export interface ContextScope {
      * @param name
      */
     hasBlock(name: string): boolean
+    /**
+     *
+     */
+    getParentTemplate(): boolean
 }

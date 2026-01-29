@@ -1,3 +1,5 @@
+export function safeValue(value: string, escape?: boolean): string | any
+
 export function element(
     tag: string,
     attrs?: {
@@ -5,5 +7,3 @@ export function element(
     },
     content?: string[] | string,
 ): string
-
-export function safeValue(value: string, escape?: boolean): string | any

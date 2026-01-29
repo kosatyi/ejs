@@ -1,11 +1,10 @@
 import { EJS } from './ejs.js'
 import { httpRequest } from './fetch.js'
-import {
+export {
     TemplateError,
     TemplateSyntaxError,
     TemplateNotFound,
 } from './error.js'
-
 export const {
     render,
     createContext,
@@ -17,5 +16,3 @@ export const {
 } = EJS({
     resolver: httpRequest,
 })
-
-export { TemplateError, TemplateSyntaxError, TemplateNotFound }

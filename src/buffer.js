@@ -1,30 +1,26 @@
 import { TemplateSyntaxError } from './error.js'
 
-function resolve(list) {
+const resolve = (list) => {
     return Promise.all(list || [])
         .then((list) => list.join(''))
         .catch((e) => e)
 }
-
-function reject(error) {
+const reject = (error) => {
+    console.log(error.message)
     return Promise.reject(new TemplateSyntaxError(error.message))
 }
 
-/**
- *
- * @return {buffer}
- */
-export function createBuffer() {
+export const createBuffer = () => {
     let store = [],
-        array = [],
-        error = []
-
+        array = []
+    /**
+     * @name buffer
+     * @param value
+     */
     const buffer = (value) => {
         array.push(value)
     }
-
     buffer.start = () => {
-        error = []
         array = []
     }
     buffer.backup = () => {

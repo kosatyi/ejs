@@ -1,11 +1,12 @@
-import { ejsDefaults } from './defaults.js'
+import { ejsDefaults } from './config.js'
 import { isFunction, isString, typeProp, isBoolean, isArray } from './type.js'
+
 export const configSchema = (config, options) => {
     return Object.assign(config, {
         path: typeProp(isString, ejsDefaults.path, config.path, options.path),
-        export: typeProp(
+        precompiled: typeProp(
             isString,
-            ejsDefaults.export,
+            ejsDefaults.precompiled,
             config.export,
             options.export,
         ),
@@ -23,7 +24,7 @@ export const configSchema = (config, options) => {
         ),
         withObject: typeProp(
             isBoolean,
-            defaults.withObject,
+            ejsDefaults.withObject,
             config.withObject,
             options.withObject,
         ),
@@ -39,6 +40,12 @@ export const configSchema = (config, options) => {
             config.cache,
             options.cache,
         ),
+        globals: Object.assign(
+            {},
+            ejsDefaults.globals,
+            config.globals,
+            options.globals,
+        ),
         token: Object.assign(
             {},
             ejsDefaults.token,
@@ -46,11 +53,5 @@ export const configSchema = (config, options) => {
             options.token,
         ),
         vars: Object.assign({}, ejsDefaults.vars, config.vars, options.vars),
-        globalHelpers: typeProp(
-            isArray,
-            ejsDefaults.globalHelpers,
-            config.globalHelpers,
-            options.globalHelpers,
-        ),
     })
 }

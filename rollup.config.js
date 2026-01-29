@@ -7,11 +7,11 @@ import copy from 'rollup-plugin-copy'
 
 import path from 'node:path'
 
-const external = ['node:path', 'node:fs']
+const external = ['node:path', 'node:fs/promises']
 
 const babelConfig = {
     babelHelpers: 'bundled',
-    presets: ['@babel/preset-env'],
+    presets: ['@babel/preset-env', {}],
 }
 
 const copyConfig = {
@@ -31,17 +31,20 @@ class RollupBuild {
     options = {
         target: 'dist',
     }
+
     constructor(options = {}) {
         Object.assign(this.options, options)
         this.export = []
     }
+
     target(type, source, options = {}) {
         const { target } = this.options
         const baseName = path.basename(source)
         const fileParse = path.parse(baseName)
         const fileName = path.format(Object.assign({}, fileParse, options))
-        return path.resolve(target, type, fileName)
+        return path.resolve(options.target ?? target, type, fileName)
     }
+
     add(name, source) {
         this.push({
             input: source,
@@ -57,6 +60,12 @@ class RollupBuild {
                         base: null,
                         ext: '.min.js',
                     }),
+                    format: 'umd',
+                    plugins: [terser()],
+                },
+                {
+                    name: name,
+                    file: this.target('', source, { target: 'public/dist' }),
                     format: 'umd',
                     plugins: [terser()],
                 },
@@ -95,6 +104,7 @@ class RollupBuild {
             plugins: [commonjs({}), resolve({})],
         })
     }
+
     push(config) {
         this.export.push(config)
     }
@@ -102,9 +112,9 @@ class RollupBuild {
 
 const build = new RollupBuild({ target: 'dist' })
 
-build.add('ejs', 'src/index.js')
-build.add('ejs', 'src/browser.js')
-build.add('ejs', 'src/worker.js')
+build.add('ejsInstance', 'src/index.js')
+build.add('ejsInstance', 'src/browser.js')
+build.add('ejsInstance', 'src/worker.js')
 build.add('element', 'src/element.js')
 build.push({
     input: 'src/bundler.js',
@@ -118,7 +128,13 @@ build.push({
             format: 'cjs',
         },
     ],
-    external: ['node:fs', 'node:path', 'glob', 'glob-watcher', './index.js'],
+    external: [
+        'node:fs/promises',
+        'node:path',
+        'glob',
+        'glob-watcher',
+        './index.js',
+    ],
     plugins: [],
 })
 

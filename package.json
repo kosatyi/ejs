@@ -1,84 +1,87 @@
 {
-  "name": "@kosatyi/ejs",
-  "description": "EJS Templates",
-  "homepage": "https://github.com/kosatyi/ejs",
-  "type": "module",
-  "version": "0.0.107",
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
-  "browser": "dist/umd/browser.js",
-  "minified": "dist/umd/browser.min.js",
-  "author": "Stepan Kosatyi (https://kosatyi.com)",
-  "bin": {
-    "ejs-bundler": "bin/bundler.js"
-  },
-  "exports": {
-    ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "types": "./types/index.d.ts"
+    "name": "@kosatyi/ejs",
+    "description": "EJS Templates",
+    "homepage": "https://github.com/kosatyi/ejs",
+    "type": "module",
+    "version": "0.0.107",
+    "main": "dist/cjs/index.js",
+    "module": "dist/esm/index.js",
+    "browser": "dist/umd/browser.js",
+    "minified": "dist/umd/browser.min.js",
+    "author": "Stepan Kosatyi (https://kosatyi.com)",
+    "browserslist": [
+        "> 0.25%, not dead"
+    ],
+    "bin": {
+        "ejs-bundler": "bin/bundler.js"
     },
-    "./browser": {
-      "import": "./dist/esm/browser.js",
-      "require": "./dist/cjs/browser.js",
-      "types": "./types/browser.d.ts"
+    "exports": {
+        ".": {
+            "import": "./dist/esm/index.js",
+            "require": "./dist/cjs/index.js",
+            "types": "./types/index.d.ts"
+        },
+        "./browser": {
+            "import": "./dist/esm/browser.js",
+            "require": "./dist/cjs/browser.js",
+            "types": "./types/browser.d.ts"
+        },
+        "./worker": {
+            "import": "./dist/esm/worker.js",
+            "require": "./dist/cjs/worker.js",
+            "types": "./types/worker.d.ts"
+        },
+        "./element": {
+            "import": "./dist/esm/element.js",
+            "require": "./dist/cjs/element.js",
+            "types": "./types/element.d.ts"
+        },
+        "./bundler": {
+            "import": "./dist/esm/bundler.js",
+            "require": "./dist/cjs/bundler.js",
+            "types": "./types/bundler.d.ts"
+        }
     },
-    "./worker": {
-      "import": "./dist/esm/worker.js",
-      "require": "./dist/cjs/worker.js",
-      "types": "./types/worker.d.ts"
+    "files": [
+        "bin",
+        "dist",
+        "types"
+    ],
+    "scripts": {
+        "build": "rollup -c",
+        "watch": "rollup -c -w",
+        "pack": "npm pack --pack-destination public",
+        "version": "npm run build",
+        "prepublishOnly": "npm i && rollup -c",
+        "postversion": "git push && git push --tags"
     },
-    "./element": {
-      "import": "./dist/esm/element.js",
-      "require": "./dist/cjs/element.js",
-      "types": "./types/element.d.ts"
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/kosatyi/ejs/issues"
     },
-    "./bundler": {
-      "import": "./dist/esm/bundler.js",
-      "require": "./dist/cjs/bundler.js",
-      "types": "./types/bundler.d.ts"
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kosatyi/ejs.git"
+    },
+    "keywords": [
+        "ejs",
+        "ejs-express",
+        "ejs-cloudflare",
+        "ejs-template-engine"
+    ],
+    "peerDependencies": {
+        "glob": "11.x || 12.x || 13.x",
+        "process.argv": "1.x",
+        "glob-watcher": "6.x"
+    },
+    "devDependencies": {
+        "@babel/preset-env": "^7.28.6",
+        "@rollup/plugin-babel": "^6.1.0",
+        "@rollup/plugin-commonjs": "^29.0.0",
+        "@rollup/plugin-node-resolve": "^16.0.3",
+        "@rollup/plugin-terser": "^0.4.4",
+        "rollup": "^4.57.0",
+        "rollup-plugin-copy": "^3.5.0",
+        "rollup-plugin-ignore": "^1.0.10"
     }
-  },
-  "files": [
-    "bin",
-    "dist",
-    "types"
-  ],
-  "scripts": {
-    "build": "rollup -c",
-    "watch": "rollup -c -w",
-    "pack": "npm pack --pack-destination public",
-    "version": "npm run build",
-    "prepublishOnly": "npm i && rollup -c",
-    "postversion": "git push && git push --tags"
-  },
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/kosatyi/ejs/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/kosatyi/ejs.git"
-  },
-  "keywords": [
-    "ejs",
-    "ejs-express",
-    "ejs-cloudflare",
-    "ejs-template-engine"
-  ],
-  "peerDependencies": {
-    "glob": "11.x || 12.x || 13.x",
-    "process.argv": "1.x",
-    "glob-watcher": "6.x"
-  },
-  "devDependencies": {
-    "@babel/preset-env": "^7.28.6",
-    "@rollup/plugin-babel": "^6.1.0",
-    "@rollup/plugin-commonjs": "^29.0.0",
-    "@rollup/plugin-node-resolve": "^16.0.3",
-    "@rollup/plugin-terser": "^0.4.4",
-    "rollup": "^4.57.0",
-    "rollup-plugin-copy": "^3.5.0",
-    "rollup-plugin-ignore": "^1.0.10"
-  }
 }

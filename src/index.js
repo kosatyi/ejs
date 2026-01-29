@@ -1,13 +1,11 @@
 import { EJS } from './ejs.js'
-import { readFile } from './readfile.js'
 import { expressRenderer } from './express.js'
-import {
+import { readFile } from './readfile.js'
+export {
     TemplateError,
     TemplateSyntaxError,
     TemplateNotFound,
 } from './error.js'
-
-export { TemplateError, TemplateSyntaxError, TemplateNotFound }
 
 export const {
     render,

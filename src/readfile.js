@@ -1,15 +1,9 @@
-import fs from 'node:fs'
+import fs from 'node:fs/promises'
 import { joinPath } from './utils.js'
-import { TemplateError } from './error.js'
 
 export const readFile = (path, template) => {
-    return new Promise((resolve, reject) => {
-        fs.readFile(joinPath(path, template), (error, data) => {
-            if (error) {
-                reject(new TemplateError(error))
-            } else {
-                resolve(data.toString())
-            }
-        })
-    })
+    return fs
+        .readFile(joinPath(path, template))
+        .then((contents) => contents.toString())
+        .then((text) => String(text))
 }

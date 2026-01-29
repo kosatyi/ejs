@@ -2,7 +2,7 @@
 
 import argv from 'process.argv'
 
-import { Bundler } from '../dist/esm/bundler.js'
+import { bundler } from '../dist/esm/bundler.js'
 
 const schema = argv(process.argv.slice(2))
 
@@ -10,7 +10,7 @@ const params = schema({
     target: null,
     umd: false,
     withObject: false,
-    export: 'ejsPrecompiled',
+    precompiled: 'ejsPrecompiled',
     path: 'views',
     extension: 'ejs',
 })
@@ -25,17 +25,20 @@ const options = {
     umd: params.umd,
 }
 
+/**
+ * @type {EjsConfig}
+ */
 const config = {
     withObject: params.withObject,
     path: params.path,
-    export: params.export,
+    precompiled: params.precompiled,
     extension: params.extension,
 }
 
-const bundler = Bundler(options, config)
+const bundle = bundler(options, config)
 
-await bundler.build()
+await bundle.build()
 
 if (params.watch && params.path) {
-    await bundler.watch()
+    await bundle.watch()
 }

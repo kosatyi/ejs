@@ -34,7 +34,7 @@ export const Compiler = (options) => {
         config.rmWhitespace = options.rmWhitespace
         config.token = options.token
         config.vars = options.vars
-        config.globalHelpers = options.globalHelpers
+        config.globals = Object.keys(options.globals)
         config.matches = []
         config.formats = []
         config.slurp = {
@@ -63,7 +63,7 @@ export const Compiler = (options) => {
     }
     const compile = (content, path) => {
         const { SCOPE, SAFE, BUFFER, COMPONENT, ELEMENT } = config.vars
-        const GLOBALS = config.globalHelpers
+        const GLOBALS = config.globals
         if (config.rmWhitespace) {
             content = String(content)
                 .replace(/[\r\n]+/g, '\n')

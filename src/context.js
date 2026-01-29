@@ -1,19 +1,15 @@
-import {
-    extend,
-    omit,
-    each,
-    getPath,
-    hasProp,
-    noop,
-    safeValue,
-} from './utils.js'
+import { omit, each, getPath, hasProp, noop, safeValue } from './utils.js'
 import { isFunction, isString } from './type.js'
 import { element } from './element.js'
 import { createBuffer } from './buffer.js'
 
-const PARENT = Symbol('ContextScope.parentTemplate')
-
-const createContextScope = (config, methods) => {
+const PARENT = Symbol('EjsContext.parentTemplate')
+/**
+ *
+ * @param {EjsConfig} config
+ * @param {EjsMethods} methods
+ */
+const createContext = (config, methods) => {
     const {
         BLOCKS,
         MACRO,
@@ -25,12 +21,8 @@ const createContextScope = (config, methods) => {
         COMPONENT,
         ELEMENT,
     } = config.vars
-    /**
-     * @name ContextScope
-     * @param data
-     * @constructor
-     */
-    function ContextScope(data) {
+    const globals = config.globals || {}
+    function EjsContext(data) {
         this[PARENT] = null
         this[BLOCKS] = {}
         this[MACRO] = {}
@@ -39,32 +31,36 @@ const createContextScope = (config, methods) => {
             omit(data, [SCOPE, BUFFER, SAFE, COMPONENT, ELEMENT]),
         )
     }
-
-    Object.assign(ContextScope.prototype, methods)
-    Object.defineProperty(ContextScope.prototype, BUFFER, {
+    Object.entries(globals).forEach(([name, value]) => {
+        EjsContext.prototype[name] = isFunction(value)
+            ? value.bind(EjsContext.prototype)
+            : value
+    })
+    Object.assign(EjsContext.prototype, methods)
+    Object.defineProperty(EjsContext.prototype, BUFFER, {
         value: createBuffer(),
     })
-    Object.defineProperty(ContextScope.prototype, BLOCKS, {
+    Object.defineProperty(EjsContext.prototype, BLOCKS, {
         value: {},
         writable: true,
     })
-    Object.defineProperty(ContextScope.prototype, MACRO, {
+    Object.defineProperty(EjsContext.prototype, MACRO, {
         value: {},
         writable: true,
     })
-    Object.defineProperty(ContextScope.prototype, LAYOUT, {
+    Object.defineProperty(EjsContext.prototype, LAYOUT, {
         value: false,
         writable: true,
     })
-    Object.defineProperty(ContextScope.prototype, EXTEND, {
+    Object.defineProperty(EjsContext.prototype, EXTEND, {
         value: false,
         writable: true,
     })
-    Object.defineProperty(ContextScope.prototype, PARENT, {
+    Object.defineProperty(EjsContext.prototype, PARENT, {
         value: null,
         writable: true,
     })
-    Object.defineProperties(ContextScope.prototype, {
+    Object.defineProperties(EjsContext.prototype, {
         /** @type {function} */
         setParentTemplate: {
             value(value) {
@@ -219,11 +215,9 @@ const createContextScope = (config, methods) => {
                 blocks[name].push(this.fn(callback))
                 if (this.getExtend()) return
                 const list = Object.assign([], blocks[name])
-                const current = () => {
-                    return list.shift()
-                }
+                const shift = () => list.shift()
                 const next = () => {
-                    const parent = current()
+                    const parent = shift()
                     if (parent) {
                         return () => {
                             this.echo(parent(next()))
@@ -232,7 +226,7 @@ const createContextScope = (config, methods) => {
                         return noop
                     }
                 }
-                this.echo(current()(next()))
+                this.echo(shift()(next()))
             },
         },
         /** @type {function} */
@@ -245,7 +239,7 @@ const createContextScope = (config, methods) => {
         include: {
             value(path, data, cx) {
                 const context = cx === false ? {} : this.clone(true)
-                const params = extend(context, data || {})
+                const params = Object.assign(context, data || {})
                 const promise = this.render(path, params)
                 this.echo(promise)
             },
@@ -318,29 +312,40 @@ const createContextScope = (config, methods) => {
             writable: true,
         },
     })
-    return ContextScope
+    return EjsContext
 }
 
+/**
+ *
+ * @param {EjsConfig} options
+ * @param {EjsMethods} methods
+ */
 export const Context = (options, methods) => {
     const config = {
-        Scope: null,
+        context: null,
+        globals: [],
     }
     /**
-     * @return {EJS}
+     * @return {EjsContext}
      */
     const create = (data) => {
-        return new config.Scope(data)
+        return new config.context(data)
     }
     const helpers = (methods) => {
-        extend(config.Scope.prototype, methods || {})
+        Object.assign(config.context.prototype, methods)
+    }
+    const globals = () => {
+        return config.globals.map((name) => config.context.prototype[name])
     }
     const configure = (options, methods) => {
-        config.Scope = createContextScope(options, methods)
+        config.context = createContext(options, methods)
+        config.globals = Object.keys(options.globals)
     }
     configure(options, methods)
     return {
         configure,
         create,
+        globals,
         helpers,
     }
 }
