@@ -19,6 +19,10 @@ const tokensMatch = (regex, content, callback) => {
     })
 }
 
+export class EjsTemplate extends Function {
+    source = ''
+}
+
 export class Compiler {
     #config = {}
     static exports = ['compile']

@@ -19,17 +19,22 @@ export class Template {
             this.#resolver = options.resolver
         }
     }
-    #resolve(path) {
-        if (this.#cache.get(path)) return this.#cache.get(path)
-        const result = Promise.resolve(this.#resolver(this.#path, path))
-        this.#cache.set(path, result)
+    #resolve(template) {
+        const cached = this.#cache.get(template)
+        if (cached instanceof Promise) return cached
+        const result = Promise.resolve(this.#resolver(this.#path, template))
+        this.#cache.set(template, result)
         return result
     }
     compile(content, template) {
+        const cached = this.#cache.get(template)
+        if (typeof cached === 'function') return cached
+        if (typeof content === 'string') {
+            content = this.#compiler.compile(content, template)
+        }
         if (typeof content === 'function') {
+            this.#cache.set(template, content)
             return content
-        } else {
-            return this.#compiler.compile(content, template)
         }
     }
     get(template) {

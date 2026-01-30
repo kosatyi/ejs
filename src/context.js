@@ -316,7 +316,6 @@ const createContext = (config, methods) => {
 
 export class Context {
     #context
-    #globals = []
     static exports = ['create', 'globals', 'helpers']
     constructor(options, methods) {
         bindContext(this, this.constructor.exports)
@@ -325,14 +324,10 @@ export class Context {
     create(data) {
         return new this.#context(data)
     }
-    globals() {
-        return this.#globals.map((name) => this.#context.prototype[name])
-    }
     helpers(methods) {
         Object.assign(this.#context.prototype, methods)
     }
     configure(options, methods) {
         this.#context = createContext(options, methods)
-        this.#globals = options.globals
     }
 }
