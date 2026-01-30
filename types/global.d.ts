@@ -1,5 +1,5 @@
 import type { EjsContext } from './context'
-import type { EjsInterface } from './base'
+import type { EjsInterface } from './ejs'
 declare global {
     const ejs: EjsContext
     const ejsInstance: EjsInterface

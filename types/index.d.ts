@@ -5,7 +5,7 @@ export {
     configure,
     helpers,
     preload,
-} from './base'
+} from './ejs'
 
 export { TemplateError, TemplateSyntaxError, TemplateNotFound } from './error'
 

@@ -1,5 +1,5 @@
 import type { Plugin } from 'rollup'
-import { EjsConfig } from './base'
+import { EjsConfig } from './ejs'
 
 export interface BundlerOptions {
     target: string[] | string

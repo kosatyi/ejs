@@ -35,7 +35,7 @@ const eachAttribute = ([key, value]) => {
 export const element = (tag, attrs, content) => {
     const result = []
     const hasClosedTag = selfClosed.indexOf(tag) === -1
-    const attributes = Object.entries(attrs)
+    const attributes = Object.entries(attrs ?? {})
         .map(eachAttribute)
         .filter((e) => e)
         .join(space)
