@@ -5,38 +5,39 @@ const resolve = (list) => {
         .then((list) => list.join(''))
         .catch((e) => e)
 }
+
 const reject = (error) => {
-    console.log(error.message)
-    return Promise.reject(new TemplateSyntaxError(error.message))
+    return Promise.reject(new TemplateSyntaxError(error))
 }
 
-export const createBuffer = () => {
-    let store = [],
-        array = []
+export const EjsBuffer = () => {
+    let store = []
+    let array = []
     /**
-     * @name buffer
+     *
      * @param value
+     * @constructor
      */
-    const buffer = (value) => {
+    const EjsBuffer = (value) => {
         array.push(value)
     }
-    buffer.start = () => {
+    EjsBuffer.start = () => {
         array = []
     }
-    buffer.backup = () => {
+    EjsBuffer.backup = () => {
         store.push(array.concat())
         array = []
     }
-    buffer.restore = () => {
+    EjsBuffer.restore = () => {
         const result = array.concat()
         array = store.pop()
         return resolve(result)
     }
-    buffer.error = (e) => {
-        return reject(e)
+    EjsBuffer.error = (e, filename) => {
+        return reject(e, filename)
     }
-    buffer.end = () => {
+    EjsBuffer.end = () => {
         return resolve(array)
     }
-    return buffer
+    return EjsBuffer
 }

@@ -7,13 +7,13 @@ export const ejsDefaults = {
     path: 'views',
     extension: 'ejs',
     rmWhitespace: true,
-    withObject: false,
+    strict: true,
     resolver: (path, template) => {
         return Promise.resolve(
             ['resolver is not defined', path, template].join(' '),
         )
     },
-    globals: {},
+    globals: [],
     vars: {
         SCOPE: 'ejs',
         COMPONENT: 'ui',

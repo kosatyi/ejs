@@ -1,14 +1,17 @@
-import { omit, each, getPath, hasProp, noop, safeValue } from './utils.js'
+import {
+    omit,
+    each,
+    getPath,
+    hasProp,
+    safeValue,
+    bindContext,
+} from './utils.js'
 import { isFunction, isString } from './type.js'
 import { element } from './element.js'
-import { createBuffer } from './buffer.js'
+import { EjsBuffer } from './buffer.js'
 
 const PARENT = Symbol('EjsContext.parentTemplate')
-/**
- *
- * @param {EjsConfig} config
- * @param {EjsMethods} methods
- */
+
 const createContext = (config, methods) => {
     const {
         BLOCKS,
@@ -21,7 +24,7 @@ const createContext = (config, methods) => {
         COMPONENT,
         ELEMENT,
     } = config.vars
-    const globals = config.globals || {}
+    const globals = config.globals || []
     function EjsContext(data) {
         this[PARENT] = null
         this[BLOCKS] = {}
@@ -31,14 +34,14 @@ const createContext = (config, methods) => {
             omit(data, [SCOPE, BUFFER, SAFE, COMPONENT, ELEMENT]),
         )
     }
-    Object.entries(globals).forEach(([name, value]) => {
-        EjsContext.prototype[name] = isFunction(value)
-            ? value.bind(EjsContext.prototype)
-            : value
+    Object.entries(methods).forEach(([name, value]) => {
+        if (isFunction(value) && globals.includes(name)) {
+            value = value.bind(EjsContext.prototype)
+        }
+        EjsContext.prototype[name] = value
     })
-    Object.assign(EjsContext.prototype, methods)
     Object.defineProperty(EjsContext.prototype, BUFFER, {
-        value: createBuffer(),
+        value: EjsBuffer(),
     })
     Object.defineProperty(EjsContext.prototype, BLOCKS, {
         value: {},
@@ -102,16 +105,16 @@ const createContext = (config, methods) => {
                 }
             },
         },
-        /** @type {()=>this[MACRO]} */
-        getMacro: {
-            value() {
-                return this[MACRO]
+        /** @type {function} */
+        useBuffer: {
+            get() {
+                return this[BUFFER]
             },
         },
         /** @type {function} */
-        getBuffer: {
+        getMacro: {
             value() {
-                return this[BUFFER]
+                return this[MACRO]
             },
         },
         /** @type {function} */
@@ -165,22 +168,18 @@ const createContext = (config, methods) => {
         },
         /** @type {function} */
         echo: {
-            value(layout) {
-                const buffer = this.getBuffer()
-                const params = [].slice.call(arguments)
-                params.forEach(buffer)
+            value() {
+                return [].slice.call(arguments).forEach(this.useBuffer)
             },
         },
         /** @type {function} */
         fn: {
             value(callback) {
-                const buffer = this.getBuffer()
-                const context = this
-                return function () {
+                return () => {
                     if (isFunction(callback)) {
-                        buffer.backup()
-                        buffer(callback.apply(context, arguments))
-                        return buffer.restore()
+                        this.useBuffer.backup()
+                        this.useBuffer(callback.apply(this, arguments))
+                        return this.useBuffer.restore()
                     }
                 }
             },
@@ -223,7 +222,7 @@ const createContext = (config, methods) => {
                             this.echo(parent(next()))
                         }
                     } else {
-                        return noop
+                        return () => {}
                     }
                 }
                 this.echo(shift()(next()))
@@ -250,7 +249,7 @@ const createContext = (config, methods) => {
                 this.echo(
                     Promise.resolve(this.require(path)).then((exports) => {
                         const list = this.getMacro()
-                        each(exports, function (macro, name) {
+                        each(exports, (macro, name) => {
                             list[[namespace, name].join('.')] = macro
                         })
                     }),
@@ -286,7 +285,7 @@ const createContext = (config, methods) => {
         },
         /** @type {function} */
         each: {
-            value: function (object, callback) {
+            value(object, callback) {
                 if (isString(object)) {
                     object = this.get(object, [])
                 }
@@ -315,37 +314,25 @@ const createContext = (config, methods) => {
     return EjsContext
 }
 
-/**
- *
- * @param {EjsConfig} options
- * @param {EjsMethods} methods
- */
-export const Context = (options, methods) => {
-    const config = {
-        context: null,
-        globals: [],
+export class Context {
+    #context
+    #globals = []
+    static exports = ['create', 'globals', 'helpers']
+    constructor(options, methods) {
+        bindContext(this, this.constructor.exports)
+        this.configure(options, methods)
     }
-    /**
-     * @return {EjsContext}
-     */
-    const create = (data) => {
-        return new config.context(data)
+    create(data) {
+        return new this.#context(data)
     }
-    const helpers = (methods) => {
-        Object.assign(config.context.prototype, methods)
+    globals() {
+        return this.#globals.map((name) => this.#context.prototype[name])
     }
-    const globals = () => {
-        return config.globals.map((name) => config.context.prototype[name])
+    helpers(methods) {
+        Object.assign(this.#context.prototype, methods)
     }
-    const configure = (options, methods) => {
-        config.context = createContext(options, methods)
-        config.globals = Object.keys(options.globals)
-    }
-    configure(options, methods)
-    return {
-        configure,
-        create,
-        globals,
-        helpers,
+    configure(options, methods) {
+        this.#context = createContext(options, methods)
+        this.#globals = options.globals
     }
 }

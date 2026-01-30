@@ -1,9 +1,8 @@
 export class TemplateError extends Error {
+    code
     new(message: string): TemplateError
-    code: number | 0
-    getCode(): number
-    getMessage(): string
     toString(): string
+    getCode(): number
 }
 
 export class TemplateNotFound extends TemplateError {

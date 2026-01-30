@@ -1,53 +1,40 @@
 import { isFunction } from './type.js'
-/**
- *
- * @param {EjsConfig} options
- * @param cache
- * @param compiler
- */
-export const Template = (options, cache, compiler) => {
-    /**
-     * @type {Pick<EjsConfig, 'path' | 'resolver'>}
-     */
-    const config = {
-        resolverOptions: {},
+import { bindContext } from './utils.js'
+
+export class Template {
+    #path
+    #resolver
+    #cache
+    #compiler
+    static exports = ['configure', 'get', 'compile']
+    constructor(options, cache, compiler) {
+        bindContext(this, this.constructor.exports)
+        this.#cache = cache
+        this.#compiler = compiler
+        this.configure(options ?? {})
     }
-    const resolve = (path) => {
-        return Promise.resolve(config.resolver(config.path, path))
+    configure(options) {
+        this.#path = options.path
+        if (isFunction(options.resolver)) {
+            this.#resolver = options.resolver
+        }
     }
-    const result = (template, content) => {
-        cache.set(template, content)
-        return content
+    #resolve(path) {
+        if (this.#cache.get(path)) return this.#cache.get(path)
+        const result = Promise.resolve(this.#resolver(this.#path, path))
+        this.#cache.set(path, result)
+        return result
     }
-    const compile = (content, template) => {
-        if (isFunction(content)) {
+    compile(content, template) {
+        if (typeof content === 'function') {
             return content
         } else {
-            return compiler.compile(content, template)
+            return this.#compiler.compile(content, template)
         }
     }
-    const get = (template) => {
-        if (cache.exist(template)) {
-            return cache.resolve(template)
-        }
-        return resolve(template).then((content) =>
-            result(template, compile(content, template)),
+    get(template) {
+        return this.#resolve(template).then((content) =>
+            this.compile(content, template),
         )
-    }
-    /**
-     * @param {EjsConfig} options
-     */
-    const configure = (options) => {
-        config.path = options.path
-        config.resolverOptions = options.resolverOptions || {}
-        if (isFunction(options.resolver)) {
-            config.resolver = options.resolver
-        }
-    }
-    configure(options)
-    return {
-        get,
-        configure,
-        compile,
     }
 }

@@ -1,31 +1,42 @@
 import fs from 'node:fs/promises'
 import globWatch from 'glob-watcher'
-import { dirname, join } from 'node:path'
 import { glob } from 'glob'
+import { dirname, join } from 'node:path'
 import { create } from './index.js'
+import { bindContext } from './utils.js'
 
-export const bundler = (params = {}, ejsParams = {}) => {
-    const config = {
+export class Bundler {
+    #templates = {}
+    #bundlerOptions = {
         target: [],
         umd: true,
         minify: true,
     }
-    const { compile, configure } = create(ejsParams)
-    const ejsConfig = configure()
-    const templates = {}
-    Object.assign(config, params || {})
-    const stageRead = (path) => {
+    #compile
+    #ejsOptions
+    #buildInProgress
+    static exports = ['build', 'watch', 'concat', 'output']
+    constructor(bundlerOptions = {}, ejsOptions = {}) {
+        const { compile, configure } = create(ejsOptions)
+        bindContext(this, this.constructor.exports)
+        Object.assign(this.#bundlerOptions, bundlerOptions)
+        this.#compile = compile
+        this.#ejsOptions = configure()
+        this.#buildInProgress = false
+        this.#templates = {}
+    }
+    async #stageRead(path) {
         return fs
-            .readFile(join(ejsConfig.path, path))
+            .readFile(join(this.#ejsOptions.path, path))
             .then((response) => response.toString())
     }
-    const stageCompile = (content, name) => {
-        return compile(content, name).source
+    #stageCompile(content, name) {
+        return this.#compile(content, name).source
     }
-    const getBundle = () => {
-        const umd = config.umd
-        const strict = ejsConfig.withObject === false
-        const module = ejsConfig.export
+    #getBundle() {
+        const umd = this.#bundlerOptions.umd
+        const strict = this.#ejsOptions.strict
+        const module = this.#ejsOptions.precompiled
         const out = []
         if (umd) {
             out.push('(function(global,factory){')
@@ -44,7 +55,7 @@ export const bundler = (params = {}, ejsParams = {}) => {
         }
         if (strict) out.push(`'use strict'`)
         out.push('const templates = {}')
-        Object.entries(templates).forEach(([name, content]) => {
+        Object.entries(this.#templates).forEach(([name, content]) => {
             name = JSON.stringify(name)
             content = String(content)
             out.push(`templates[${name}] = ${content}`)
@@ -56,48 +67,52 @@ export const bundler = (params = {}, ejsParams = {}) => {
         }
         return out.join('\n')
     }
-    const watch = async () => {
-        console.log('🔍', 'watch directory:', ejsConfig.path)
-        const pattern = '**/*.'.concat(ejsConfig.extension)
-        const watcher = globWatch(pattern, { cwd: ejsConfig.path })
+    async build() {
+        if (this.#buildInProgress === true) return false
+        this.#buildInProgress = true
+        await this.concat().catch(console.error)
+        await this.output().catch(console.error)
+        console.log('✅', 'bundle complete:', this.#bundlerOptions.target)
+        this.#buildInProgress = false
+    }
+    async watch() {
+        console.log('🔍', 'watch directory:', this.#ejsOptions.path)
+        const pattern = '**/*.'.concat(this.#ejsOptions.extension)
+        const watcher = globWatch(pattern, { cwd: this.#ejsOptions.path })
         const state = { build: null }
         watcher.on('change', (path) => {
             if (state.build) return
             console.log('⟳', 'file change:', path)
-            state.build = build().then(() => {
+            state.build = this.build().then(() => {
                 state.build = null
             })
         })
         watcher.on('add', (path) => {
             if (state.build) return
             console.log('+', 'file added:', path)
-            state.build = build().then(() => {
+            state.build = this.build().then(() => {
                 state.build = null
             })
         })
     }
-    const concat = async () => {
-        const pattern = '**/*.'.concat(ejsConfig.extension)
-        const list = await glob(pattern, { cwd: ejsConfig.path })
+    async concat() {
+        const pattern = '**/*.'.concat(this.#ejsOptions.extension)
+        const list = await glob(
+            pattern,
+            { cwd: this.#ejsOptions.path },
+            () => {},
+        )
         for (let template of list) {
             let content = ''
-            content = await stageRead(template)
-            content = await stageCompile(content, template)
-            templates[template] = content
+            content = await this.#stageRead(template)
+            content = await this.#stageCompile(content, template)
+            this.#templates[template] = content
         }
     }
-    const build = async () => {
-        if (config.buildInProgress === true) return false
-        config.buildInProgress = true
-        await concat().catch(console.error)
-        await output().catch(console.error)
-        console.log('✅', 'bundle complete:', config.target)
-        config.buildInProgress = false
-    }
-    const output = async () => {
-        const target = [].concat(config.target)
-        const content = getBundle()
-        for (let file of target) {
+    async output() {
+        const target = [].concat(this.#bundlerOptions.target)
+        const content = this.#getBundle()
+        for (const file of target) {
             const folderPath = dirname(file)
             const folderExists = await fs
                 .stat(folderPath)
@@ -109,15 +124,13 @@ export const bundler = (params = {}, ejsParams = {}) => {
             await fs.writeFile(file, content)
         }
     }
-    return {
-        build,
-        watch,
-        concat,
-        output,
-    }
 }
 
-export const ejsBundler = (options, config) => {
+export const bundler = (bundlerOptions = {}, ejsOptions = {}) => {
+    return new Bundler(bundlerOptions, ejsOptions)
+}
+
+export const ejsRollupBundler = (options, config) => {
     const bundle = bundler(options, config)
     return {
         name: 'ejs-bundler',

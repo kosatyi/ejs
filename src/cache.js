@@ -1,58 +1,58 @@
-import { hasProp, isNode } from './utils.js'
+import { bindContext } from './utils.js'
 
-const global = typeof globalThis !== 'undefined' ? globalThis : window || self
-/**
- *
- * @param {EjsConfig} options
- */
-export const Cache = (options = {}) => {
-    const config = {}
-    const list = {}
-    const load = (data) => {
-        if (config.enabled) {
-            Object.assign(list, data || {})
+export class Cache {
+    static exports = [
+        'load',
+        'set',
+        'get',
+        'exist',
+        'clear',
+        'remove',
+        'resolve',
+    ]
+    #cache = true
+    #precompiled
+    #list = {}
+    constructor(options) {
+        bindContext(this, this.constructor.exports)
+        this.configure(options)
+    }
+    get(key) {
+        if (this.#cache) {
+            return this.#list[key]
         }
     }
-    const get = (key) => {
-        if (config.enabled) {
-            return list[key]
+    set(key, value) {
+        if (this.#cache) {
+            this.#list[key] = value
         }
     }
-    const set = (key, value) => {
-        if (config.enabled) {
-            list[key] = value
+    exist(key) {
+        if (this.#cache) {
+            return this.#list.hasOwnProperty(key)
         }
     }
-    const exist = (key) => {
-        if (config.enabled) {
-            return hasProp(list, key)
+    clear() {
+        Object.keys(this.#list).forEach(this.remove)
+    }
+    remove(key) {
+        delete this.#list[key]
+    }
+    resolve(key) {
+        return Promise.resolve(this.get(key))
+    }
+
+    load(data) {
+        if (this.#cache) {
+            Object.assign(this.#list, data || {})
         }
     }
-    const clear = () => {
-        Object.keys(list).forEach(remove)
-    }
-    const remove = (key) => {
-        delete list[key]
-    }
-    const resolve = (key) => {
-        return Promise.resolve(get(key))
-    }
-    const configure = (options = {}) => {
-        config.enabled = options.cache
-        config.precompiled = options.precompiled
-        if (isNode() === false) {
-            load(global[config.precompiled])
+
+    configure(options) {
+        this.#cache = options.cache
+        this.#precompiled = options.precompiled
+        if (typeof window === 'object') {
+            this.load(window[this.#precompiled])
         }
-    }
-    configure(options)
-    return {
-        configure,
-        load,
-        set,
-        get,
-        exist,
-        clear,
-        remove,
-        resolve,
     }
 }

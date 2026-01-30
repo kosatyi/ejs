@@ -1,4 +1,4 @@
-import { EJS } from './ejs.js'
+import { EjsInstance } from './ejs.js'
 import { httpRequest } from './fetch.js'
 export {
     TemplateError,
@@ -13,6 +13,6 @@ export const {
     preload,
     configure,
     create,
-} = EJS({
+} = new EjsInstance({
     resolver: httpRequest,
 })

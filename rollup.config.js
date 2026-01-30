@@ -19,7 +19,7 @@ const copyConfig = {
         {
             src: 'package.cjs.json',
             dest: 'dist/cjs',
-            rename(name, extension, fullPath) {
+            rename() {
                 return 'package.json'
             },
         },
@@ -67,7 +67,7 @@ class RollupBuild {
                     name: name,
                     file: this.target('', source, { target: 'public/dist' }),
                     format: 'umd',
-                    plugins: [terser()],
+                    //plugins: [terser()],
                 },
             ],
             plugins: [

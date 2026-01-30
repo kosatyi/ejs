@@ -1,26 +1,21 @@
-export function TemplateError(message) {
-    this.message = message
-    this.stack = new Error().stack
+export class TemplateError extends Error {
+    name = 'TemplateError'
+    constructor(error) {
+        super(error)
+        if (error instanceof Error) {
+            this.stack = error.stack
+            this.filename = error.filename
+            this.lineno = error.lineno
+        }
+    }
 }
-TemplateError.prototype = new Error()
-Object.assign(TemplateError.prototype, {
-    code: 0,
-})
 
-export function TemplateNotFound(reason) {
-    TemplateError.call(this, String(reason))
+export class TemplateNotFound extends TemplateError {
+    name = 'TemplateNotFound'
+    code = 404
 }
-Object.setPrototypeOf(TemplateNotFound.prototype, TemplateError.prototype)
-Object.assign(TemplateNotFound.prototype, {
-    name: 'TemplateNotFound',
-    code: 404,
-})
 
-export function TemplateSyntaxError(reason) {
-    TemplateError.call(this, reason)
+export class TemplateSyntaxError extends TemplateError {
+    name = 'TemplateSyntaxError'
+    code = 500
 }
-Object.setPrototypeOf(TemplateSyntaxError.prototype, TemplateError.prototype)
-Object.assign(TemplateSyntaxError.prototype, {
-    name: 'TemplateSyntaxError',
-    code: 500,
-})

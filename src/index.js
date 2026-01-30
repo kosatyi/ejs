@@ -1,4 +1,4 @@
-import { EJS } from './ejs.js'
+import { EjsInstance } from './ejs.js'
 import { expressRenderer } from './express.js'
 import { readFile } from './readfile.js'
 export {
@@ -15,7 +15,7 @@ export const {
     preload,
     configure,
     create,
-} = EJS({
+} = new EjsInstance({
     resolver: readFile,
 })
 

@@ -8,6 +8,7 @@
     "module": "dist/esm/index.js",
     "browser": "dist/umd/browser.js",
     "minified": "dist/umd/browser.min.js",
+    "types": "type/base.d.ts",
     "author": "Stepan Kosatyi (https://kosatyi.com)",
     "browserslist": [
         "> 0.25%, not dead"
@@ -17,29 +18,29 @@
     },
     "exports": {
         ".": {
+            "types": "./types/index.d.ts",
             "import": "./dist/esm/index.js",
-            "require": "./dist/cjs/index.js",
-            "types": "./types/index.d.ts"
+            "require": "./dist/cjs/index.js"
         },
         "./browser": {
+            "types": "./types/browser.d.ts",
             "import": "./dist/esm/browser.js",
-            "require": "./dist/cjs/browser.js",
-            "types": "./types/browser.d.ts"
+            "require": "./dist/cjs/browser.js"
         },
         "./worker": {
+            "types": "./types/worker.d.ts",
             "import": "./dist/esm/worker.js",
-            "require": "./dist/cjs/worker.js",
-            "types": "./types/worker.d.ts"
+            "require": "./dist/cjs/worker.js"
         },
         "./element": {
+            "types": "./types/element.d.ts",
             "import": "./dist/esm/element.js",
-            "require": "./dist/cjs/element.js",
-            "types": "./types/element.d.ts"
+            "require": "./dist/cjs/element.js"
         },
         "./bundler": {
+            "types": "./types/bundler.d.ts",
             "import": "./dist/esm/bundler.js",
-            "require": "./dist/cjs/bundler.js",
-            "types": "./types/bundler.d.ts"
+            "require": "./dist/cjs/bundler.js"
         }
     },
     "files": [
@@ -50,6 +51,7 @@
     "scripts": {
         "build": "rollup -c",
         "watch": "rollup -c -w",
+        "esbuild": "esbuild src/library.ts --bundle --platform=node --outfile=dist/index.js ",
         "pack": "npm pack --pack-destination public",
         "version": "npm run build",
         "prepublishOnly": "npm i && rollup -c",
@@ -71,8 +73,8 @@
     ],
     "peerDependencies": {
         "glob": "11.x || 12.x || 13.x",
-        "process.argv": "1.x",
-        "glob-watcher": "6.x"
+        "glob-watcher": "6.x",
+        "process.argv": "1.x"
     },
     "devDependencies": {
         "@babel/preset-env": "^7.28.6",

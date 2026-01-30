@@ -1,101 +1,106 @@
 import { configSchema } from './schema.js'
-import { ext } from './utils.js'
-import { isFunction } from './type.js'
+import { bindContext } from './utils.js'
 import { Template } from './template.js'
 import { Compiler } from './compiler.js'
 import { Cache } from './cache.js'
 import { Context } from './context.js'
-/**
- * @param {EjsConfig} options
- */
-export const EJS = (options) => {
-    const config = configSchema({}, options)
-    const methods = {}
-    const context = Context(config, methods)
-    const compiler = Compiler(config)
-    const cache = Cache(config)
-    const template = Template(config, cache, compiler)
-    const configure = (options) => {
+
+export class EjsInstance {
+    #cache
+    #context
+    #compiler
+    #template
+    #config = {}
+    #methods = {}
+    static exports = [
+        'configure',
+        'create',
+        'createContext',
+        'render',
+        'require',
+        'preload',
+        'compile',
+        'helpers',
+    ]
+    constructor(options = {}) {
+        bindContext(this, this.constructor.exports)
+        this.#methods = {}
+        this.#config = configSchema({}, options)
+        this.#context = new Context(this.#config, this.#methods)
+        this.#compiler = new Compiler(this.#config)
+        this.#cache = new Cache(this.#config)
+        this.#template = new Template(this.#config, this.#cache, this.#compiler)
+        this.helpers({ render: this.render, require: this.require })
+    }
+    create(options) {
+        return new this.constructor(options)
+    }
+    configure(options) {
         if (options) {
-            Object.keys(methods).forEach(removeMethod)
-            configSchema(config, options)
-            context.configure(config, methods)
-            compiler.configure(config)
-            cache.configure(config)
-            template.configure(config)
+            configSchema(this.#config, options)
+            this.#context.configure(this.#config, this.#methods)
+            this.#compiler.configure(this.#config)
+            this.#cache.configure(this.#config)
+            this.#template.configure(this.#config)
         }
-        return config
+        return this.#config
     }
-    const templateFile = (name) => {
-        return ext(name, config.extension)
+    createContext(data) {
+        return this.#context.create(data)
     }
-    const removeMethod = (name) => {
-        delete methods[name]
+    preload(list) {
+        return this.#cache.load(list || {})
     }
-    const require = (name) => {
-        const scope = createContext({})
-        return output(templateFile(name), scope).then(() => scope.getMacro())
+    compile(content, path) {
+        return this.#compiler.compile(content, path)
     }
-    const render = (name, data) => {
-        const scope = createContext(data)
-        return output(templateFile(name), scope).then(
-            outputContent(name, scope),
+    helpers(methods) {
+        this.#context.helpers(Object.assign(this.#methods, methods))
+    }
+    async render(name, params) {
+        const data = this.createContext(params)
+        return this.#output(this.#path(name), data).then(
+            this.#outputContent(name, data),
         )
     }
-    const outputContent = (name, scope) => {
+    async require(name) {
+        const data = this.createContext({})
+        return this.#output(this.#path(name), data).then(() => data.getMacro())
+    }
+    #path(name) {
+        const ext = name.split('.').pop()
+        if (ext !== this.#config.extension) {
+            name = [name, this.#config.extension].join('.')
+        }
+        return name
+    }
+    #output(path, data) {
+        return this.#template
+            .get(path)
+            .then((callback) =>
+                callback.apply(data, [
+                    data,
+                    data.useComponent,
+                    data.useElement,
+                    data.useBuffer,
+                    data.useSafeValue,
+                ]),
+            )
+    }
+    #renderLayout(name, params, parentTemplate) {
+        const data = this.createContext(params)
+        if (parentTemplate) data.setParentTemplate(parentTemplate)
+        return this.#output(this.#path(name), data).then(
+            this.#outputContent(name, data),
+        )
+    }
+    #outputContent(name, data) {
         return (content) => {
-            if (scope.getExtend()) {
-                scope.setExtend(false)
-                return renderLayout(scope.getLayout(), scope, name)
+            if (data.getExtend()) {
+                data.setExtend(false)
+                return this.#renderLayout(data.getLayout(), data, name)
             }
             return content
         }
-    }
-    const renderLayout = (name, data, parent) => {
-        const scope = createContext(data)
-        if (parent) scope.setParentTemplate(parent)
-        return output(templateFile(name), scope).then(
-            outputContent(name, scope),
-        )
-    }
-    const helpers = (extendMethods) => {
-        context.helpers(Object.assign(methods, extendMethods))
-    }
-    const createContext = (data) => {
-        return context.create(data)
-    }
-    const compile = (content, path) => {
-        return compiler.compile(content, path)
-    }
-    const preload = (list) => {
-        return cache.load(list || {})
-    }
-    const create = (config) => {
-        return EJS(config)
-    }
-    const output = (path, scope) => {
-        const params = [
-            scope,
-            scope.useComponent,
-            scope.useElement,
-            scope.getBuffer(),
-            scope.useSafeValue,
-        ]
-        return template
-            .get(path)
-            .then((callback) =>
-                callback.apply(scope, params.concat(context.globals())),
-            )
-    }
-    helpers({ render, require })
-    return {
-        configure,
-        create,
-        createContext,
-        render,
-        require,
-        preload,
-        compile,
-        helpers,
     }
 }

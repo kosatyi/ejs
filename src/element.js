@@ -24,32 +24,21 @@ const slash = '/'
 const lt = '<'
 const gt = '>'
 
+const eachAttribute = ([key, value]) => {
+    if (value !== null && value !== undefined) {
+        return [entities(key), [quote, entities(value), quote].join('')].join(
+            equal,
+        )
+    }
+}
+
 export const element = (tag, attrs, content) => {
     const result = []
     const hasClosedTag = selfClosed.indexOf(tag) === -1
     const attributes = Object.entries(attrs)
-        .reduce((attributes, [key, value]) => {
-            if (value !== null && value !== undefined) {
-                attributes.push(
-                    [
-                        entities(key),
-                        [quote, entities(value), quote].join(''),
-                    ].join(equal),
-                )
-            }
-            return attributes
-        }, [])
+        .map(eachAttribute)
+        .filter((e) => e)
         .join(space)
-
-    Object.entries(attributes).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-            return [
-                entities(key),
-                [quote, entities(value), quote].join(''),
-            ].join(equal)
-        }
-    })
-
     result.push([lt, tag, space, attributes, gt].join(''))
     if (content && hasClosedTag) {
         result.push(Array.isArray(content) ? content.join('') : content)

@@ -17,22 +17,19 @@ $ npm install @kosatyi/ejs
 ## Usage
 
 ```js
-const ejs = require('@kosatyi/ejs');
-
+import {configure, helpers, render} from '@kosatyi/ejs'
 // path where templates is located 
-ejs.configure({
+configure({
     path: 'views'
 })
-
 // add custom template helper functions
-ejs.helpers({
+helpers({
     ucase(text){
         return String(text).toUpperCase()
     }
 })
-
 // load index.ejs template from `views` folder
-ejs.render('page/index',{
+render('page/index',{
     posts:[{
         title:'Post Title',
         content:"<p>post content</p>"

@@ -1,10 +1,5 @@
 import { isFunction, isUndefined } from './type.js'
 
-export const isNode = () =>
-    Object.prototype.toString.call(
-        typeof process !== 'undefined' ? process : 0,
-    ) === '[object process]'
-
 export const symbolEntities = {
     "'": "'",
     '\\': '\\',
@@ -78,16 +73,6 @@ export const getPath = (context, name, strict) => {
     return [data, prop]
 }
 
-export const ext = (path, defaults) => {
-    const ext = path.split('.').pop()
-    if (ext !== defaults) {
-        path = [path, defaults].join('.')
-    }
-    return path
-}
-
-export const noop = () => {}
-
 export const format = (pattern, params) => {
     pattern = pattern || ''
     params = params || {}
@@ -138,14 +123,11 @@ export const joinPath = (path, template) => {
     return template
 }
 
-export const matchTokens = (regex, text, callback) => {
-    let index = 0
-    text.replace(regex, function () {
-        const params = [].slice.call(arguments, 0, -1)
-        const offset = params.pop()
-        const match = params.shift()
-        callback(params, index, offset)
-        index = offset + match.length
-        return match
-    })
+export const bindContext = (object, methods = []) => {
+    for (let i = 0, len = methods.length; i < len; i++) {
+        const name = methods[i]
+        if (name in object) {
+            object[name] = object[name].bind(object)
+        }
+    }
 }

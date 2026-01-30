@@ -1,5 +1,12 @@
 import { ejsDefaults } from './config.js'
-import { isFunction, isString, typeProp, isBoolean, isArray } from './type.js'
+import {
+    isFunction,
+    isString,
+    typeProp,
+    isBoolean,
+    isArrayOfVariables,
+    isArray,
+} from './type.js'
 
 export const configSchema = (config, options) => {
     return Object.assign(config, {
@@ -22,11 +29,11 @@ export const configSchema = (config, options) => {
             config.extension,
             options.extension,
         ),
-        withObject: typeProp(
+        strict: typeProp(
             isBoolean,
-            ejsDefaults.withObject,
-            config.withObject,
-            options.withObject,
+            ejsDefaults.strict,
+            config.strict,
+            options.strict,
         ),
         rmWhitespace: typeProp(
             isBoolean,
@@ -40,11 +47,11 @@ export const configSchema = (config, options) => {
             config.cache,
             options.cache,
         ),
-        globals: Object.assign(
-            {},
+        globals: typeProp(
+            isArray,
             ejsDefaults.globals,
             config.globals,
-            options.globals,
+            isArrayOfVariables(options.globals),
         ),
         token: Object.assign(
             {},

@@ -1,108 +1,144 @@
-import { symbols, matchTokens } from './utils.js'
+import { bindContext, symbols } from './utils.js'
 
 const configSymbols = [
     {
         symbol: '-',
-        format(value) {
-            return `')\n${this.BUFFER}(${this.SAFE}(${value},1))\n${this.BUFFER}('`
+        format(value, buffer, safe) {
+            return `')\n${buffer}(${safe}(${value},1))\n${buffer}('`
         },
     },
     {
         symbol: '=',
-        format(value) {
-            return `')\n${this.BUFFER}(${this.SAFE}(${value}))\n${this.BUFFER}('`
+        format(value, buffer, safe) {
+            return `')\n${buffer}(${safe}(${value}))\n${buffer}('`
         },
     },
     {
         symbol: '#',
-        format(value) {
-            return `')\n/**${value}**/\n${this.BUFFER}('`
+        format(value, buffer) {
+            return `')\n/**${value}**/\n${buffer}('`
         },
     },
     {
         symbol: '',
-        format(value) {
-            return `')\n${value.trim()}\n${this.BUFFER}('`
+        format(value, buffer) {
+            return `')\n${value}\n${buffer}('`
         },
     },
 ]
 
-export const Compiler = (options) => {
-    const config = {}
-    const configure = (options) => {
-        config.withObject = options.withObject
-        config.rmWhitespace = options.rmWhitespace
-        config.token = options.token
-        config.vars = options.vars
-        config.globals = Object.keys(options.globals)
-        config.matches = []
-        config.formats = []
-        config.slurp = {
-            match: '[s\t\n]*',
-            start: [config.token.start, '_'],
-            end: ['_', config.token.end],
-        }
-        configSymbols.forEach((item) => {
-            config.matches.push(
-                config.token.start
-                    .concat(item.symbol)
-                    .concat(config.token.regex)
-                    .concat(config.token.end),
-            )
-            config.formats.push(item.format.bind(config.vars))
-        })
-        config.regex = new RegExp(config.matches.join('|').concat('|$'), 'g')
-        config.slurpStart = new RegExp(
-            [config.slurp.match, config.slurp.start.join('')].join(''),
-            'gm',
-        )
-        config.slurpEnd = new RegExp(
-            [config.slurp.end.join(''), config.slurp.match].join(''),
-            'gm',
-        )
+const matchTokens = (regex, content, callback) => {
+    let index = 0
+    content.replace(regex, function () {
+        const params = [].slice.call(arguments, 0, -1)
+        const offset = params.pop()
+        const match = params.shift()
+        callback(params, index, offset)
+        index = offset + match.length
+        return match
+    })
+}
+
+export class Compiler {
+    #config = {}
+    static exports = ['compile']
+    constructor(options) {
+        bindContext(this, this.constructor.exports)
+        this.configure(options)
     }
-    const compile = (content, path) => {
-        const { SCOPE, SAFE, BUFFER, COMPONENT, ELEMENT } = config.vars
-        const GLOBALS = config.globals
-        if (config.rmWhitespace) {
+    configure(options) {
+        this.#config.strict = options.strict
+        this.#config.rmWhitespace = options.rmWhitespace
+        this.#config.token = options.token
+        this.#config.vars = options.vars
+        this.#config.globals = options.globals
+        this.#config.legacy = options.legacy ?? true
+        this.#config.slurp = {
+            match: '[s\t\n]*',
+            start: [this.#config.token.start, '_'],
+            end: ['_', this.#config.token.end],
+        }
+        this.#config.matches = []
+        this.#config.formats = []
+        configSymbols.forEach(({ symbol, format }) => {
+            this.#config.matches.push(
+                this.#config.token.start
+                    .concat(symbol)
+                    .concat(this.#config.token.regex)
+                    .concat(this.#config.token.end),
+            )
+            this.#config.formats.push(format)
+        })
+        this.#config.regex = new RegExp(
+            this.#config.matches.join('|').concat('|$'),
+            'g',
+        )
+        this.#config.slurpStart = new RegExp(
+            [this.#config.slurp.match, this.#config.slurp.start.join('')].join(
+                '',
+            ),
+            'gm',
+        )
+        this.#config.slurpEnd = new RegExp(
+            [this.#config.slurp.end.join(''), this.#config.slurp.match].join(
+                '',
+            ),
+            'gm',
+        )
+        if (this.#config.globals.length) {
+            if (this.#config.legacy) {
+                this.#config.globalVariables = `const ${this.#config.globals
+                    .map((name) => `${name}=${this.#config.vars.SCOPE}.${name}`)
+                    .join(',')};`
+            } else {
+                this.#config.globalVariables = `const {${this.#config.globals.join(',')}} = ${this.#config.vars.SCOPE};`
+            }
+        }
+    }
+
+    compile(content, path) {
+        const GLOBALS = this.#config.globalVariables
+        const { SCOPE, SAFE, BUFFER, COMPONENT, ELEMENT } = this.#config.vars
+        if (this.#config.rmWhitespace) {
             content = String(content)
                 .replace(/[\r\n]+/g, '\n')
                 .replace(/^\s+|\s+$/gm, '')
         }
         content = String(content)
-            .replace(config.slurpStart, config.token.start)
-            .replace(config.slurpEnd, config.token.end)
-        let source = `${BUFFER}('`
-        matchTokens(config.regex, content, (params, index, offset) => {
-            source += symbols(content.slice(index, offset))
+            .replace(this.#config.slurpStart, this.#config.token.start)
+            .replace(this.#config.slurpEnd, this.#config.token.end)
+        let OUTPUT = `${BUFFER}('`
+        matchTokens(this.#config.regex, content, (params, index, offset) => {
+            OUTPUT += symbols(content.slice(index, offset))
             params.forEach((value, index) => {
                 if (value) {
-                    source += config.formats[index](value)
+                    OUTPUT += this.#config.formats[index](
+                        value.trim(),
+                        BUFFER,
+                        SAFE,
+                    )
                 }
             })
         })
-        source += `');`
-        source = `try{${source}}catch(e){return ${BUFFER}.error(e)}`
-        if (config.withObject) {
-            source = `with(${SCOPE}){${source}}`
+        OUTPUT += `');`
+        OUTPUT = `try{${OUTPUT}}catch(e){return ${BUFFER}.error(e,'${path}')}`
+        if (this.#config.strict === false) {
+            OUTPUT = `with(${SCOPE}){${OUTPUT}}`
         }
-        source = `${BUFFER}.start();${source}return ${BUFFER}.end();`
-        source += `\n//# sourceURL=${path}`
-        let result = null
-        let params = [SCOPE, COMPONENT, ELEMENT, BUFFER, SAFE].concat(GLOBALS)
+        OUTPUT = `${BUFFER}.start();${OUTPUT}return ${BUFFER}.end();`
+        OUTPUT += `\n//# sourceURL=${path}`
+        if (GLOBALS) {
+            OUTPUT = `${GLOBALS}\n${OUTPUT}`
+        }
         try {
-            result = Function.apply(null, params.concat(source))
-            result.source = `(function(${params.join(',')}){\n${source}\n});`
-        } catch (e) {
-            e.filename = path
-            e.source = source
-            throw e
+            const params = [SCOPE, COMPONENT, ELEMENT, BUFFER, SAFE]
+            const result = Function.apply(null, params.concat(OUTPUT))
+            result.source = `(function(${params.join(',')}){\n${OUTPUT}\n});`
+            return result
+        } catch (error) {
+            error.filename = path
+            error.source = OUTPUT
+            throw error
         }
-        return result
-    }
-    configure(options)
-    return {
-        configure,
-        compile,
     }
 }

@@ -1,7 +1,25 @@
 import { EjsContext } from './context'
 import { TemplateError } from './error'
 
-declare type EjsConfig = {
+export declare type EjsConfigVars = {
+    SCOPE: string
+    COMPONENT: string
+    ELEMENT: string
+    EXTEND: string
+    BUFFER: string
+    LAYOUT: string
+    BLOCKS: string
+    MACRO: string
+    SAFE: string
+}
+
+export declare type EjsConfigToken = {
+    start: string
+    end: string
+    regex: string
+}
+
+export declare type EjsConfig = {
     /**
      * Global variable where the compiled templates are stored
      * @default 'ejsPrecompiled'
@@ -36,48 +54,27 @@ declare type EjsConfig = {
      * is determined in `EjsConfig.vars.SCOPE`
      * @default false
      */
-    withObject?: boolean
+    strict?: boolean
     /**
      * Template source resolver function
-     * @example
-     * For server templates using fs.promises.readFile
-     * @example
-     * For client templates using window.fetch
-     * @example
-     * For worker templates using precompiled Map of templates
+     * - For server templates using fs.promises.readFile
+     * - For client templates using window.fetch
+     * - For worker templates using precompiled Map of templates
      */
     resolver?: (
         path: string,
         template: string,
     ) => Promise<string | TemplateError>
     /**
-     * Additional options for template source resolver function
-     */
-    resolverOptions?: {}
-    /**
      * An array of local variables that are always destructured from helpers
      * available even in strict mode.
      */
-    globals?: { [p: string]: any }
+    globals?: string[]
     /**
      * Template variables
      */
-    vars?: {
-        SCOPE?: string
-        COMPONENT?: string
-        ELEMENT?: string
-        EXTEND?: string
-        BUFFER?: string
-        LAYOUT?: string
-        BLOCKS?: string
-        MACRO?: string
-        SAFE?: string
-    }
-    token?: {
-        start?: string
-        end?: string
-        regex?: string
-    }
+    vars?: Partial<EjsConfigVars>
+    token?: Partial<EjsConfigToken>
 }
 
 declare type configure = <T extends EjsConfig>(options?: T) => EjsConfig & T

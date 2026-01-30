@@ -1,5 +1,5 @@
 import { isFunction } from './type.js'
-import { EJS } from './ejs.js'
+import { EjsInstance } from './ejs.js'
 import {
     TemplateError,
     TemplateSyntaxError,
@@ -9,7 +9,7 @@ import {
 export { TemplateError, TemplateSyntaxError, TemplateNotFound }
 
 /**
- * @type {{[p:string]:any}}
+ * @type {{[p:string]:Function}}
  */
 const templateCache = {}
 
@@ -19,9 +19,9 @@ const getOrigin = (url, secure) => {
     return url.origin
 }
 
-export const { render, createContext, helpers, configure } = EJS({
+export const { render, createContext, helpers, configure } = new EjsInstance({
     cache: false,
-    withObject: false,
+    strict: true,
     async resolver(path, name) {
         if (isFunction(templateCache[name])) {
             return templateCache[name]
@@ -39,13 +39,7 @@ export function useTemplates(templates = {}) {
 }
 
 /**
- * @deprecated Renamed to `useTemplates`
- * @param {{[p:string],Function}} templates
- */
-export const setTemplates = useTemplates
-
-/**
- * @typedef {{}} HonoContext
+ * @typedef {{[p:string]:any}} HonoContext
  * @property {function(*):Promise<Response>} html
  * @property {function():Promise<Response>} notFound
  * @property {function(methods:{}):void} helpers
@@ -54,26 +48,21 @@ export const setTemplates = useTemplates
  * @property {EjsContext} data
  */
 /**
- * @param {Object<string,any>} options
+ * @param {RendererParams} options
  * @return {(function(c:HonoContext, next): Promise<any>)|*}
  */
-export function useRenderer({ templates = {}, version, secure = true } = {}) {
-    useTemplates(templates)
+export function useRenderer(options = {}) {
+    useTemplates(options.templates ?? {})
     return async (c, next) => {
         c.data = createContext({})
-        c.data.set('version', version)
-        c.data.set('origin', getOrigin(c.req.url, secure))
+        c.data.set('version', options.version)
+        c.data.set('origin', getOrigin(c.req.url, options.secure ?? true))
         c.data.set('path', c.req.path)
         c.data.set('query', c.req.query())
-        c.ejs = (name, data) =>
+        c.ejs = async (name, data) =>
             render(name, Object.assign({ param: c.req.param() }, c.data, data))
         c.helpers = (methods) => helpers(methods)
-        c.render = (name, data) => c.html(c.ejs(name, data))
+        c.render = async (name, data) => c.html(c.ejs(name, data))
         await next()
     }
 }
-
-/**
- * @deprecated Renamed to `useRenderer`
- */
-export const setRenderer = useRenderer
