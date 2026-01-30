@@ -4,7 +4,6 @@ import commonjs from '@rollup/plugin-commonjs'
 import babel from '@rollup/plugin-babel'
 import terser from '@rollup/plugin-terser'
 import copy from 'rollup-plugin-copy'
-
 import path from 'node:path'
 
 const external = ['node:path', 'node:fs/promises']
@@ -50,24 +49,18 @@ class RollupBuild {
             input: source,
             output: [
                 {
-                    name: name,
+                    name,
                     file: this.target('umd', source),
                     format: 'umd',
                 },
                 {
-                    name: name,
+                    name,
                     file: this.target('umd', source, {
                         base: null,
                         ext: '.min.js',
                     }),
                     format: 'umd',
                     plugins: [terser()],
-                },
-                {
-                    name: name,
-                    file: this.target('', source, { target: 'public/dist' }),
-                    format: 'umd',
-                    //plugins: [terser()],
                 },
             ],
             plugins: [
@@ -136,6 +129,17 @@ build.push({
         './index.js',
     ],
     plugins: [],
+})
+
+build.push({
+    input: 'src/browser.js',
+    output: {
+        name: 'ejsInstance',
+        file: 'public/dist/ejs.js',
+        format: 'umd',
+        plugins: [terser()],
+    },
+    plugins: [ignore(external), commonjs({}), resolve({}), babel(babelConfig)],
 })
 
 export default build.export

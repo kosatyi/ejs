@@ -2,6 +2,7 @@ import fs from 'node:fs/promises'
 import globWatch from 'glob-watcher'
 import { glob } from 'glob'
 import { dirname, join } from 'node:path'
+
 import { create } from './index.js'
 import { bindContext } from './utils.js'
 
@@ -17,8 +18,8 @@ export class Bundler {
     #buildInProgress
     static exports = ['build', 'watch', 'concat', 'output']
     constructor(bundlerOptions = {}, ejsOptions = {}) {
-        const { compile, configure } = create(ejsOptions)
         bindContext(this, this.constructor.exports)
+        const { compile, configure } = create(ejsOptions)
         Object.assign(this.#bundlerOptions, bundlerOptions)
         this.#compile = compile
         this.#ejsOptions = configure()
@@ -130,8 +131,8 @@ export const bundler = (bundlerOptions = {}, ejsOptions = {}) => {
     return new Bundler(bundlerOptions, ejsOptions)
 }
 
-export const ejsRollupBundler = (options, config) => {
-    const bundle = bundler(options, config)
+export const ejsRollupBundler = (bundlerOptions, ejsOptions) => {
+    const bundle = new Bundler(bundlerOptions, ejsOptions)
     return {
         name: 'ejs-bundler',
         async buildStart() {

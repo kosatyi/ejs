@@ -10,7 +10,7 @@ const params = schema({
     target: null,
     umd: false,
     strict: true,
-    globals: [],
+    globals: '',
     precompiled: 'ejsPrecompiled',
     path: 'views',
     extension: 'ejs',

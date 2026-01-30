@@ -1,33 +1,13 @@
 import { bindContext, symbols } from './utils.js'
 
-const configSymbols = [
-    {
-        symbol: '-',
-        format(value, buffer, safe) {
-            return `')\n${buffer}(${safe}(${value},1))\n${buffer}('`
-        },
-    },
-    {
-        symbol: '=',
-        format(value, buffer, safe) {
-            return `')\n${buffer}(${safe}(${value}))\n${buffer}('`
-        },
-    },
-    {
-        symbol: '#',
-        format(value, buffer) {
-            return `')\n/**${value}**/\n${buffer}('`
-        },
-    },
-    {
-        symbol: '',
-        format(value, buffer) {
-            return `')\n${value}\n${buffer}('`
-        },
-    },
+const tokenList = [
+    ['-', (v, b, s) => `')\n${b}(${s}(${v},1))\n${b}('`],
+    ['=', (v, b, s) => `')\n${b}(${s}(${v}))\n${b}('`],
+    ['#', (v, b) => `')\n/**${v}**/\n${b}('`],
+    ['', (v, b) => `')\n${v}\n${b}('`],
 ]
 
-const matchTokens = (regex, content, callback) => {
+const tokensMatch = (regex, content, callback) => {
     let index = 0
     content.replace(regex, function () {
         const params = [].slice.call(arguments, 0, -1)
@@ -42,10 +22,12 @@ const matchTokens = (regex, content, callback) => {
 export class Compiler {
     #config = {}
     static exports = ['compile']
+
     constructor(options) {
         bindContext(this, this.constructor.exports)
         this.configure(options)
     }
+
     configure(options) {
         this.#config.strict = options.strict
         this.#config.rmWhitespace = options.rmWhitespace
@@ -60,7 +42,7 @@ export class Compiler {
         }
         this.#config.matches = []
         this.#config.formats = []
-        configSymbols.forEach(({ symbol, format }) => {
+        for (const [symbol, format] of tokenList) {
             this.#config.matches.push(
                 this.#config.token.start
                     .concat(symbol)
@@ -68,7 +50,7 @@ export class Compiler {
                     .concat(this.#config.token.end),
             )
             this.#config.formats.push(format)
-        })
+        }
         this.#config.regex = new RegExp(
             this.#config.matches.join('|').concat('|$'),
             'g',
@@ -95,7 +77,6 @@ export class Compiler {
             }
         }
     }
-
     compile(content, path) {
         const GLOBALS = this.#config.globalVariables
         const { SCOPE, SAFE, BUFFER, COMPONENT, ELEMENT } = this.#config.vars
@@ -108,7 +89,7 @@ export class Compiler {
             .replace(this.#config.slurpStart, this.#config.token.start)
             .replace(this.#config.slurpEnd, this.#config.token.end)
         let OUTPUT = `${BUFFER}('`
-        matchTokens(this.#config.regex, content, (params, index, offset) => {
+        tokensMatch(this.#config.regex, content, (params, index, offset) => {
             OUTPUT += symbols(content.slice(index, offset))
             params.forEach((value, index) => {
                 if (value) {
