@@ -5,7 +5,7 @@ export {
     configure,
     helpers,
     preload,
-} from './ejs'
+} from './ejs.js'
 
 export { TemplateError, TemplateSyntaxError, TemplateNotFound } from './error'
 

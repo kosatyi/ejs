@@ -1,5 +1,5 @@
 export class TemplateError extends Error {
-    code
+    code: number
     new(message: string): TemplateError
     toString(): string
     getCode(): number
