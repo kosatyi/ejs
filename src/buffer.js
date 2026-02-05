@@ -3,9 +3,7 @@ import { error } from './error.js'
 const resolve = (list) => {
     return Promise.all(list || [])
         .then((list) => list.join(''))
-        .catch((e) => {
-            return error(500, e)
-        })
+        .catch((e) => error(500, e))
 }
 
 const reject = (e) => {
