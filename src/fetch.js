@@ -1,15 +1,11 @@
 import { joinPath } from './utils.js'
-import { TemplateError, TemplateNotFound } from './error.js'
-export const httpRequest = (path, template) => {
+
+export const httpRequest = (path, template, error) => {
     return fetch(joinPath(path, template)).then(
         (response) => {
             if (response.ok) return response.text()
-            throw new TemplateNotFound(
-                `template ${path} / ${template} not found`,
-            )
+            return error(404, `template ${template} not found`)
         },
-        (reason) => {
-            return new TemplateError(reason)
-        },
+        (reason) => error(500, reason),
     )
 }

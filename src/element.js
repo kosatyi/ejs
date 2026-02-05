@@ -1,4 +1,4 @@
-import { entities, safeValue } from './utils.js'
+import { entities, escapeValue } from './utils.js'
 
 const selfClosed = [
     'area',
@@ -49,4 +49,4 @@ export const element = (tag, attrs, content) => {
     return result.join('')
 }
 
-export { safeValue }
+export { escapeValue }

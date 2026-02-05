@@ -19,19 +19,13 @@ const tokensMatch = (regex, content, callback) => {
     })
 }
 
-export class EjsTemplate extends Function {
-    source = ''
-}
-
-export class Compiler {
+export class EjsCompiler {
     #config = {}
-    static exports = ['compile']
-
+    static exports = ['configure', 'compile']
     constructor(options) {
         bindContext(this, this.constructor.exports)
         this.configure(options)
     }
-
     configure(options) {
         this.#config.strict = options.strict
         this.#config.rmWhitespace = options.rmWhitespace
@@ -106,7 +100,7 @@ export class Compiler {
             })
         })
         OUTPUT += `');`
-        OUTPUT = `try{${OUTPUT}}catch(e){return ${BUFFER}.error(e,'${path}')}`
+        OUTPUT = `try{${OUTPUT}}catch(e){return ${BUFFER}.error(e)}`
         if (this.#config.strict === false) {
             OUTPUT = `with(${SCOPE}){${OUTPUT}}`
         }

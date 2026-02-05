@@ -68,12 +68,6 @@ export interface EjsContext {
      */
     call(name: string, props?: object, callback?: any): any
     /**
-     * asynchronous template execution
-     * @param promise
-     * @param callback
-     */
-    async(promise: Promise<any>, callback?: any): any
-    /**
      * buffer output
      * @param args
      */

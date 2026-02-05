@@ -1,13 +1,5 @@
 import { isFunction } from './type.js'
 import { EjsInstance } from './ejs.js'
-import {
-    TemplateError,
-    TemplateSyntaxError,
-    TemplateNotFound,
-} from './error.js'
-
-export { TemplateError, TemplateSyntaxError, TemplateNotFound }
-
 /**
  * @type {{[p:string]:Function}}
  */
@@ -22,12 +14,11 @@ const getOrigin = (url, secure) => {
 export const { render, createContext, helpers, configure } = new EjsInstance({
     cache: false,
     strict: true,
-    async resolver(path, name) {
+    async resolver(path, name, error) {
         if (isFunction(templateCache[name])) {
             return templateCache[name]
-        } else {
-            throw new TemplateNotFound(`template ${name} not found`)
         }
+        error(404, `template ${name} not found`)
     },
 })
 

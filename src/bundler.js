@@ -1,12 +1,11 @@
 import fs from 'node:fs/promises'
 import globWatch from 'glob-watcher'
-import { glob } from 'glob'
 import { dirname, join } from 'node:path'
-
-import { create } from './index.js'
 import { bindContext } from './utils.js'
+import { create } from './index.js'
+import { glob } from 'glob'
 
-export class Bundler {
+export class EjsBundler {
     #templates = {}
     #bundlerOptions = {
         target: [],
@@ -22,7 +21,7 @@ export class Bundler {
         const { compile, configure } = create(ejsOptions)
         Object.assign(this.#bundlerOptions, bundlerOptions)
         this.#compile = compile
-        this.#ejsOptions = configure()
+        this.#ejsOptions = configure({})
         this.#buildInProgress = false
         this.#templates = {}
     }
@@ -128,11 +127,11 @@ export class Bundler {
 }
 
 export const bundler = (bundlerOptions = {}, ejsOptions = {}) => {
-    return new Bundler(bundlerOptions, ejsOptions)
+    return new EjsBundler(bundlerOptions, ejsOptions)
 }
 
 export const ejsRollupBundler = (bundlerOptions, ejsOptions) => {
-    const bundle = new Bundler(bundlerOptions, ejsOptions)
+    const bundle = bundler(bundlerOptions, ejsOptions)
     return {
         name: 'ejs-bundler',
         async buildStart() {

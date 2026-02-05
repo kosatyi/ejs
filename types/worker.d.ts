@@ -7,12 +7,6 @@ export {
     preload,
 } from './ejs.js'
 
-export {
-    TemplateError,
-    TemplateSyntaxError,
-    TemplateNotFound,
-} from './error.js'
-
 export type HonoContext = {}
 
 export type RendererParams = {

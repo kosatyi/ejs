@@ -1,9 +1,9 @@
 import { configSchema } from './schema.js'
 import { bindContext } from './utils.js'
-import { Template } from './template.js'
-import { Compiler } from './compiler.js'
-import { Cache } from './cache.js'
-import { Context } from './context.js'
+import { EjsTemplate } from './template.js'
+import { EjsCompiler } from './compiler.js'
+import { EjsCache } from './cache.js'
+import { EjsContext } from './context.js'
 
 export class EjsInstance {
     #cache
@@ -26,10 +26,14 @@ export class EjsInstance {
         bindContext(this, this.constructor.exports)
         this.#methods = {}
         this.#config = configSchema({}, options)
-        this.#context = new Context(this.#config, this.#methods)
-        this.#compiler = new Compiler(this.#config)
-        this.#cache = new Cache(this.#config)
-        this.#template = new Template(this.#config, this.#cache, this.#compiler)
+        this.#context = new EjsContext(this.#config, this.#methods)
+        this.#compiler = new EjsCompiler(this.#config)
+        this.#cache = new EjsCache(this.#config)
+        this.#template = new EjsTemplate(
+            this.#config,
+            this.#cache,
+            this.#compiler,
+        )
         this.helpers({ render: this.render, require: this.require })
     }
     create(options) {
@@ -83,7 +87,7 @@ export class EjsInstance {
                     data.useComponent,
                     data.useElement,
                     data.useBuffer,
-                    data.useSafeValue,
+                    data.useEscapeValue,
                 ]),
             )
     }

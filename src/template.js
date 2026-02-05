@@ -1,12 +1,13 @@
 import { isFunction } from './type.js'
 import { bindContext } from './utils.js'
+import { error } from './error.js'
 
-export class Template {
+export class EjsTemplate {
     #path
     #resolver
     #cache
     #compiler
-    static exports = ['configure', 'get', 'compile']
+    static exports = ['configure', 'get']
     constructor(options, cache, compiler) {
         bindContext(this, this.constructor.exports)
         this.#cache = cache
@@ -22,11 +23,13 @@ export class Template {
     #resolve(template) {
         const cached = this.#cache.get(template)
         if (cached instanceof Promise) return cached
-        const result = Promise.resolve(this.#resolver(this.#path, template))
+        const result = Promise.resolve(
+            this.#resolver(this.#path, template, error),
+        )
         this.#cache.set(template, result)
         return result
     }
-    compile(content, template) {
+    #compile(content, template) {
         const cached = this.#cache.get(template)
         if (typeof cached === 'function') return cached
         if (typeof content === 'string') {
@@ -38,8 +41,8 @@ export class Template {
         }
     }
     get(template) {
-        return this.#resolve(template).then((content) =>
-            this.compile(content, template),
-        )
+        return this.#resolve(template).then((content) => {
+            return this.#compile(content, template)
+        })
     }
 }

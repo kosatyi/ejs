@@ -39,17 +39,13 @@ export const symbols = (string) => {
     )
 }
 
-export const safeValue = (value, escape) => {
+export const escapeValue = (value, escape) => {
     const check = value
     return check == null
         ? ''
         : Boolean(escape) === true
           ? entities(check)
           : check
-}
-
-export const instanceOf = (object, instance) => {
-    return Boolean(object instanceof instance)
 }
 
 export const getPath = (context, name, strict) => {

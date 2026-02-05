@@ -1,6 +1,6 @@
 import { bindContext } from './utils.js'
 
-export class Cache {
+export class EjsCache {
     static exports = [
         'load',
         'set',
@@ -41,13 +41,11 @@ export class Cache {
     resolve(key) {
         return Promise.resolve(this.get(key))
     }
-
     load(data) {
         if (this.#cache) {
             Object.assign(this.#list, data || {})
         }
     }
-
     configure(options) {
         this.#cache = options.cache
         this.#precompiled = options.precompiled

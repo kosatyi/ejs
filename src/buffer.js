@@ -1,13 +1,15 @@
-import { TemplateSyntaxError } from './error.js'
+import { error } from './error.js'
 
 const resolve = (list) => {
     return Promise.all(list || [])
         .then((list) => list.join(''))
-        .catch((e) => e)
+        .catch((e) => {
+            return error(500, e)
+        })
 }
 
-const reject = (error) => {
-    return Promise.reject(new TemplateSyntaxError(error))
+const reject = (e) => {
+    return Promise.reject(error(500, e))
 }
 
 export const EjsBuffer = () => {
@@ -33,8 +35,8 @@ export const EjsBuffer = () => {
         array = store.pop()
         return resolve(result)
     }
-    EjsBuffer.error = (e, filename) => {
-        return reject(e, filename)
+    EjsBuffer.error = (e) => {
+        return reject(e)
     }
     EjsBuffer.end = () => {
         return resolve(array)

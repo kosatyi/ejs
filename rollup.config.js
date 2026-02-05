@@ -108,7 +108,7 @@ const build = new RollupBuild({ target: 'dist' })
 build.add('ejsInstance', 'src/index.js')
 build.add('ejsInstance', 'src/browser.js')
 build.add('ejsInstance', 'src/worker.js')
-build.add('element', 'src/element.js')
+build.add('ejsElement', 'src/element.js')
 build.push({
     input: 'src/bundler.js',
     output: [
@@ -129,17 +129,6 @@ build.push({
         './index.js',
     ],
     plugins: [],
-})
-
-build.push({
-    input: 'src/browser.js',
-    output: {
-        name: 'ejsInstance',
-        file: 'public/dist/ejs.js',
-        format: 'umd',
-        plugins: [terser()],
-    },
-    plugins: [ignore(external), commonjs({}), resolve({}), babel(babelConfig)],
 })
 
 export default build.export

@@ -6,9 +6,3 @@ export {
     helpers,
     preload,
 } from './ejs.js'
-
-export {
-    TemplateError,
-    TemplateSyntaxError,
-    TemplateNotFound,
-} from './error.js'

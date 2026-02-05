@@ -1,5 +1,5 @@
 import { EjsContext } from './context.js'
-import { TemplateError } from './error.js'
+import { EjsError, error } from './error.js'
 
 export declare type EjsConfigVars = {
     SCOPE: string
@@ -61,10 +61,7 @@ export declare type EjsConfig = {
      * - For client templates using window.fetch
      * - For worker templates using precompiled Map of templates
      */
-    resolver?: (
-        path: string,
-        template: string,
-    ) => Promise<string | TemplateError>
+    resolver?: (path: string, template: string, error: error) => Promise<string>
     /**
      * An array of local variables that are always destructured from helpers
      * available even in strict mode.

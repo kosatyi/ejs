@@ -3,7 +3,7 @@ import {
     each,
     getPath,
     hasProp,
-    safeValue,
+    escapeValue,
     bindContext,
 } from './utils.js'
 import { isFunction, isString } from './type.js'
@@ -34,12 +34,6 @@ const createContext = (config, methods) => {
             omit(data, [SCOPE, BUFFER, SAFE, COMPONENT, ELEMENT]),
         )
     }
-    Object.entries(methods).forEach(([name, value]) => {
-        if (isFunction(value) && globals.includes(name)) {
-            value = value.bind(EjsContext.prototype)
-        }
-        EjsContext.prototype[name] = value
-    })
     Object.defineProperty(EjsContext.prototype, BUFFER, {
         value: EjsBuffer(),
     })
@@ -64,36 +58,31 @@ const createContext = (config, methods) => {
         writable: true,
     })
     Object.defineProperties(EjsContext.prototype, {
-        /** @type {function} */
         setParentTemplate: {
             value(value) {
                 this[PARENT] = value
                 return this
             },
         },
-        /** @type {function} */
         getParentTemplate: {
             value() {
                 return this[PARENT]
             },
         },
-        /** @type {function} */
-        useSafeValue: {
-            get: () => safeValue,
+        useEscapeValue: {
+            get: () => escapeValue,
         },
-        /** @type {function} */
         useComponent: {
             get() {
                 if (isFunction(this[COMPONENT])) {
                     return this[COMPONENT].bind(this)
                 } else {
-                    return () => {
+                    return function () {
                         throw new Error(`${COMPONENT} must be a function`)
                     }
                 }
             },
         },
-        /** @type {function} */
         useElement: {
             get() {
                 if (isFunction(this[ELEMENT])) {
@@ -105,51 +94,43 @@ const createContext = (config, methods) => {
                 }
             },
         },
-        /** @type {function} */
         useBuffer: {
             get() {
                 return this[BUFFER]
             },
         },
-        /** @type {function} */
         getMacro: {
             value() {
                 return this[MACRO]
             },
         },
-        /** @type {function} */
         getBlocks: {
             value() {
                 return this[BLOCKS]
             },
         },
-        /** @type {function} */
         setExtend: {
             value(value) {
                 this[EXTEND] = value
                 return this
             },
         },
-        /** @type {function} */
         getExtend: {
             value() {
                 return this[EXTEND]
             },
         },
-        /** @type {function} */
         setLayout: {
             value(layout) {
                 this[LAYOUT] = layout
                 return this
             },
         },
-        /** @type {function} */
         getLayout: {
             value() {
                 return this[LAYOUT]
             },
         },
-        /** @type {function} */
         clone: {
             value(exclude_blocks) {
                 const filter = [LAYOUT, EXTEND, BUFFER]
@@ -159,32 +140,29 @@ const createContext = (config, methods) => {
                 return omit(this, filter)
             },
         },
-        /** @type {function} */
         extend: {
             value(layout) {
                 this.setExtend(true)
                 this.setLayout(layout)
             },
         },
-        /** @type {function} */
         echo: {
             value() {
                 return [].slice.call(arguments).forEach(this.useBuffer)
             },
         },
-        /** @type {function} */
         fn: {
             value(callback) {
-                return () => {
+                const context = this
+                return function () {
                     if (isFunction(callback)) {
-                        this.useBuffer.backup()
-                        this.useBuffer(callback.apply(this, arguments))
-                        return this.useBuffer.restore()
+                        context.useBuffer.backup()
+                        context.useBuffer(callback.apply(context, arguments))
+                        return context.useBuffer.restore()
                     }
                 }
             },
         },
-        /** @type {function} */
         macro: {
             value(name, callback) {
                 const list = this.getMacro()
@@ -195,7 +173,6 @@ const createContext = (config, methods) => {
                 }
             },
         },
-        /** @type {function} */
         call: {
             value(name) {
                 const list = this.getMacro()
@@ -206,35 +183,35 @@ const createContext = (config, methods) => {
                 }
             },
         },
-        /** @type {function} */
         block: {
             value(name, callback) {
                 const blocks = this.getBlocks()
                 blocks[name] = blocks[name] || []
                 blocks[name].push(this.fn(callback))
                 if (this.getExtend()) return
+                const context = this
                 const list = Object.assign([], blocks[name])
-                const shift = () => list.shift()
-                const next = () => {
+                const shift = function () {
+                    return list.shift()
+                }
+                const next = function () {
                     const parent = shift()
                     if (parent) {
-                        return () => {
-                            this.echo(parent(next()))
+                        return function () {
+                            context.echo(parent(next()))
                         }
                     } else {
-                        return () => {}
+                        return function () {}
                     }
                 }
                 this.echo(shift()(next()))
             },
         },
-        /** @type {function} */
         hasBlock: {
             value(name) {
                 return this.getBlocks().hasOwnProperty(name)
             },
         },
-        /** @type {function} */
         include: {
             value(path, data, cx) {
                 const context = cx === false ? {} : this.clone(true)
@@ -243,7 +220,6 @@ const createContext = (config, methods) => {
                 this.echo(promise)
             },
         },
-        /** @type {function} */
         use: {
             value(path, namespace) {
                 this.echo(
@@ -256,13 +232,6 @@ const createContext = (config, methods) => {
                 )
             },
         },
-        /** @type {function} */
-        async: {
-            value(promise, callback) {
-                this.echo(Promise.resolve(promise).then(callback))
-            },
-        },
-        /** @type {function} */
         get: {
             value(name, defaults) {
                 const path = getPath(this, name, true)
@@ -271,7 +240,6 @@ const createContext = (config, methods) => {
                 return hasProp(result, prop) ? result[prop] : defaults
             },
         },
-        /** @type {function} */
         set: {
             value(name, value) {
                 const path = getPath(this, name, false)
@@ -283,7 +251,6 @@ const createContext = (config, methods) => {
                 return (result[prop] = value)
             },
         },
-        /** @type {function} */
         each: {
             value(object, callback) {
                 if (isString(object)) {
@@ -293,7 +260,6 @@ const createContext = (config, methods) => {
             },
             writable: true,
         },
-        /** @type {function} */
         el: {
             value(tag, attr, content) {
                 content = isFunction(content) ? this.fn(content)() : content
@@ -305,16 +271,21 @@ const createContext = (config, methods) => {
             },
             writable: true,
         },
-        /** @type {function} */
         ui: {
-            value(layout) {},
+            value() {},
             writable: true,
         },
+    })
+    Object.entries(methods).forEach(([name, value]) => {
+        if (isFunction(value) && globals.includes(name)) {
+            value = value.bind(EjsContext.prototype)
+        }
+        EjsContext.prototype[name] = value
     })
     return EjsContext
 }
 
-export class Context {
+export class EjsContext {
     #context
     static exports = ['create', 'globals', 'helpers']
     constructor(options, methods) {

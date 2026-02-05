@@ -1,21 +1,14 @@
-export class TemplateError extends Error {
-    name = 'TemplateError'
-    constructor(error) {
-        super(error)
-        if (error instanceof Error) {
-            this.stack = error.stack
-            this.filename = error.filename
-            this.lineno = error.lineno
+class EjsError extends Error {
+    constructor(code, content) {
+        super(content)
+        this.code = code
+        if (content instanceof Error) {
+            this.stack = content.stack
+            this.message = content.message
         }
     }
 }
 
-export class TemplateNotFound extends TemplateError {
-    name = 'TemplateNotFound'
-    code = 404
-}
-
-export class TemplateSyntaxError extends TemplateError {
-    name = 'TemplateSyntaxError'
-    code = 500
+export const error = (code, content) => {
+    throw new EjsError(code, content)
 }

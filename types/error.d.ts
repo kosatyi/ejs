@@ -1,14 +1,11 @@
-export class TemplateError extends Error {
-    code: number
-    new(message: string): TemplateError
-    toString(): string
-    getCode(): number
+export interface EjsError<N, C> {
+    code: N
+    content: C;
+    (code: N, content: C): EjsError<N, C>
+    toString(): C
 }
 
-export class TemplateNotFound extends TemplateError {
-    code: 404
-}
-
-export class TemplateSyntaxError extends TemplateError {
-    code: 500
-}
+export type error = <N, C extends string | Error>(
+    code: N,
+    content: C,
+) => EjsError<N, C>
