@@ -1,8 +1,6 @@
-import { isFunction } from './type.js'
-import { EjsInstance } from './ejs.js'
-/**
- * @type {{[p:string]:Function}}
- */
+import { isFunction } from './ejs/type.js'
+import { EjsInstance } from './ejs/index.js'
+
 const templateCache = {}
 
 const getOrigin = (url, secure) => {
@@ -22,26 +20,10 @@ export const { render, createContext, helpers, configure } = new EjsInstance({
     },
 })
 
-/**
- * @param {{[p:string],Function}} templates
- */
 export function useTemplates(templates = {}) {
     Object.assign(templateCache, templates)
 }
 
-/**
- * @typedef {{[p:string]:any}} HonoContext
- * @property {function(*):Promise<Response>} html
- * @property {function():Promise<Response>} notFound
- * @property {function(methods:{}):void} helpers
- * @property {function(name:string,data:{}):Promise<string>} render
- * @property {function(name:string,data:{}):Promise<string>} ejs
- * @property {EjsContext} data
- */
-/**
- * @param {RendererParams} options
- * @return {(function(c:HonoContext, next): Promise<any>)|*}
- */
 export function useRenderer(options = {}) {
     useTemplates(options.templates ?? {})
     return async (c, next) => {

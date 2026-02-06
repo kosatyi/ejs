@@ -13,6 +13,7 @@ import { EjsBuffer } from './buffer.js'
 const PARENT = Symbol('EjsContext.parentTemplate')
 
 const createContext = (config, methods) => {
+    const globals = config.globals || []
     const {
         BLOCKS,
         MACRO,
@@ -24,40 +25,41 @@ const createContext = (config, methods) => {
         COMPONENT,
         ELEMENT,
     } = config.vars
-    const globals = config.globals || []
-    function EjsContext(data) {
-        this[PARENT] = null
-        this[BLOCKS] = {}
-        this[MACRO] = {}
-        Object.assign(
-            this,
-            omit(data, [SCOPE, BUFFER, SAFE, COMPONENT, ELEMENT]),
-        )
+    class Context {
+        constructor(data) {
+            this[PARENT] = null
+            this[BLOCKS] = {}
+            this[MACRO] = {}
+            Object.assign(
+                this,
+                omit(data, [SCOPE, BUFFER, SAFE, COMPONENT, ELEMENT]),
+            )
+        }
     }
-    Object.defineProperty(EjsContext.prototype, BUFFER, {
-        value: EjsBuffer(),
-    })
-    Object.defineProperty(EjsContext.prototype, BLOCKS, {
-        value: {},
-        writable: true,
-    })
-    Object.defineProperty(EjsContext.prototype, MACRO, {
-        value: {},
-        writable: true,
-    })
-    Object.defineProperty(EjsContext.prototype, LAYOUT, {
-        value: false,
-        writable: true,
-    })
-    Object.defineProperty(EjsContext.prototype, EXTEND, {
-        value: false,
-        writable: true,
-    })
-    Object.defineProperty(EjsContext.prototype, PARENT, {
-        value: null,
-        writable: true,
-    })
-    Object.defineProperties(EjsContext.prototype, {
+    Object.defineProperties(Context.prototype, {
+        [BUFFER]: {
+            value: EjsBuffer(),
+        },
+        [BLOCKS]: {
+            value: {},
+            writable: true,
+        },
+        [MACRO]: {
+            value: {},
+            writable: true,
+        },
+        [LAYOUT]: {
+            value: false,
+            writable: true,
+        },
+        [EXTEND]: {
+            value: false,
+            writable: true,
+        },
+        [PARENT]: {
+            value: null,
+            writable: true,
+        },
         setParentTemplate: {
             value(value) {
                 this[PARENT] = value
@@ -70,10 +72,12 @@ const createContext = (config, methods) => {
             },
         },
         useEscapeValue: {
-            get: () => escapeValue,
+            value() {
+                return escapeValue
+            },
         },
         useComponent: {
-            get() {
+            value() {
                 if (isFunction(this[COMPONENT])) {
                     return this[COMPONENT].bind(this)
                 } else {
@@ -84,7 +88,7 @@ const createContext = (config, methods) => {
             },
         },
         useElement: {
-            get() {
+            value() {
                 if (isFunction(this[ELEMENT])) {
                     return this[ELEMENT].bind(this)
                 } else {
@@ -95,7 +99,7 @@ const createContext = (config, methods) => {
             },
         },
         useBuffer: {
-            get() {
+            value() {
                 return this[BUFFER]
             },
         },
@@ -148,17 +152,18 @@ const createContext = (config, methods) => {
         },
         echo: {
             value() {
-                return [].slice.call(arguments).forEach(this.useBuffer)
+                return [].slice.call(arguments).forEach(this.useBuffer())
             },
         },
         fn: {
             value(callback) {
+                const buffer = this.useBuffer()
                 const context = this
                 return function () {
                     if (isFunction(callback)) {
-                        context.useBuffer.backup()
-                        context.useBuffer(callback.apply(context, arguments))
-                        return context.useBuffer.restore()
+                        buffer.backup()
+                        buffer(callback.apply(context, arguments))
+                        return buffer.restore()
                     }
                 }
             },
@@ -275,14 +280,22 @@ const createContext = (config, methods) => {
             value() {},
             writable: true,
         },
+        require: {
+            value() {},
+            writable: true,
+        },
+        render: {
+            value() {},
+            writable: true,
+        },
     })
     Object.entries(methods).forEach(([name, value]) => {
         if (isFunction(value) && globals.includes(name)) {
-            value = value.bind(EjsContext.prototype)
+            value = value.bind(Context.prototype)
         }
-        EjsContext.prototype[name] = value
+        Context.prototype[name] = value
     })
-    return EjsContext
+    return Context
 }
 
 export class EjsContext {

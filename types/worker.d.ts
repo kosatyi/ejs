@@ -16,12 +16,6 @@ export type RendererParams = {
     [key: string]: any
 }
 
-export function setRenderer(
-    options: RendererParams,
-): (c: HonoContext) => Promise<HonoContext>
-
-export function setTemplates(templates?: { [x: string]: any }): void
-
 export function useRenderer(
     options: RendererParams,
 ): (c: HonoContext) => Promise<HonoContext>

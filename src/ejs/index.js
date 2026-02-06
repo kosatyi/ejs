@@ -84,10 +84,10 @@ export class EjsInstance {
             .then((callback) =>
                 callback.apply(data, [
                     data,
-                    data.useComponent,
-                    data.useElement,
-                    data.useBuffer,
-                    data.useEscapeValue,
+                    data.useComponent(),
+                    data.useElement(),
+                    data.useBuffer(),
+                    data.useEscapeValue(),
                 ]),
             )
     }

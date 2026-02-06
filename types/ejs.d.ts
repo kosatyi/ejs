@@ -1,5 +1,5 @@
 import { EjsContext } from './context.js'
-import { EjsError, error } from './error.js'
+import { error } from './error.js'
 
 export declare type EjsConfigVars = {
     SCOPE: string

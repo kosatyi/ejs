@@ -1,9 +1,10 @@
 import fs from 'node:fs/promises'
 import globWatch from 'glob-watcher'
 import { dirname, join } from 'node:path'
-import { bindContext } from './utils.js'
-import { create } from './index.js'
 import { glob } from 'glob'
+import { bindContext } from './ejs/utils.js'
+
+import { create } from './index.js'
 
 export class EjsBundler {
     #templates = {}
@@ -16,6 +17,7 @@ export class EjsBundler {
     #ejsOptions
     #buildInProgress
     static exports = ['build', 'watch', 'concat', 'output']
+
     constructor(bundlerOptions = {}, ejsOptions = {}) {
         bindContext(this, this.constructor.exports)
         const { compile, configure } = create(ejsOptions)
@@ -25,14 +27,17 @@ export class EjsBundler {
         this.#buildInProgress = false
         this.#templates = {}
     }
+
     async #stageRead(path) {
         return fs
             .readFile(join(this.#ejsOptions.path, path))
             .then((response) => response.toString())
     }
+
     #stageCompile(content, name) {
         return this.#compile(content, name).source
     }
+
     #getBundle() {
         const umd = this.#bundlerOptions.umd
         const strict = this.#ejsOptions.strict
@@ -67,6 +72,7 @@ export class EjsBundler {
         }
         return out.join('\n')
     }
+
     async build() {
         if (this.#buildInProgress === true) return false
         this.#buildInProgress = true
@@ -75,6 +81,7 @@ export class EjsBundler {
         console.log('✅', 'bundle complete:', this.#bundlerOptions.target)
         this.#buildInProgress = false
     }
+
     async watch() {
         console.log('🔍', 'watch directory:', this.#ejsOptions.path)
         const pattern = '**/*.'.concat(this.#ejsOptions.extension)
@@ -95,6 +102,7 @@ export class EjsBundler {
             })
         })
     }
+
     async concat() {
         const pattern = '**/*.'.concat(this.#ejsOptions.extension)
         const list = await glob(
@@ -109,6 +117,7 @@ export class EjsBundler {
             this.#templates[template] = content
         }
     }
+
     async output() {
         const target = [].concat(this.#bundlerOptions.target)
         const content = this.#getBundle()

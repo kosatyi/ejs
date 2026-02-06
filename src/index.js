@@ -1,6 +1,6 @@
-import { EjsInstance } from './ejs.js'
-import { expressRenderer } from './express.js'
-import { readFile } from './readfile.js'
+import { EjsInstance } from './ejs/index.js'
+import { expressRenderer } from './ejs/express.js'
+import { readFile } from './ejs/readfile.js'
 
 export const {
     render,

@@ -1,5 +1,5 @@
-import { EjsInstance } from './ejs.js'
-import { httpRequest } from './fetch.js'
+import { EjsInstance } from './ejs/index.js'
+import { httpRequest } from './ejs/fetch.js'
 
 export const {
     render,
