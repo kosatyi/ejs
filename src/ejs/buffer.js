@@ -3,11 +3,11 @@ import { error } from './error.js'
 const resolve = (list) => {
     return Promise.all(list || [])
         .then((list) => list.join(''))
-        .catch((e) => error(500, e))
+        .catch((e) => error(0, e))
 }
 
 const reject = (e) => {
-    return Promise.reject(error(500, e))
+    return Promise.reject(error(0, e))
 }
 
 export const EjsBuffer = () => {

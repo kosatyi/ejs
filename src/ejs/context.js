@@ -9,6 +9,7 @@ import {
 import { isFunction, isString } from './type.js'
 import { element } from './element.js'
 import { EjsBuffer } from './buffer.js'
+import { error } from './error.js'
 
 const PARENT = Symbol('EjsContext.parentTemplate')
 
@@ -82,7 +83,7 @@ const createContext = (config, methods) => {
                     return this[COMPONENT].bind(this)
                 } else {
                     return function () {
-                        throw new Error(`${COMPONENT} must be a function`)
+                        error(2, `${COMPONENT} must be a function`)
                     }
                 }
             },
@@ -93,7 +94,7 @@ const createContext = (config, methods) => {
                     return this[ELEMENT].bind(this)
                 } else {
                     return () => {
-                        throw new Error(`${ELEMENT} must be a function`)
+                        error(2, `${ELEMENT} must be a function`)
                     }
                 }
             },

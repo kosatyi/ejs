@@ -1,4 +1,5 @@
 import { bindContext, symbols } from './utils.js'
+import { error } from './error.js'
 
 const tokenList = [
     ['-', (v, b, s) => `')\n${b}(${s}(${v},1))\n${b}('`],
@@ -114,10 +115,10 @@ export class EjsCompiler {
             const result = Function.apply(null, params.concat(OUTPUT))
             result.source = `(function(${params.join(',')}){\n${OUTPUT}\n});`
             return result
-        } catch (error) {
-            error.filename = path
-            error.source = OUTPUT
-            throw error
+        } catch (e) {
+            e.filename = path
+            e.source = OUTPUT
+            error(0, e)
         }
     }
 }

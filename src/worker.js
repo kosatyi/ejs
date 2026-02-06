@@ -9,15 +9,17 @@ const getOrigin = (url, secure) => {
     return url.origin
 }
 
+const resolver = async (path, name, error) => {
+    if (isFunction(templateCache[name])) {
+        return templateCache[name]
+    }
+    error(1, `template ${name} not found`)
+}
+
 export const { render, createContext, helpers, configure } = new EjsInstance({
     cache: false,
     strict: true,
-    async resolver(path, name, error) {
-        if (isFunction(templateCache[name])) {
-            return templateCache[name]
-        }
-        error(404, `template ${name} not found`)
-    },
+    resolver,
 })
 
 export function useTemplates(templates = {}) {

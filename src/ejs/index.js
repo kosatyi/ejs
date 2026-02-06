@@ -22,6 +22,10 @@ export class EjsInstance {
         'compile',
         'helpers',
     ]
+    /**
+     *
+     * @param {EjsConfig} options
+     */
     constructor(options = {}) {
         bindContext(this, this.constructor.exports)
         this.#methods = {}

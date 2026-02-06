@@ -10,7 +10,7 @@
     "minified": "dist/umd/browser.min.js",
     "author": "Stepan Kosatyi (https://kosatyi.com)",
     "browserslist": [
-        "> 0.25%, not dead"
+        "> 0.1%, not dead"
     ],
     "bin": {
         "ejs-bundler": "bin/bundler.js"
@@ -75,12 +75,12 @@
         "process.argv": "1.x"
     },
     "devDependencies": {
-        "@babel/preset-env": "^7.28.6",
+        "@babel/preset-env": "^7.29.0",
         "@rollup/plugin-babel": "^6.1.0",
         "@rollup/plugin-commonjs": "^29.0.0",
         "@rollup/plugin-node-resolve": "^16.0.3",
         "@rollup/plugin-terser": "^0.4.4",
-        "rollup": "^4.57.0",
+        "rollup": "^4.57.1",
         "rollup-plugin-copy": "^3.5.0",
         "rollup-plugin-ignore": "^1.0.10"
     }
