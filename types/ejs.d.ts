@@ -1,6 +1,6 @@
 import { EjsContext } from './context.js'
 import { error } from './error.js'
-import { element, escapeValue } from './element.js'
+
 export declare type EjsConfigVars = {
     SCOPE: string
     COMPONENT: string
@@ -106,8 +106,6 @@ declare type EjsInterface = {
     preload: preload
     compile: compile
     helpers: helpers<EjsMethods>
-    element: typeof element
-    escapeValue: typeof escapeValue
 }
 
 declare type EjsInstance = (config: EjsConfig) => EjsInterface

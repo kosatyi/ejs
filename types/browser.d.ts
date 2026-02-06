@@ -1,3 +1,4 @@
+export { element, escapeValue } from './element.js'
 export {
     create,
     render,
