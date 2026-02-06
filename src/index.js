@@ -5,6 +5,8 @@ import { isBoolean, isFunction, isString, typeProp } from './ejs/type.js'
 import { EjsInstance } from './ejs/index.js'
 import { ejsDefaults } from './ejs/config.js'
 
+export { element, escapeValue } from './element.js'
+
 const resolver = async (path, template, error) => {
     return fs
         .readFile(joinPath(path, template))

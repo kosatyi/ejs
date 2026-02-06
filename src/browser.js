@@ -1,6 +1,8 @@
 import { EjsInstance } from './ejs/index.js'
 import { joinPath } from './ejs/utils.js'
 
+export { element, escapeValue } from './element.js'
+
 const resolver = async (path, template, error) => {
     return fetch(joinPath(path, template)).then(
         (response) => {

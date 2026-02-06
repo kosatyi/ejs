@@ -1,6 +1,8 @@
 import { isFunction } from './ejs/type.js'
 import { EjsInstance } from './ejs/index.js'
 
+export { element, escapeValue } from './element.js'
+
 const templateCache = {}
 
 const getOrigin = (url, secure) => {
