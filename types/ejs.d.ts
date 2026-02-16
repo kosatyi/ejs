@@ -78,8 +78,6 @@ declare type configure = <T extends EjsConfig>(options?: T) => EjsConfig & T
 
 declare type compile = (content: string, path: string) => Function
 
-declare type EjsMethods = { [p: string]: any }
-
 declare type createContext = (data: { [p: string]: any }) => EjsContext
 
 declare type render = (
@@ -91,9 +89,7 @@ declare type require = (name: string) => Promise<{ [x: string]: any }>
 
 declare type preload = (list: { [p: string]: any }) => void
 
-declare type helpers<T extends EjsMethods> = (
-    extendMethods: T,
-) => EjsContext & T
+declare type helpers = (extendMethods: Record<string, any>) => EjsContext
 
 declare type create = (config: EjsConfig) => EjsInstance
 
@@ -105,7 +101,7 @@ declare type EjsInterface = {
     require: require
     preload: preload
     compile: compile
-    helpers: helpers<EjsMethods>
+    helpers: helpers
 }
 
 declare type EjsInstance = (config: EjsConfig) => EjsInterface
@@ -120,7 +116,7 @@ export const require: require
 
 export const preload: preload
 
-export const helpers: helpers<EjsMethods>
+export const helpers: helpers
 
 export const compile: compile
 

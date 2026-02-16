@@ -1,6 +1,4 @@
-import { EjsMethods } from './ejs'
-
-export interface EjsContext extends EjsMethods {
+export interface EjsContext {
     /**
      * extend layout with blocks in current template file
      * @param layout
