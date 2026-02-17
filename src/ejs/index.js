@@ -24,7 +24,7 @@ export class EjsInstance {
     ]
     /**
      *
-     * @param {EjsConfig} options
+     * @param {Partial<EjsConfig>} options
      */
     constructor(options = {}) {
         bindContext(this, this.constructor.exports)
