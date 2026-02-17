@@ -4,7 +4,8 @@ import { joinPath } from './ejs/utils.js'
 export { element, escapeValue } from './element.js'
 
 const resolver = async (path, template, error) => {
-    return fetch(joinPath(path, template)).then(
+    const url = new URL(joinPath(path, template), location.origin)
+    return fetch(url).then(
         (response) => {
             if (response.ok) return response.text()
             return error(1, `template ${template} not found`)
