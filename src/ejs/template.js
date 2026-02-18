@@ -8,12 +8,14 @@ export class EjsTemplate {
     #cache
     #compiler
     static exports = ['configure', 'get']
+
     constructor(options, cache, compiler) {
         bindContext(this, this.constructor.exports)
         this.#cache = cache
         this.#compiler = compiler
         this.configure(options ?? {})
     }
+
     configure(options) {
         this.#path = options.path
         if (isFunction(options.resolver)) {
@@ -21,28 +23,23 @@ export class EjsTemplate {
         }
     }
     #resolve(template) {
-        const cached = this.#cache.get(template)
-        if (cached instanceof Promise) return cached
-        const result = Promise.resolve(
-            this.#resolver(this.#path, template, error),
-        )
-        this.#cache.set(template, result)
-        return result
+        return Promise.resolve(this.#resolver(this.#path, template, error))
     }
     #compile(content, template) {
-        const cached = this.#cache.get(template)
-        if (typeof cached === 'function') return cached
-        if (typeof content === 'string') {
-            content = this.#compiler.compile(content, template)
-        }
         if (typeof content === 'function') {
-            this.#cache.set(template, content)
             return content
+        }
+        if (typeof content === 'string') {
+            return this.#compiler.compile(content, template)
         }
     }
     get(template) {
+        const callback = this.#cache.get(template)
+        if (callback) return Promise.resolve(callback)
         return this.#resolve(template).then((content) => {
-            return this.#compile(content, template)
+            const callback = this.#compile(content, template)
+            this.#cache.set(template, callback)
+            return callback
         })
     }
 }
