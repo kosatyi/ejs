@@ -3,8 +3,8 @@ import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import babel from '@rollup/plugin-babel'
 import terser from '@rollup/plugin-terser'
-import copy from 'rollup-plugin-copy'
 import path from 'node:path'
+import fs from 'node:fs/promises'
 
 const external = ['node:path', 'node:fs/promises']
 
@@ -13,18 +13,12 @@ const babelConfig = {
     presets: ['@babel/preset-env', {}],
 }
 
-const copyConfig = {
-    targets: [
-        {
-            src: 'package.cjs.json',
-            dest: 'dist/cjs',
-            rename() {
-                return 'package.json'
-            },
-        },
-    ],
-    copyOnce: true,
-}
+const packageJsonCjs = (source,target) => ({
+    name:'packageJsonCjs',
+    async closeBundle() {
+        await fs.copyFile(source,target)
+    }
+})
 
 class RollupBuild {
     options = {
@@ -83,7 +77,7 @@ class RollupBuild {
                 commonjs({}),
                 resolve({}),
                 babel(babelConfig),
-                copy(copyConfig),
+                packageJsonCjs('package.cjs.json','dist/cjs/package.json'),
             ],
         })
         this.push({
