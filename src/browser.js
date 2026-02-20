@@ -5,7 +5,7 @@ export { element, escapeValue } from './element.js'
 
 const resolver = async (path, template, error) => {
     const url = new URL(joinPath(path, template), location.origin)
-    return fetch(url).then(
+    return fetch(url.toString()).then(
         (response) => {
             if (response.ok) return response.text()
             return error(1, `template ${template} not found`)
